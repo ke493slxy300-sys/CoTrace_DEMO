@@ -87,4 +87,12 @@
 
   --duration-fast: 180ms;
   --duration-button: 160ms;
+
+  /* 全局滚动条（中性灰，弱化默认、悬停增强） */
+  --scrollbar-size: 8px;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: color-mix(in srgb, var(--text-muted) 34%, transparent);
+  --scrollbar-thumb-hover: color-mix(in srgb, var(--text-muted) 56%, transparent);
+  --scrollbar-thumb-active: color-mix(in srgb, var(--text-muted) 72%, transparent);
+  --scrollbar-radius: 999px;
 }

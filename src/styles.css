@@ -7,6 +7,54 @@
   box-sizing: border-box;
 }
 
+/* —— 全局滚动条（Chrome / Edge / Safari / Firefox）—— */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar-thumb {
+  min-height: 36px;
+  background-color: var(--scrollbar-thumb);
+  background-clip: content-box;
+  border: 2px solid transparent;
+  border-radius: var(--scrollbar-radius);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background-color: var(--scrollbar-thumb-active);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/**
+ * 固定分栏滚动容器：预留滚动槽，避免内容左右跳动。
+ * 不用于整页 / 弹窗默认区，避免边缘多余空隙。
+ */
+.project-log-decisions,
+.blueprint-detail-body,
+.sidebar-panel > .panel-body,
+.editor-panel .code-viewer-body,
+.right-section > .panel-body,
+.team-discussion-window-body {
+  scrollbar-gutter: stable;
+}
+
 html,
 body,
 #root {
@@ -1585,6 +1633,16 @@ button {
 
   .project-log-side-body {
     overflow: visible;
+  }
+
+  /* 窄屏取消分栏稳定占位，避免内容被挤压 */
+  .project-log-decisions,
+  .blueprint-detail-body,
+  .sidebar-panel > .panel-body,
+  .editor-panel .code-viewer-body,
+  .right-section > .panel-body,
+  .team-discussion-window-body {
+    scrollbar-gutter: auto;
   }
 }
 
