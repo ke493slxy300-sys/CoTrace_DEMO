@@ -1,0 +1,176 @@
+import type { BlueprintNode } from '../types';
+import { EXPERIENCE_MEMBER_ID } from './members';
+
+export type BlueprintArtifact = {
+  id: string;
+  label: string;
+  kind: 'code' | 'doc' | 'test';
+};
+
+export type BlueprintNodeDetail = {
+  background: string;
+  goal: string;
+  artifacts: BlueprintArtifact[];
+  openIssues: string[];
+  evolution: string[];
+};
+
+const DETAIL_BY_NODE_ID: Record<string, BlueprintNodeDetail> = {
+  'node-requirements': {
+    background:
+      '校园二手交易平台需覆盖发布、浏览、咨询、购买到评价的完整课程作业流程。',
+    goal: '对齐业务对象、主路径与验收边界，作为后续设计与实现的共同前提。',
+    artifacts: [
+      {
+        id: 'req-brief',
+        label: '流程确认纪要.md',
+        kind: 'doc',
+      },
+    ],
+    openIssues: [],
+    evolution: ['模拟 AI 初始理解：已根据预置业务流程生成需求确认节点。'],
+  },
+  'node-database': {
+    background:
+      '交易链路依赖用户、商品与订单等核心表，并需保证历史订单不受商品后续改价影响。',
+    goal: '完成核心表结构、状态枚举与订单快照规则设计。',
+    artifacts: [
+      {
+        id: 'db-schema',
+        label: 'schema.sql · users / listings / orders',
+        kind: 'code',
+      },
+      {
+        id: 'db-model',
+        label: 'data-model.md · 商品与订单关系说明',
+        kind: 'doc',
+      },
+      {
+        id: 'db-snapshot-test',
+        label: '订单快照一致性测试',
+        kind: 'test',
+      },
+    ],
+    openIssues: [],
+    evolution: [
+      '模拟 AI 初始理解：建议由数据库负责人完成表结构与快照规则。',
+      '预置团队决策：订单保存交易发生时的商品标题和价格快照。',
+    ],
+  },
+  'node-backend': {
+    background:
+      '购买申请需要在服务端校验商品存在性与可购买状态，并创建 pending 订单。',
+    goal: '实现 createOrder 等后端接口，返回明确错误码供前端区分提示。',
+    artifacts: [
+      {
+        id: 'be-order-service',
+        label: 'src/services/orderService.js',
+        kind: 'code',
+      },
+    ],
+    openIssues: ['错误响应结构尚待与前端联调对齐。'],
+    evolution: [
+      '模拟 AI 初始理解：后端 API 由项目负责人 Maya Chen 负责。',
+    ],
+  },
+  'node-frontend': {
+    background:
+      '学生需要浏览、筛选商品并在详情页发起购买申请，界面需对接后端接口。',
+    goal: '完成列表、详情、购买申请与订单状态展示的基础页面。',
+    artifacts: [
+      {
+        id: 'fe-list',
+        label: 'ListingList.jsx · 商品列表和筛选',
+        kind: 'code',
+      },
+      {
+        id: 'fe-detail',
+        label: 'ListingDetail.jsx · 详情与购买申请',
+        kind: 'code',
+      },
+      {
+        id: 'fe-badge',
+        label: 'OrderStatusBadge.jsx · 订单状态显示',
+        kind: 'code',
+      },
+      {
+        id: 'fe-api',
+        label: 'api.js · 购买申请请求封装',
+        kind: 'code',
+      },
+    ],
+    openIssues: [
+      '当前前端只能显示通用的“请求失败”，尚未区分 LISTING_NOT_FOUND 与 LISTING_UNAVAILABLE。',
+    ],
+    evolution: [
+      '模拟 AI 初始理解：前端页面由前端负责人推进。',
+      '状态说明：已完成部分页面，等待接口联调。',
+    ],
+  },
+  'node-integration': {
+    background: '各端实现完成后，需要把浏览到收货的主路径串起来演示。',
+    goal: '打通端到端交易流程，并校正关键状态流转。',
+    artifacts: [],
+    openIssues: [],
+    evolution: ['模拟 AI 初始理解：联调节点依赖后端与前端完成后开始。'],
+  },
+  'node-testing': {
+    background: '课程验收需要可重复的集成测试覆盖快照与错误场景。',
+    goal: '补齐订单快照一致性与关键错误码场景测试。',
+    artifacts: [],
+    openIssues: [],
+    evolution: ['模拟 AI 初始理解：集成测试安排在联调之后。'],
+  },
+  'node-acceptance': {
+    background: '对照软件工程课程作业要求完成整体演示与限制说明。',
+    goal: '完成演示路径与已知限制记录，作为项目验收依据。',
+    artifacts: [],
+    openIssues: [],
+    evolution: ['模拟 AI 初始理解：项目验收由项目负责人统筹。'],
+  },
+};
+
+export function getBlueprintNodeDetail(
+  node: BlueprintNode | string,
+): BlueprintNodeDetail {
+  const nodeId = typeof node === 'string' ? node : node.id;
+  const isBlank = typeof node === 'string' ? false : Boolean(node.isBlank);
+  const editHistory = typeof node === 'string' ? [] : (node.editHistory ?? []);
+
+  const base: BlueprintNodeDetail = isBlank
+    ? {
+        background: '这是负责人新增的空白任务节点，尚未补充完整说明。',
+        goal: '待补充任务目标。',
+        artifacts: [],
+        openIssues: [],
+        evolution: [],
+      }
+    : (DETAIL_BY_NODE_ID[nodeId] ?? {
+        background: '该任务节点已进入项目蓝图。',
+        goal: '待补充任务目标。',
+        artifacts: [],
+        openIssues: [],
+        evolution: ['模拟 AI 初始理解。'],
+      });
+
+  return {
+    ...base,
+    evolution: [...base.evolution, ...editHistory],
+  };
+}
+
+export function getNodeArtifactCount(node: BlueprintNode | string): number {
+  return getBlueprintNodeDetail(node).artifacts.length;
+}
+
+export type ArtifactEmptyKind = 'unassigned' | 'maya-working' | 'none';
+
+export function resolveArtifactEmptyKind(
+  node: BlueprintNode,
+): ArtifactEmptyKind | null {
+  const detail = getBlueprintNodeDetail(node.id);
+  if (detail.artifacts.length > 0) return null;
+  if (!node.ownerId) return 'unassigned';
+  if (node.ownerId === EXPERIENCE_MEMBER_ID) return 'maya-working';
+  return 'none';
+}

@@ -1,0 +1,98 @@
+{
+  "nodeId": "node-backend-api",
+  "currentMember": {"id": "member-maya", "label": "Maya Chen", "isPlaceholder": false},
+  "sourcePolicy": "以下内容由 Maya 从上一阶段个人 Agent 协作记录中主动选择，项目理解 Agent 只做主题归类与摘要；本包不复制原始对话。",
+  "organizedBy": "项目理解 Agent",
+  "cards": [
+    {
+      "id": "trace-maya-001",
+      "generatedTitle": "接口可运行不等于业务边界完整",
+      "displayTitle": "接口可运行不等于业务边界完整",
+      "titleEdited": false,
+      "topic": "业务校验",
+      "selectedByCurrentMember": true,
+      "selectionNote": "Maya 选择了暴露缺口的片段，而不是只保留 Agent 对代码的肯定。",
+      "fragments": [
+        {"speaker": "AI", "text": "基础 create order 路由已经能返回订单。"},
+        {"speaker": "Maya", "text": "先检查自购、商品不存在和不可售，否则只是路径跑通。"}
+      ],
+      "humanUnderstanding": "接口通路只是技术完成度，业务边界决定它是否可被真实页面调用。",
+      "humanDecision": "补齐输入、自购、商品状态校验，并给每类失败稳定错误码。",
+      "affectedArtifacts": ["上一阶段：code/backend-api/submission-v1/src/controllers/orderController.js", "上一阶段：code/backend-api/submission-v1/src/services/orderService.js"],
+      "unresolved": "鉴权后的 buyerId 应改从会话读取。",
+      "memoryCandidate": "先枚举业务失败，再判断接口是否完成。"
+    },
+    {
+      "id": "trace-maya-002",
+      "generatedTitle": "条件更新比先查后改更能守住并发",
+      "displayTitle": "条件更新守住并发边界",
+      "titleEdited": true,
+      "topic": "并发一致性",
+      "selectedByCurrentMember": true,
+      "selectionNote": "Maya 缩短了标题，并保留自己质疑读取后更新的判断。",
+      "fragments": [
+        {"speaker": "AI", "text": "先读取商品状态再更新，逻辑更直观。"},
+        {"speaker": "Maya", "text": "两个请求会同时读到 available，必须让更新本身带状态条件。"}
+      ],
+      "humanUnderstanding": "应用层顺序无法阻止并发请求同时通过旧状态检查。",
+      "humanDecision": "把 available 条件放进 UPDATE，并根据命中结果返回不可售。",
+      "affectedArtifacts": ["上一阶段：code/backend-api/submission-v1/src/repositories/itemRepository.js", "上一阶段：code/backend-api/submission-v1/src/repositories/orderRepository.js"],
+      "unresolved": "需要数据库集成测试验证真实隔离级别下的竞争。",
+      "memoryCandidate": "并发判断应尽量下沉到原子数据操作。"
+    },
+    {
+      "id": "trace-maya-003",
+      "generatedTitle": "订单响应必须携带不可变商品快照",
+      "displayTitle": "订单响应必须携带不可变商品快照",
+      "titleEdited": false,
+      "topic": "数据契约",
+      "selectedByCurrentMember": true,
+      "selectionNote": "Maya 选择此段用于解释为什么接口字段不是简单返回 itemId。",
+      "fragments": [
+        {"speaker": "AI", "text": "返回 orderId 和 itemId 已足够，页面可继续用原商品对象。"},
+        {"speaker": "Maya", "text": "成功态应该基于订单事实，标题和价格快照要进入响应。"}
+      ],
+      "humanUnderstanding": "前端原商品对象可能过期，订单响应需要自足地描述本次交易。",
+      "humanDecision": "当前响应包含标题与价格快照，供结果页直接消费；币种字段留待跨节点契约统一。",
+      "affectedArtifacts": ["上一阶段：code/backend-api/submission-v1/src/services/orderService.js", "上一阶段：documents/sources/04_订单API接口规范.md"],
+      "unresolved": "快照字段命名和币种字段需与数据库最终 schema 完全对齐。",
+      "memoryCandidate": "创建接口响应应返回新领域对象的关键事实。"
+    },
+    {
+      "id": "trace-maya-004",
+      "generatedTitle": "Maya 识别出 sold 与待确认的语义冲突",
+      "displayTitle": "sold 与待确认存在语义冲突",
+      "titleEdited": true,
+      "topic": "状态语义",
+      "selectedByCurrentMember": true,
+      "selectionNote": "该卡片强调冲突由 Maya 主动识别，而非 Agent 自动宣布结论。",
+      "fragments": [
+        {"speaker": "AI", "text": "创建订单后把商品改成 sold，流程即可闭合。"},
+        {"speaker": "Maya", "text": "页面还写等待卖家确认；sold 看起来像已经完成，必须公开这个矛盾。"}
+      ],
+      "humanUnderstanding": "数据实现能工作，但术语会误导团队和用户；这是产品与技术共同问题。",
+      "humanDecision": "本次不扩展 reserved 状态，但在 API 限制、数据库注释和工作日志中明确记录。",
+      "affectedArtifacts": ["上一阶段：documents/sources/04_订单API接口规范.md", "database/README.md"],
+      "unresolved": "reserved、拒绝和超时释放规则待下一阶段设计。",
+      "memoryCandidate": "状态名必须和用户可见流程阶段保持一致。"
+    },
+    {
+      "id": "trace-maya-005",
+      "generatedTitle": "单元测试通过后仍保留事务风险",
+      "displayTitle": "测试通过不代表事务风险消失",
+      "titleEdited": true,
+      "topic": "验证边界",
+      "selectedByCurrentMember": true,
+      "selectionNote": "Maya 没有把测试通过当作终点，选中未被当前测试覆盖的部分。",
+      "fragments": [
+        {"speaker": "AI", "text": "现有测试均通过，可以认为创建订单功能完成。"},
+        {"speaker": "Maya", "text": "这些测试替换了仓储层，还没证明真实数据库失败时会一起回滚。"}
+      ],
+      "humanUnderstanding": "Mock 测试验证服务分支，但无法验证约束、锁与真实事务。",
+      "humanDecision": "保留现有单元测试结论，同时把数据库集成测试列为上线前阻塞项。",
+      "affectedArtifacts": ["上一阶段：code/backend-api/submission-v1/tests/orderService.test.js", "work-logs/maya-backend-api-work-log.md"],
+      "unresolved": "尚未运行 PostgreSQL 竞争和回滚集成测试。",
+      "memoryCandidate": "测试结论必须注明替身边界和未覆盖风险。"
+    }
+  ]
+}

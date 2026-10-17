@@ -1,0 +1,29 @@
+{
+  "snapshotId": "snapshot-backend-baseline",
+  "projectId": "project-campus-market-001",
+  "nodeId": "node-backend-api",
+  "ownerId": "member-maya",
+  "label": "进入个人工作区时的初始版本",
+  "version": "0.1.0",
+  "editable": true,
+  "root": "code/backend-api/baseline",
+  "defaultFile": "src/services/orderService.js",
+  "files": [
+    { "path": "package.json", "language": "json" },
+    { "path": "src/controllers/orderController.js", "language": "javascript" },
+    { "path": "src/domain/orderStatus.js", "language": "javascript" },
+    { "path": "src/errors/BusinessError.js", "language": "javascript" },
+    { "path": "src/repositories/itemRepository.js", "language": "javascript" },
+    { "path": "src/repositories/orderRepository.js", "language": "javascript" },
+    { "path": "src/services/orderService.js", "language": "javascript" },
+    { "path": "tests/orderService.test.js", "language": "javascript" }
+  ],
+  "knownGaps": [
+    "self-purchase-not-checked",
+    "item-status-not-checked",
+    "competing-buyers-not-protected",
+    "item-snapshot-missing",
+    "order-item-consistency-not-guaranteed",
+    "failure-tests-incomplete"
+  ]
+}

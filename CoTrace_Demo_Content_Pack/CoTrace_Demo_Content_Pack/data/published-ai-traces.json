@@ -1,0 +1,52 @@
+{
+  "projectId": "project-campus-market-001",
+  "nodeId": "node-backend-api",
+  "submissionId": "submission-backend-v1",
+  "traces": [
+    {
+      "id": "trace-gap-analysis",
+      "title": "识别订单创建流程缺口",
+      "summary": "Agent 发现自购、商品可售状态、重复成交、订单快照和写入一致性五类缺口。",
+      "sourceMessageIds": ["msg-002"],
+      "fileRefs": ["src/services/orderService.js", "tests/orderService.test.js"],
+      "decision": "accepted",
+      "publishedBy": "member-maya"
+    },
+    {
+      "id": "trace-conditional-update",
+      "title": "用条件更新模拟重复成交保护",
+      "summary": "仅当商品仍为 available 时更新为 sold，使两个竞争请求最多有一个成功。",
+      "sourceMessageIds": ["msg-004"],
+      "fileRefs": ["src/repositories/itemRepository.js", "src/services/orderService.js"],
+      "decision": "accepted",
+      "publishedBy": "member-maya"
+    },
+    {
+      "id": "trace-item-snapshot",
+      "title": "保存交易发生时的商品快照",
+      "summary": "订单保存 title 和 price，避免历史订单随商品信息修改而变化。",
+      "sourceMessageIds": ["msg-008"],
+      "fileRefs": ["src/services/orderService.js"],
+      "decision": "accepted",
+      "publishedBy": "member-maya"
+    },
+    {
+      "id": "trace-human-scope-decision",
+      "title": "人工限制状态模型范围",
+      "summary": "Maya 拒绝在本阶段扩展 reserved、取消和支付流程，要求保留 sold 的临时语义并公开限制。",
+      "sourceMessageIds": ["msg-005", "msg-013"],
+      "fileRefs": ["src/domain/orderStatus.js"],
+      "decision": "human-adjusted",
+      "publishedBy": "member-maya"
+    },
+    {
+      "id": "trace-tests-and-limit",
+      "title": "完成异常测试并记录事务限制",
+      "summary": "5 个测试通过；内存仓储使用补偿恢复，真实系统仍需数据库事务。",
+      "sourceMessageIds": ["msg-014"],
+      "fileRefs": ["src/services/orderService.js", "tests/orderService.test.js"],
+      "decision": "accepted-with-limit",
+      "publishedBy": "member-maya"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "id": "project-seatflow-demo",
+  "name": "SeatFlow",
+  "subtitle": "校园自习室预约系统",
+  "projectType": "课程团队项目",
+  "status": "completed",
+  "statusLabel": "已完成",
+  "dateRange": "2026.03—2026.05",
+  "summary": "围绕座位预约、状态确认与并发冲突完成的课程 Demo。",
+  "memberCount": 4,
+  "members": [
+    {"memberId": "member-maya", "displayName": "Maya Chen", "isPlaceholder": false},
+    {"memberId": "former-teammate-a", "displayName": "前项目队友 A", "isPlaceholder": true},
+    {"memberId": "former-teammate-b", "displayName": "前项目队友 B", "isPlaceholder": true},
+    {"memberId": "former-teammate-c", "displayName": "前项目队友 C", "isPlaceholder": true}
+  ],
+  "logStats": {
+    "decisionCount": 3,
+    "growthCount": 2,
+    "experienceCount": 3
+  },
+  "primaryAction": {
+    "label": "查看项目日志",
+    "target": "project-log",
+    "projectId": "project-seatflow-demo"
+  },
+  "demoNotice": "CoTrace Demo 虚构历史项目，不代表真实用户、真实上线结果或最终队友名称。"
+}

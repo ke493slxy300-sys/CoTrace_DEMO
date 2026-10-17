@@ -1,0 +1,27 @@
+{
+  "nodeId": "node-database-design",
+  "title": "交易数据模型与创建订单事务",
+  "kind": "code",
+  "owner": {"memberId": "teammate-b", "displayName": "队友 B", "isPlaceholder": true, "resolveFromDuty": "database-design"},
+  "ownerNotice": "队友 B 不是最终姓名，必须从 project.collaborators 动态解析。",
+  "viewerMode": "teammate-readonly",
+  "primaryPanel": {
+    "type": "code-repository",
+    "root": "../database",
+    "defaultFile": "../database/sql/create_order_transaction.sql",
+    "files": [
+      "../database/sql/001_create_users_items.sql",
+      "../database/sql/002_create_orders.sql",
+      "../database/sql/003_add_order_constraints.sql",
+      "../database/sql/create_order_transaction.sql",
+      "../database/sql/seed_demo_data.sql",
+      "../database/README.md"
+    ]
+  },
+  "insightPanels": {
+    "traceCards": "../traces/teammate-b-database-traces.json",
+    "workLog": "../work-logs/teammate-b-database-work-log.md"
+  },
+  "teamDiscussion": {"presentation": "secondary-drawer", "defaultOpen": false, "scope": "node-database-design"},
+  "forbiddenUI": ["editable-agent-chat", "raw-ai-transcript", "submitted-badge", "fixed-two-column-owner-info"]
+}

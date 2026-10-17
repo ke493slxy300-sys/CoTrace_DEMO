@@ -1,0 +1,17 @@
+{
+  "nodeId": "node-product-analysis",
+  "member": {"id": "teammate-c", "label": "队友 C", "isPlaceholder": true},
+  "evidenceBoundary": "Demo 需求假设，不是访谈或线上数据结论。",
+  "initialUnderstanding": "为交易流程联调补充需求说明。",
+  "reframedUnderstanding": "对齐交易是否建立、角色状态理解与跨节点可验证责任。",
+  "aiUse": {
+    "accepted": ["完整交易还包含支付、物流、退款", "需要避免重复订单"],
+    "adapted": ["把抽象需求拆成三层验收结果"],
+    "questioned": ["用购买成功描述创建订单"],
+    "rejected": ["把支付和物流纳入本次 P0"]
+  },
+  "humanDecisions": ["使用等待卖家确认文案", "公开 sold 语义冲突", "标注非目标", "使用 Given/When/Then"],
+  "verification": {"completed": ["与前端、后端、数据库规则交叉对照"], "notClaimed": ["没有真实用户验证"]},
+  "unresolved": ["状态文案理解度", "网络超时后的重试偏好"],
+  "longTermMemory": ["区分证据与假设", "状态反馈先表达事实", "跨职能需求拆为可观察结果"]
+}

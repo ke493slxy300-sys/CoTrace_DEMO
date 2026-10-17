@@ -1,0 +1,77 @@
+{
+  "projectId": "project-campus-market-001",
+  "documents": [
+    {
+      "id": "doc-project-scope",
+      "title": "项目需求与范围说明",
+      "ownerIds": ["member-maya"],
+      "nodeIds": ["node-product-analysis"],
+      "version": "1.0",
+      "status": "confirmed",
+      "updatedAt": "2026-10-16T09:10:00+08:00",
+      "summary": "定义交易 Demo 的目标、范围、业务规则和暂不实现内容。",
+      "sourcePath": "documents/sources/01_项目需求与范围说明.md",
+      "pdfPath": "documents/pdfs/01_项目需求与范围说明.pdf"
+    },
+    {
+      "id": "doc-business-flow",
+      "title": "二手交易核心业务流程",
+      "ownerIds": ["team"],
+      "nodeIds": ["node-trade-integration"],
+      "version": "1.0",
+      "status": "pending-integration",
+      "updatedAt": "2026-10-16T09:20:00+08:00",
+      "summary": "描述主流程、异常分支、并发购买和当前状态模型。",
+      "sourcePath": "documents/sources/02_二手交易核心业务流程.md",
+      "pdfPath": "documents/pdfs/02_二手交易核心业务流程.pdf"
+    },
+    {
+      "id": "doc-database-schema",
+      "title": "数据库结构设计",
+      "ownerIds": ["member-alex"],
+      "nodeIds": ["node-database-design"],
+      "version": "1.0",
+      "status": "reviewed",
+      "updatedAt": "2026-10-16T09:25:00+08:00",
+      "summary": "定义 users、items、orders 及订单快照和事务边界。",
+      "sourcePath": "documents/sources/03_数据库结构设计.md",
+      "pdfPath": "documents/pdfs/03_数据库结构设计.pdf"
+    },
+    {
+      "id": "doc-order-api",
+      "title": "订单 API 接口规范",
+      "ownerIds": ["member-maya"],
+      "nodeIds": ["node-backend-api"],
+      "version": "1.0",
+      "status": "submitted",
+      "updatedAt": "2026-10-16T10:13:00+08:00",
+      "summary": "定义创建订单请求、响应、错误码和调用约束。",
+      "sourcePath": "documents/sources/04_订单API接口规范.md",
+      "pdfPath": "documents/pdfs/04_订单API接口规范.pdf"
+    },
+    {
+      "id": "doc-integration-guide",
+      "title": "前后端联调说明",
+      "ownerIds": ["member-priya", "member-maya"],
+      "nodeIds": ["node-frontend", "node-trade-integration"],
+      "version": "1.0",
+      "status": "pending",
+      "updatedAt": "2026-10-16T10:20:00+08:00",
+      "summary": "对应前端动作、API 错误码和共同验证场景。",
+      "sourcePath": "documents/sources/05_前后端联调说明.md",
+      "pdfPath": "documents/pdfs/05_前后端联调说明.pdf"
+    },
+    {
+      "id": "doc-test-checklist",
+      "title": "测试与验收清单",
+      "ownerIds": [],
+      "nodeIds": ["node-testing"],
+      "version": "1.0",
+      "status": "unassigned",
+      "updatedAt": "2026-10-16T10:25:00+08:00",
+      "summary": "覆盖后端、API、联调、数据一致性与 CoTrace 协作验收。",
+      "sourcePath": "documents/sources/06_测试与验收清单.md",
+      "pdfPath": "documents/pdfs/06_测试与验收清单.pdf"
+    }
+  ]
+}

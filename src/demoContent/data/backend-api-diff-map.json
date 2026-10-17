@@ -1,0 +1,48 @@
+{
+  "fromSnapshotId": "snapshot-backend-baseline",
+  "toSnapshotId": "snapshot-backend-submission-v1",
+  "changes": [
+    {
+      "id": "change-input-errors",
+      "file": "src/errors/BusinessError.js",
+      "summary": "错误对象支持稳定 code、HTTP status 和可选 details。",
+      "sourceMessageIds": ["msg-006", "msg-010"],
+      "traceIds": ["trace-gap-analysis"]
+    },
+    {
+      "id": "change-status-constants",
+      "file": "src/domain/orderStatus.js",
+      "summary": "补充取消状态，同时保留 sold 的临时语义。",
+      "sourceMessageIds": ["msg-011", "msg-012", "msg-013"],
+      "traceIds": ["trace-human-scope-decision"]
+    },
+    {
+      "id": "change-conditional-update",
+      "file": "src/repositories/itemRepository.js",
+      "summary": "增加 updateIfStatus，仅在商品仍可售时完成状态更新。",
+      "sourceMessageIds": ["msg-004", "msg-006", "msg-010"],
+      "traceIds": ["trace-conditional-update"]
+    },
+    {
+      "id": "change-order-validation",
+      "file": "src/services/orderService.js",
+      "summary": "增加自购、商品状态、条件更新结果和写入失败处理。",
+      "sourceMessageIds": ["msg-002", "msg-006", "msg-010", "msg-014"],
+      "traceIds": ["trace-gap-analysis", "trace-conditional-update", "trace-tests-and-limit"]
+    },
+    {
+      "id": "change-item-snapshot",
+      "file": "src/services/orderService.js",
+      "summary": "订单保存商品标题与价格快照。",
+      "sourceMessageIds": ["msg-007", "msg-008", "msg-009"],
+      "traceIds": ["trace-item-snapshot"]
+    },
+    {
+      "id": "change-tests",
+      "file": "tests/orderService.test.js",
+      "summary": "覆盖成功、自购、缺失、已售出和竞争购买。",
+      "sourceMessageIds": ["msg-010", "msg-014"],
+      "traceIds": ["trace-tests-and-limit"]
+    }
+  ]
+}

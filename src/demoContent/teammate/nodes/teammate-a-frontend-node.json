@@ -1,0 +1,28 @@
+{
+  "nodeId": "node-frontend",
+  "title": "商品详情与下单反馈",
+  "kind": "code",
+  "owner": {"memberId": "teammate-a", "displayName": "队友 A", "isPlaceholder": true, "resolveFromDuty": "frontend-page"},
+  "ownerNotice": "队友 A 不是最终姓名，必须从 project.collaborators 动态解析。",
+  "viewerMode": "teammate-readonly",
+  "primaryPanel": {
+    "type": "code-repository",
+    "root": "../frontend",
+    "defaultFile": "../frontend/src/components/PurchasePanel.jsx",
+    "files": [
+      "../frontend/src/pages/ItemDetailPage.jsx",
+      "../frontend/src/components/PurchasePanel.jsx",
+      "../frontend/src/components/OrderResultPanel.jsx",
+      "../frontend/src/services/orderApi.js",
+      "../frontend/src/utils/orderErrorMessages.js",
+      "../frontend/tests/PurchasePanel.test.jsx",
+      "../frontend/README.md"
+    ]
+  },
+  "insightPanels": {
+    "traceCards": "../traces/teammate-a-frontend-traces.json",
+    "workLog": "../work-logs/teammate-a-frontend-work-log.md"
+  },
+  "teamDiscussion": {"presentation": "secondary-drawer", "defaultOpen": false, "scope": "node-frontend"},
+  "forbiddenUI": ["editable-agent-chat", "raw-ai-transcript", "submitted-badge", "fixed-two-column-owner-info"]
+}

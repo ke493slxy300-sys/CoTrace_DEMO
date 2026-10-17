@@ -1,0 +1,35 @@
+{
+  "snapshotId": "snapshot-backend-submission-v1",
+  "submissionId": "submission-backend-v1",
+  "projectId": "project-campus-market-001",
+  "nodeId": "node-backend-api",
+  "ownerId": "member-maya",
+  "label": "创建订单接口完善",
+  "version": "0.2.0",
+  "submittedAt": "2026-10-16T10:13:00+08:00",
+  "editable": false,
+  "root": "code/backend-api/submission-v1",
+  "defaultFile": "src/services/orderService.js",
+  "commitTitle": "完善创建订单校验与状态一致性",
+  "commitSummary": "补充自购与可售状态校验，使用条件更新避免重复成交，保存商品快照，并覆盖主要异常测试。",
+  "files": [
+    { "path": "package.json", "language": "json", "change": "modified" },
+    { "path": "src/controllers/orderController.js", "language": "javascript", "change": "modified" },
+    { "path": "src/domain/orderStatus.js", "language": "javascript", "change": "modified" },
+    { "path": "src/errors/BusinessError.js", "language": "javascript", "change": "modified" },
+    { "path": "src/repositories/itemRepository.js", "language": "javascript", "change": "modified" },
+    { "path": "src/repositories/orderRepository.js", "language": "javascript", "change": "modified" },
+    { "path": "src/services/orderService.js", "language": "javascript", "change": "modified" },
+    { "path": "tests/orderService.test.js", "language": "javascript", "change": "modified" }
+  ],
+  "testResult": {
+    "command": "npm test",
+    "passed": 5,
+    "failed": 0
+  },
+  "limitations": [
+    "The in-memory compensation is not a real database transaction.",
+    "The sold state temporarily means no longer accepting purchase requests.",
+    "Payment, cancellation and seller rejection are outside this submission."
+  ]
+}

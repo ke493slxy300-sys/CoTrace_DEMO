@@ -1,0 +1,90 @@
+:root {
+  --bg-header: #1b2633;
+  --bg-page-title: #151e2a;
+  --bg-editor: #131b24;
+  --bg-sidebar: #18212d;
+  --bg-ai-panel: #1a2430;
+  --bg-bottom: #17202b;
+  --bg-card: #212c3a;
+  --bg-input: #1a2531;
+  --bg-selected: #20334c;
+
+  --text-primary: #e6eaf2;
+  --text-secondary: #c0c9d9;
+  --text-muted: #95a4ba;
+  --text-disabled: #718096;
+
+  --border-default: #354355;
+  --border-active: #627a9c;
+  --accent-primary: #7baafe;
+  --code-selection: #20334c;
+
+  --semantic-ai: #ae91f5;
+  --semantic-user: #f09380;
+  --semantic-generated: #77c9a7;
+  --semantic-pending: #ddb17e;
+  --semantic-accepted: #9bc9b1;
+  --semantic-verified: #94bdf3;
+  --semantic-error: #e68a88;
+
+  --semantic-ai-bg: #332b49;
+  --semantic-user-bg: #463038;
+  --semantic-generated-bg: #264239;
+  --semantic-pending-bg: #41362d;
+  --semantic-accepted-bg: #2d4139;
+  --semantic-verified-bg: #2a3e56;
+  --semantic-error-bg: #473033;
+
+  --gradient-header: linear-gradient(180deg, #202a3d 0%, #1b2636 100%);
+  --gradient-panel: linear-gradient(180deg, #18212d 0%, #1a2430 100%);
+  --gradient-bottom: linear-gradient(180deg, #17202b 0%, #1c2835 100%);
+
+  --sidebar-width: 216px;
+  --ai-panel-width: 412px;
+  --header-height: 54px;
+  --title-height: 72px;
+  --footer-height: 36px;
+
+  /* —— 蓝图底栏尺寸（可手动微调）——
+   * 文件：src/styles/tokens.css
+   * 底栏总高、待办卡宽、文档卡宽： */
+  --blueprint-dock-height: 240px;
+  --blueprint-dock-max-vh: 32vh;
+  --blueprint-dock-min-height: 180px;
+  --blueprint-todo-card-width: 196px;
+  --blueprint-doc-card-width: 132px;
+
+  /* 代码 Token 色（伪 IDE 高亮，沿用当前色板） */
+  --tok-keyword: #c792ea;
+  --tok-string: #c3e88d;
+  --tok-comment: #718096;
+  --tok-number: #f78c6c;
+  --tok-function: #82aaff;
+  --tok-punctuation: #89ddff;
+  --tok-property: #ffcb6b;
+  --input-height: 36px;
+  --button-height: 36px;
+  --button-compact-height: 32px;
+  --radius-button: 6px;
+  --radius-card: 8px;
+  --border-width: 1px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+
+  --font-ui: "Noto Sans SC", "Inter", system-ui, -apple-system, "Segoe UI",
+    sans-serif;
+  --font-code: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono",
+    Menlo, monospace;
+
+  --font-size-title: 24px;
+  --font-size-module: 16px;
+  --font-size-body: 14px;
+  --font-size-caption: 12px;
+  --font-size-code: 13px;
+
+  --duration-fast: 180ms;
+  --duration-button: 160ms;
+}
