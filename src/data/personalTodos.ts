@@ -31,9 +31,7 @@ export type TeamPendingItem = {
 };
 
 /** 团队提出的待处理事项（预置） */
-/** 团队提出的待处理事项（预置） */
-export const INITIAL_TEAM_PENDING_ITEMS =
-  personalTodoData as unknown as TeamPendingItem[];
+export const INITIAL_TEAM_PENDING_ITEMS: TeamPendingItem[] = personalTodoData;
 
 export const PERSONAL_TODO_STATUS_LABELS: Record<PersonalTodoStatus, string> = {
   open: "待处理",

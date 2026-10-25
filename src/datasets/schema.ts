@@ -91,3 +91,90 @@ export const BlueprintNodeDutySchema = z.record(
   z.string(),
   DutyIdSchema.nullable(),
 );
+
+export const BlueprintArtifactSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  kind: z.enum(["code", "doc", "test"]),
+});
+
+export const BlueprintNodeDetailSchema = z.object({
+  background: z.string(),
+  goal: z.string(),
+  artifacts: z.array(BlueprintArtifactSchema),
+  openIssues: z.array(z.string()),
+  evolution: z.array(z.string()),
+});
+
+/** 键是蓝图节点 ID，值是该节点的详情 */
+export const BlueprintDetailsSchema = z.record(
+  z.string(),
+  BlueprintNodeDetailSchema,
+);
+
+export const PersonalTodoStatusSchema = z.enum([
+  "open",
+  "waiting",
+  "done",
+  "blocked-later",
+]);
+
+export const TeamPendingItemSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  fromMemberName: z.string(),
+  summary: z.string(),
+  status: PersonalTodoStatusSchema,
+  relatedNodeId: z.string().nullable(),
+  relatedDiscussionId: z.string().nullable(),
+  track: z.enum(["ready", "later"]),
+});
+
+export const PersonalTodosSchema = z.array(TeamPendingItemSchema);
+
+export const BlueprintNodeStatusSchema = z.enum([
+  "todo",
+  "in-progress",
+  "awaiting-review",
+  "discussing",
+  "needs-change",
+  "accepted",
+  "done",
+]);
+
+/**
+ * AI 初始生成的蓝图节点。
+ * 它还不是页面最终使用的 BlueprintNode。
+ */
+export const BlueprintNodeSeedSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  summary: z.string(),
+  suggestedCollaboratorIds: z.array(z.string()),
+  status: BlueprintNodeStatusSchema,
+  dependsOn: z.array(z.string()),
+  acceptance: z.array(z.string()),
+  x: z.number(),
+  y: z.number(),
+});
+
+export const BlueprintNodeSeedsSchema = z.array(BlueprintNodeSeedSchema);
+
+export type BlueprintNodeSeedData = z.infer<typeof BlueprintNodeSeedSchema>;
+
+/** 一套完整的 CoTrace 项目数据集 */
+export const ProjectDatasetSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  project: ProjectTemplateSchema,
+  members: TeamMembersSchema,
+  duties: DutyCatalogSchema,
+  collaboratorSeeds: CollaboratorSeedsSchema,
+  experienceCollaborator: ProjectCollaboratorSchema,
+  blueprintNodeDuty: BlueprintNodeDutySchema,
+  blueprintNodes: BlueprintNodeSeedsSchema,
+  blueprintDetails: BlueprintDetailsSchema,
+  personalTodos: PersonalTodosSchema,
+});
+
+export type ProjectDataset = z.infer<typeof ProjectDatasetSchema>;

@@ -1,7 +1,6 @@
 import type {
   BlueprintNode,
   BlueprintNodeStatus,
-  DutyId,
   ProjectCollaborator,
 } from "../types";
 import { BLUEPRINT_NODE_DUTY, resolveOwnerForDuty } from "./collaborators";
@@ -24,20 +23,7 @@ export const BLUEPRINT_STATUS_LABELS: Record<BlueprintNodeStatus, string> = {
 /** 节点无负责人时的展示文案 */
 export const BLUEPRINT_OWNER_PENDING_LABEL = "待分配";
 
-type NodeSeed = {
-  id: string;
-  name: string;
-  summary: string;
-  /** 建议协作者候选（仅当其已在项目协作快照中才会写入） */
-  suggestedCollaboratorIds: string[];
-  status: BlueprintNodeStatus;
-  dependsOn: string[];
-  acceptance: string[];
-  x: number;
-  y: number;
-};
-
-const NODE_SEEDS = blueprintNodeData as NodeSeed[];
+const NODE_SEEDS = blueprintNodeData;
 
 function selectedIdSet(collaborators: ProjectCollaborator[]): Set<string> {
   return new Set(collaborators.map((item) => item.memberId));
@@ -47,7 +33,7 @@ function resolveNodeOwner(
   nodeName: string,
   collaborators: ProjectCollaborator[],
 ): string | null {
-  const dutyId = BLUEPRINT_NODE_DUTY[nodeName] as DutyId | null | undefined;
+  const dutyId = BLUEPRINT_NODE_DUTY[nodeName];
   if (!dutyId) return null;
   return resolveOwnerForDuty(dutyId, collaborators);
 }

@@ -19,10 +19,8 @@ export type BlueprintNodeDetail = {
   evolution: string[];
 };
 
-const DETAIL_BY_NODE_ID = blueprintDetailData as unknown as Record<
-  string,
-  BlueprintNodeDetail
->;
+const DETAIL_BY_NODE_ID: Record<string, BlueprintNodeDetail> =
+  blueprintDetailData;
 
 export function getBlueprintNodeDetail(
   node: BlueprintNode | string,

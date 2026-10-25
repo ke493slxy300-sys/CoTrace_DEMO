@@ -17,7 +17,7 @@ const experienceCollaboratorData =
 export function createLockedExperienceCollaborator(): ProjectCollaborator {
   return {
     ...experienceCollaboratorData,
-  } as ProjectCollaborator;
+  };
 }
 
 export type CollaboratorSelectionInput = {
@@ -95,17 +95,15 @@ export function resolveOwnerForDuty(
 }
 
 /** 当前Demo的蓝图节点与职责对应关系 */
-export const BLUEPRINT_NODE_DUTY = blueprintNodeDutyData as Record<
-  string,
-  DutyId | null
->;
+export const BLUEPRINT_NODE_DUTY: Record<string, DutyId | null> =
+  blueprintNodeDutyData;
 
 /**
  * 伪项目演示协作班底（Demo 锁定）：仅此三人可选入协作。
  * 注册未选手动成员时仍并入；注册侧禁止增删改。
  */
-export const DEMO_CAST_SEEDS =
-  collaboratorSeedData as CollaboratorSelectionInput[];
+export const DEMO_CAST_SEEDS: CollaboratorSelectionInput[] =
+  collaboratorSeedData;
 
 export const DEMO_CAST_MEMBER_IDS = DEMO_CAST_SEEDS.map(
   (seed) => seed.memberId,
