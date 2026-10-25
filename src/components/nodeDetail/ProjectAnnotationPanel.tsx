@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
-import { MessagesSquare } from 'lucide-react';
-import { getSubmission } from '../../data/demoSubmission';
-import { BACKEND_APP_NODE_ID } from '../../demoContent/packIds';
+import { useMemo, useState } from "react";
+import { MessagesSquare } from "lucide-react";
+import { getSubmission } from "../../data/demoSubmission";
+import { BACKEND_APP_NODE_ID } from "../../datasets/built-in/campus-marketplace/content/packIds";
 import {
   DEMO_ANNOTATION_IDS,
   getDecisionBadge,
@@ -9,30 +9,28 @@ import {
   getDiscussionViewStatus,
   getReadyToArchiveHint,
   useNodeCollaborationStore,
-} from '../../data/nodeCollaborationStore';
-import { getMemberById } from '../../data/members';
-import type { ProjectAnnotation } from '../../types/collaboration';
-import type { DiscussionViewStatus } from '../../types/collaboration';
+} from "../../data/nodeCollaborationStore";
+import { getMemberById } from "../../data/members";
+import type { ProjectAnnotation } from "../../types/collaboration";
+import type { DiscussionViewStatus } from "../../types/collaboration";
 import {
   DISCUSSION_VIEW_STATUS_LABELS,
   formatRelativeTime,
-} from '../../utils/discussionLabels';
-import { EmptyState } from '../common/EmptyState';
+} from "../../utils/discussionLabels";
+import { EmptyState } from "../common/EmptyState";
 
 /**
  * 后端 API：提交前只展示 A/C 两条标注；
  * 《购买失败需区分错误码后再改提示》(B) 提交后再出现。
  */
-function isBackendAnnotationVisibleBeforeSubmit(
-  annotationId: string,
-): boolean {
+function isBackendAnnotationVisibleBeforeSubmit(annotationId: string): boolean {
   return (
     annotationId === DEMO_ANNOTATION_IDS.A ||
     annotationId === DEMO_ANNOTATION_IDS.C
   );
 }
 
-type FilterKey = 'all' | DiscussionViewStatus;
+type FilterKey = "all" | DiscussionViewStatus;
 
 type ProjectAnnotationPanelProps = {
   projectId: string;
@@ -44,12 +42,12 @@ type ProjectAnnotationPanelProps = {
 
 function formatTarget(annotation: ProjectAnnotation): string {
   const t = annotation.target;
-  if (t.kind === 'node') return '节点';
-  if (t.kind === 'file') return t.fileLabel ?? t.fileId;
-  if (t.kind === 'lines') {
+  if (t.kind === "node") return "节点";
+  if (t.kind === "file") return t.fileLabel ?? t.fileId;
+  if (t.kind === "lines") {
     return `${t.fileLabel ?? t.fileId} · L${t.lineStart}–${t.lineEnd}`;
   }
-  return t.traceTitle ? `溯源 · ${t.traceTitle}` : 'AI 溯源卡片';
+  return t.traceTitle ? `溯源 · ${t.traceTitle}` : "AI 溯源卡片";
 }
 
 export function ProjectAnnotationPanel({
@@ -60,7 +58,7 @@ export function ProjectAnnotationPanel({
   onOpenAnnotation,
 }: ProjectAnnotationPanelProps) {
   const store = useNodeCollaborationStore();
-  const [filter, setFilter] = useState<FilterKey>('all');
+  const [filter, setFilter] = useState<FilterKey>("all");
 
   const hasBackendSubmission = Boolean(
     nodeId === BACKEND_APP_NODE_ID && getSubmission(nodeId, projectId),
@@ -90,8 +88,8 @@ export function ProjectAnnotationPanel({
         : null;
       const lastMsg = discussion?.messages[discussion.messages.length - 1];
       const counterpartId = discussion
-        ? discussion.participantIds.find((id) => id !== currentUserId) ??
-          discussion.participantIds[0]
+        ? (discussion.participantIds.find((id) => id !== currentUserId) ??
+          discussion.participantIds[0])
         : annotation.authorId;
       return {
         annotation,
@@ -100,7 +98,7 @@ export function ProjectAnnotationPanel({
         lastSummary: lastMsg?.content ?? annotation.summary,
         updatedAt: discussion?.updatedAt ?? annotation.updatedAt,
         counterpartName:
-          getMemberById(counterpartId)?.name ?? counterpartId ?? '—',
+          getMemberById(counterpartId)?.name ?? counterpartId ?? "—",
         authorName:
           getMemberById(annotation.authorId)?.name ?? annotation.authorId,
         archiveHint: discussion
@@ -126,7 +124,7 @@ export function ProjectAnnotationPanel({
   }, [rows]);
 
   const visible = rows.filter((row) => {
-    if (filter === 'all') return true;
+    if (filter === "all") return true;
     return row.viewStatus === filter;
   });
 
@@ -141,22 +139,29 @@ export function ProjectAnnotationPanel({
   }
 
   const filters: { key: FilterKey; label: string }[] = [
-    { key: 'all', label: '全部' },
-    { key: 'needs_my_reply', label: DISCUSSION_VIEW_STATUS_LABELS.needs_my_reply },
+    { key: "all", label: "全部" },
     {
-      key: 'waiting_for_teammate',
+      key: "needs_my_reply",
+      label: DISCUSSION_VIEW_STATUS_LABELS.needs_my_reply,
+    },
+    {
+      key: "waiting_for_teammate",
       label: DISCUSSION_VIEW_STATUS_LABELS.waiting_for_teammate,
     },
     {
-      key: 'ready_to_archive',
+      key: "ready_to_archive",
       label: DISCUSSION_VIEW_STATUS_LABELS.ready_to_archive,
     },
-    { key: 'archived', label: DISCUSSION_VIEW_STATUS_LABELS.archived },
+    { key: "archived", label: DISCUSSION_VIEW_STATUS_LABELS.archived },
   ];
 
   return (
     <div className="project-anno-wrap">
-      <div className="project-anno-filters" role="tablist" aria-label="讨论状态筛选">
+      <div
+        className="project-anno-filters"
+        role="tablist"
+        aria-label="讨论状态筛选"
+      >
         {filters.map((item) => (
           <button
             key={item.key}
@@ -164,7 +169,7 @@ export function ProjectAnnotationPanel({
             role="tab"
             aria-selected={filter === item.key}
             className={`project-anno-filter${
-              filter === item.key ? ' is-active' : ''
+              filter === item.key ? " is-active" : ""
             }`}
             onClick={() => setFilter(item.key)}
           >
@@ -195,12 +200,10 @@ export function ProjectAnnotationPanel({
                   {row.annotation.typeLabel} · {row.authorName}
                 </span>
                 {row.viewStatus ? (
-                  <span
-                    className={`project-anno-status is-${row.viewStatus}`}
-                  >
+                  <span className={`project-anno-status is-${row.viewStatus}`}>
                     {DISCUSSION_VIEW_STATUS_LABELS[row.viewStatus]}
-                    {row.archiveHint ? ` · ${row.archiveHint}` : ''}
-                    {row.decisionBadge ? ` · ${row.decisionBadge}` : ''}
+                    {row.archiveHint ? ` · ${row.archiveHint}` : ""}
+                    {row.decisionBadge ? ` · ${row.decisionBadge}` : ""}
                   </span>
                 ) : (
                   <span className="project-anno-status is-note">仅标注</span>
@@ -212,11 +215,11 @@ export function ProjectAnnotationPanel({
                   对象：{formatTarget(row.annotation)}
                   {row.discussion
                     ? ` · 对方 ${row.counterpartName}`
-                    : ' · 尚未发起讨论'}
+                    : " · 尚未发起讨论"}
                 </span>
                 <span className="project-anno-meta">
                   {formatRelativeTime(row.updatedAt)}
-                  {row.discussion ? ` · ${row.lastSummary}` : ''}
+                  {row.discussion ? ` · ${row.lastSummary}` : ""}
                 </span>
               </button>
             </li>

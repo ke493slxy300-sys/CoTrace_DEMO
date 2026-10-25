@@ -1,17 +1,17 @@
-import { useMemo, useState } from 'react';
-import { ArrowLeft, Check } from 'lucide-react';
-import { AppHeader } from '../components/layout/AppHeader';
-import { PageTitleBar } from '../components/layout/PageTitleBar';
-import { CodeViewer } from '../components/editor/CodeViewer';
-import { BACKEND_APP_NODE_ID } from '../demoContent/packIds';
+import { useMemo, useState } from "react";
+import { ArrowLeft, Check } from "lucide-react";
+import { AppHeader } from "../components/layout/AppHeader";
+import { PageTitleBar } from "../components/layout/PageTitleBar";
+import { CodeViewer } from "../components/editor/CodeViewer";
+import { BACKEND_APP_NODE_ID } from "../datasets/built-in/campus-marketplace/content/packIds";
 import {
   saveSubmission,
   type DemoSubmission,
   type DemoSubmissionTraceCard,
-} from '../data/demoSubmission';
-import { getExperienceMember, getMemberById } from '../data/members';
-import { getSubmitTraceCandidates } from '../data/submitTraceCandidates';
-import type { BlueprintNode, CodeFile, CourseProject } from '../types';
+} from "../data/demoSubmission";
+import { getExperienceMember, getMemberById } from "../data/members";
+import { getSubmitTraceCandidates } from "../data/submitTraceCandidates";
+import type { BlueprintNode, CodeFile, CourseProject } from "../types";
 
 type SubmitStep = 1 | 2 | 3;
 
@@ -116,8 +116,18 @@ export function TaskSubmitPage({
       />
 
       <nav className="submit-steps" aria-label="提交进度">
-        <StepPill index={1} label="提交说明" active={step === 1} done={step > 1} />
-        <StepPill index={2} label="选择公开溯源" active={step === 2} done={step > 2} />
+        <StepPill
+          index={1}
+          label="提交说明"
+          active={step === 1}
+          done={step > 1}
+        />
+        <StepPill
+          index={2}
+          label="选择公开溯源"
+          active={step === 2}
+          done={step > 2}
+        />
         <StepPill index={3} label="预览确认" active={step === 3} done={false} />
       </nav>
 
@@ -137,7 +147,7 @@ export function TaskSubmitPage({
                   <dt>负责人</dt>
                   <dd>
                     {ownerLabel}
-                    {node.ownerId === me.id ? ' · 你' : ''}
+                    {node.ownerId === me.id ? " · 你" : ""}
                   </dd>
                 </div>
                 <div>
@@ -156,8 +166,8 @@ export function TaskSubmitPage({
               </label>
               <p className="submit-hint">
                 {isBackendNode
-                  ? '后端 API 节点详情提交前为空；确认后写入本次工作区代码，并可选公开主题溯源。'
-                  : '代码仓将随提交一并写入节点详情；下一步只选择允许公开的 AI 主题溯源卡片，不会公开完整原始对话。'}
+                  ? "后端 API 节点详情提交前为空；确认后写入本次工作区代码，并可选公开主题溯源。"
+                  : "代码仓将随提交一并写入节点详情；下一步只选择允许公开的 AI 主题溯源卡片，不会公开完整原始对话。"}
               </p>
               <div className="submit-actions">
                 <button
@@ -184,7 +194,10 @@ export function TaskSubmitPage({
       ) : null}
 
       {step === 2 ? (
-        <main className="workbench submit-select-layout" aria-label="步骤二：选择公开内容">
+        <main
+          className="workbench submit-select-layout"
+          aria-label="步骤二：选择公开内容"
+        >
           <aside className="panel sidebar-panel" aria-label="将提交的代码仓">
             <div className="panel-header">
               <h2>代码仓</h2>
@@ -192,7 +205,9 @@ export function TaskSubmitPage({
             </div>
             <div className="panel-body node-file-list">
               {files.length === 0 ? (
-                <p className="blueprint-detail-note">暂无代码文件，无法提交。</p>
+                <p className="blueprint-detail-note">
+                  暂无代码文件，无法提交。
+                </p>
               ) : (
                 <ul>
                   {files.map((file) => (
@@ -200,7 +215,7 @@ export function TaskSubmitPage({
                       <button
                         type="button"
                         className={`node-file-item${
-                          file.id === activeFileId ? ' is-active' : ''
+                          file.id === activeFileId ? " is-active" : ""
                         }`}
                         onClick={() => setActiveFileId(file.id)}
                       >
@@ -244,7 +259,7 @@ export function TaskSubmitPage({
                       <li key={card.id}>
                         <label
                           className={`submit-trace-pick-card${
-                            checked ? ' is-checked' : ''
+                            checked ? " is-checked" : ""
                           }`}
                         >
                           <input
@@ -346,12 +361,13 @@ export function TaskSubmitPage({
                 <span>
                   确认本任务已完成
                   {isBackendNode
-                    ? '（勾选后，蓝图中「后端 API」节点状态变为已完成）'
-                    : '（勾选后，蓝图中该节点状态变为已完成）'}
+                    ? "（勾选后，蓝图中「后端 API」节点状态变为已完成）"
+                    : "（勾选后，蓝图中该节点状态变为已完成）"}
                 </span>
               </label>
               <p className="submit-hint">
-                确认前不会写入本地 Demo 数据。确认后将进入节点详情；刷新后仍可查看。
+                确认前不会写入本地 Demo
+                数据。确认后将进入节点详情；刷新后仍可查看。
               </p>
               <div className="submit-actions">
                 <button
@@ -397,8 +413,8 @@ function StepPill({
 }) {
   return (
     <span
-      className={`submit-step-pill${active ? ' is-active' : ''}${
-        done ? ' is-done' : ''
+      className={`submit-step-pill${active ? " is-active" : ""}${
+        done ? " is-done" : ""
       }`}
     >
       <span className="submit-step-index">{index}</span>

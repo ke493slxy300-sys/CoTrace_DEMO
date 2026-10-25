@@ -6,15 +6,15 @@
 import {
   getBackendPublishedTraceCards,
   type PublishedTraceCardView,
-} from '../demoContent/backendPack';
-import { BACKEND_APP_NODE_ID } from '../demoContent/packIds';
-import type { DemoSubmissionTraceCard } from './demoSubmission';
+} from "../datasets/built-in/campus-marketplace/content/backendPack";
+import { BACKEND_APP_NODE_ID } from "../datasets/built-in/campus-marketplace/content/packIds";
+import type { DemoSubmissionTraceCard } from "./demoSubmission";
 
 export type SubmitTraceCandidate = DemoSubmissionTraceCard;
 
 function mapPublishedCard(card: PublishedTraceCardView): SubmitTraceCandidate {
-  const userTurns = card.dialogues.filter((item) => item.role === 'user');
-  const agentTurns = card.dialogues.filter((item) => item.role === 'agent');
+  const userTurns = card.dialogues.filter((item) => item.role === "user");
+  const agentTurns = card.dialogues.filter((item) => item.role === "agent");
   const fragmentBits = [
     ...agentTurns.slice(0, 1).map((item) => item.content),
     ...userTurns.slice(0, 1).map((item) => item.content),
@@ -27,13 +27,13 @@ function mapPublishedCard(card: PublishedTraceCardView): SubmitTraceCandidate {
     title: card.theme,
     fragmentSummary:
       fragmentBits.length > 0
-        ? fragmentBits.map((text) => truncate(text, 96)).join(' / ')
+        ? fragmentBits.map((text) => truncate(text, 96)).join(" / ")
         : truncate(card.summary, 140),
     humanUnderstanding: truncate(card.summary, 200),
     humanDecision:
       card.adoption ??
       userTurns[userTurns.length - 1]?.content ??
-      '负责人已确认纳入本次公开范围。',
+      "负责人已确认纳入本次公开范围。",
   };
 }
 
@@ -44,7 +44,9 @@ function truncate(text: string, max: number): string {
 }
 
 /** 个人工作区当前节点上可供勾选公开的主题卡 */
-export function getSubmitTraceCandidates(nodeId: string): SubmitTraceCandidate[] {
+export function getSubmitTraceCandidates(
+  nodeId: string,
+): SubmitTraceCandidate[] {
   if (nodeId === BACKEND_APP_NODE_ID) {
     return getBackendPublishedTraceCards().map(mapPublishedCard);
   }

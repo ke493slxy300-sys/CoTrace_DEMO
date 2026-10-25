@@ -1,6 +1,6 @@
-import { getBackendBaselineFiles } from '../demoContent/backendPack';
-import { BACKEND_APP_NODE_ID } from '../demoContent/packIds';
-import type { CodeFile } from '../types';
+import { getBackendBaselineFiles } from "../datasets/built-in/campus-marketplace/content/backendPack";
+import { BACKEND_APP_NODE_ID } from "../datasets/built-in/campus-marketplace/content/packIds";
+import type { CodeFile } from "../types";
 
 /** @deprecated 使用 BACKEND_APP_NODE_ID；保留别名兼容旧引用 */
 export const BACKEND_TASK_ID = BACKEND_APP_NODE_ID;

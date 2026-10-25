@@ -1,60 +1,63 @@
-import type { CodeFile, CodeLanguage, CourseProject, DutyId } from '../types';
+import type {
+  CodeFile,
+  CodeLanguage,
+  CourseProject,
+  DutyId,
+} from "../../../../types";
 import {
   BLUEPRINT_OWNER_PENDING_LABEL,
   formatBlueprintOwnerLabel,
-} from '../data/blueprint';
-import {
-  collaboratorHasDuty,
-} from '../data/collaborators';
-import { EXPERIENCE_MEMBER_ID, getMemberById } from '../data/members';
-import { toAppNodeId } from './packIds';
+} from "../../../../data/blueprint";
+import { collaboratorHasDuty } from "../../../../data/collaborators";
+import { EXPERIENCE_MEMBER_ID, getMemberById } from "../../../../data/members";
+import { toAppNodeId } from "./packIds";
 import {
   PACK_DUTY_TO_APP,
   type TeammateDocumentRef,
   type TeammateTraceCard,
   type TeammateTracePack,
-} from './teammateTypes';
+} from "./teammateTypes";
 
-import frontendTracesJson from './teammate/traces/teammate-a-frontend-traces.json';
-import databaseTracesJson from './teammate/traces/teammate-b-database-traces.json';
-import researchTracesJson from './teammate/traces/teammate-c-research-traces.json';
-import researchMarkdownRaw from './teammate/research/sources/用户需求与分析.md?raw';
+import frontendTracesJson from "./teammate/traces/teammate-a-frontend-traces.json";
+import databaseTracesJson from "./teammate/traces/teammate-b-database-traces.json";
+import researchTracesJson from "./teammate/traces/teammate-c-research-traces.json";
+import researchMarkdownRaw from "./teammate/research/sources/用户需求与分析.md?raw";
 
-const frontendRaw = import.meta.glob('./teammate/frontend/**/*', {
-  query: '?raw',
-  import: 'default',
+const frontendRaw = import.meta.glob("./teammate/frontend/**/*", {
+  query: "?raw",
+  import: "default",
   eager: true,
 }) as Record<string, string>;
 
-const databaseRaw = import.meta.glob('./teammate/database/**/*', {
-  query: '?raw',
-  import: 'default',
+const databaseRaw = import.meta.glob("./teammate/database/**/*", {
+  query: "?raw",
+  import: "default",
   eager: true,
 }) as Record<string, string>;
 
 const FRONTEND_FILES = [
-  'src/pages/ItemDetailPage.jsx',
-  'src/components/PurchasePanel.jsx',
-  'src/components/OrderResultPanel.jsx',
-  'src/services/orderApi.js',
-  'src/utils/orderErrorMessages.js',
-  'tests/PurchasePanel.test.jsx',
-  'README.md',
+  "src/pages/ItemDetailPage.jsx",
+  "src/components/PurchasePanel.jsx",
+  "src/components/OrderResultPanel.jsx",
+  "src/services/orderApi.js",
+  "src/utils/orderErrorMessages.js",
+  "tests/PurchasePanel.test.jsx",
+  "README.md",
 ] as const;
 
 const DATABASE_FILES = [
-  'sql/001_create_users_items.sql',
-  'sql/002_create_orders.sql',
-  'sql/003_add_order_constraints.sql',
-  'sql/create_order_transaction.sql',
-  'sql/seed_demo_data.sql',
-  'README.md',
+  "sql/001_create_users_items.sql",
+  "sql/002_create_orders.sql",
+  "sql/003_add_order_constraints.sql",
+  "sql/create_order_transaction.sql",
+  "sql/seed_demo_data.sql",
+  "README.md",
 ] as const;
 
 const TEAMMATE_APP_NODES = new Set([
-  'node-frontend',
-  'node-database',
-  'node-requirements',
+  "node-frontend",
+  "node-database",
+  "node-requirements",
 ]);
 
 export function isTeammatePackNode(appNodeId: string): boolean {
@@ -62,11 +65,11 @@ export function isTeammatePackNode(appNodeId: string): boolean {
 }
 
 function normalizeLanguage(path: string): CodeLanguage {
-  if (path.endsWith('.sql')) return 'sql';
-  if (path.endsWith('.md')) return 'markdown';
-  if (path.endsWith('.json')) return 'json';
-  if (path.endsWith('.jsx') || path.endsWith('.js')) return 'javascript';
-  return 'text';
+  if (path.endsWith(".sql")) return "sql";
+  if (path.endsWith(".md")) return "markdown";
+  if (path.endsWith(".json")) return "json";
+  if (path.endsWith(".jsx") || path.endsWith(".js")) return "javascript";
+  return "text";
 }
 
 function resolveRaw(
@@ -74,9 +77,9 @@ function resolveRaw(
   marker: string,
   relativePath: string,
 ): string {
-  const normalized = relativePath.replace(/\\/g, '/');
+  const normalized = relativePath.replace(/\\/g, "/");
   const hit = Object.entries(modules).find(([key]) =>
-    key.replace(/\\/g, '/').endsWith(`${marker}/${normalized}`),
+    key.replace(/\\/g, "/").endsWith(`${marker}/${normalized}`),
   );
   if (!hit) {
     console.warn(`[teammatePack] missing: ${marker}/${normalized}`);
@@ -92,21 +95,21 @@ function toCodeFiles(
   paths: readonly string[],
 ): CodeFile[] {
   return paths.map((path) => ({
-    id: `teammate-${taskId}-${path.replace(/[\\/]/g, '-')}`,
+    id: `teammate-${taskId}-${path.replace(/[\\/]/g, "-")}`,
     name: path,
     language: normalizeLanguage(path),
     content: resolveRaw(modules, marker, path),
     taskId,
-    source: 'preset' as const,
+    source: "preset" as const,
   }));
 }
 
 export function getTeammateFrontendFiles(): CodeFile[] {
-  return toCodeFiles('node-frontend', frontendRaw, 'frontend', FRONTEND_FILES);
+  return toCodeFiles("node-frontend", frontendRaw, "frontend", FRONTEND_FILES);
 }
 
 export function getTeammateDatabaseFiles(): CodeFile[] {
-  return toCodeFiles('node-database', databaseRaw, 'database', DATABASE_FILES);
+  return toCodeFiles("node-database", databaseRaw, "database", DATABASE_FILES);
 }
 
 export function getTeammateDefaultFileId(
@@ -120,18 +123,18 @@ export function getTeammateDefaultFileId(
 export function getTeammateResearchDocuments(): TeammateDocumentRef[] {
   return [
     {
-      id: 'doc-research-pdf',
-      label: '用户需求与分析（PDF）',
-      path: 'research/pdfs/用户需求与分析.pdf',
-      mimeType: 'application/pdf',
-      href: '/docs/research/用户需求与分析.pdf',
+      id: "doc-research-pdf",
+      label: "用户需求与分析（PDF）",
+      path: "research/pdfs/用户需求与分析.pdf",
+      mimeType: "application/pdf",
+      href: "/docs/research/用户需求与分析.pdf",
     },
     {
-      id: 'doc-research-md',
-      label: 'Markdown 源文档',
-      path: 'research/sources/用户需求与分析.md',
-      mimeType: 'text/markdown',
-      markdownKey: 'research-md',
+      id: "doc-research-md",
+      label: "Markdown 源文档",
+      path: "research/sources/用户需求与分析.md",
+      mimeType: "text/markdown",
+      markdownKey: "research-md",
     },
   ];
 }
@@ -144,13 +147,15 @@ function asTracePack(raw: unknown): TeammateTracePack {
   return raw as TeammateTracePack;
 }
 
-export function getTeammateTracePack(appNodeId: string): TeammateTracePack | null {
+export function getTeammateTracePack(
+  appNodeId: string,
+): TeammateTracePack | null {
   switch (appNodeId) {
-    case 'node-frontend':
+    case "node-frontend":
       return asTracePack(frontendTracesJson);
-    case 'node-database':
+    case "node-database":
       return asTracePack(databaseTracesJson);
-    case 'node-requirements':
+    case "node-requirements":
       return asTracePack(researchTracesJson);
     default:
       return null;
@@ -187,11 +192,11 @@ export function resolveTeammateOwnerLabel(
    * Demo 决定：product-analysis 暂归 Maya（体验者），需求与流程确认节点展示 Maya。
    * 真实产品中该职责未必属于项目负责人——见 PROJECT_STATUS 风险项。
    */
-  if (packDutyId === 'product-analysis') {
+  if (packDutyId === "product-analysis") {
     const maya = getMemberById(EXPERIENCE_MEMBER_ID);
     return {
       ownerId: EXPERIENCE_MEMBER_ID,
-      ownerLabel: maya?.name ?? 'Maya Chen',
+      ownerLabel: maya?.name ?? "Maya Chen",
     };
   }
 
@@ -226,12 +231,12 @@ export function resolveTeammateOwnerLabel(
 
 export function getTeammateResolveDuty(appNodeId: string): string | undefined {
   switch (appNodeId) {
-    case 'node-frontend':
-      return 'frontend-page';
-    case 'node-database':
-      return 'database-design';
-    case 'node-requirements':
-      return 'product-analysis';
+    case "node-frontend":
+      return "frontend-page";
+    case "node-database":
+      return "database-design";
+    case "node-requirements":
+      return "product-analysis";
     default:
       return undefined;
   }
@@ -239,12 +244,12 @@ export function getTeammateResolveDuty(appNodeId: string): string | undefined {
 
 export function getTeammateNodeTitle(appNodeId: string): string | null {
   switch (appNodeId) {
-    case 'node-frontend':
-      return '商品详情与下单反馈';
-    case 'node-database':
-      return '交易数据模型与创建订单事务';
-    case 'node-requirements':
-      return '用户需求与交易流程分析';
+    case "node-frontend":
+      return "商品详情与下单反馈";
+    case "node-database":
+      return "交易数据模型与创建订单事务";
+    case "node-requirements":
+      return "用户需求与交易流程分析";
     default:
       return null;
   }
@@ -254,10 +259,8 @@ export function findTeammateFileByArtifactPath(
   files: CodeFile[],
   artifactPath: string,
 ): CodeFile | undefined {
-  const normalized = artifactPath.replace(/\\/g, '/');
-  const bare = normalized
-    .replace(/^frontend\//, '')
-    .replace(/^database\//, '');
+  const normalized = artifactPath.replace(/\\/g, "/");
+  const bare = normalized.replace(/^frontend\//, "").replace(/^database\//, "");
   return (
     files.find((file) => file.name === bare) ??
     files.find((file) => normalized.endsWith(file.name))

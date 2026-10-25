@@ -5,26 +5,26 @@
 import {
   getBackendAgentWorkspaceMessages,
   type WorkspaceAgentMessage,
-} from '../demoContent/backendPack';
-import { BACKEND_APP_NODE_ID } from '../demoContent/packIds';
+} from "../datasets/built-in/campus-marketplace/content/backendPack";
+import { BACKEND_APP_NODE_ID } from "../datasets/built-in/campus-marketplace/content/packIds";
 
 export type CodingAgentStatus =
-  | 'waiting-user'
-  | 'understanding'
-  | 'suggestion-ready'
-  | 'awaiting-confirm';
+  | "waiting-user"
+  | "understanding"
+  | "suggestion-ready"
+  | "awaiting-confirm";
 
 export const CODING_AGENT_STATUS_LABELS: Record<CodingAgentStatus, string> = {
-  'waiting-user': '等待用户发起对话',
-  understanding: '正在理解任务',
-  'suggestion-ready': '已提出修改建议',
-  'awaiting-confirm': '等待负责人确认',
+  "waiting-user": "等待用户发起对话",
+  understanding: "正在理解任务",
+  "suggestion-ready": "已提出修改建议",
+  "awaiting-confirm": "等待负责人确认",
 };
 
 /** 兼容旧面板；工作区优先使用 WorkspaceAgentMessage */
 export type CodingAgentMessage = {
   id: string;
-  role: 'user' | 'agent';
+  role: "user" | "agent";
   content: string;
 };
 
@@ -36,12 +36,12 @@ export function getCodingAgentPreset(nodeId: string): {
 } {
   if (nodeId === BACKEND_APP_NODE_ID) {
     return {
-      status: 'awaiting-confirm',
+      status: "awaiting-confirm",
       messages: getBackendAgentWorkspaceMessages(),
     };
   }
   return {
-    status: 'waiting-user',
+    status: "waiting-user",
     messages: [],
   };
 }

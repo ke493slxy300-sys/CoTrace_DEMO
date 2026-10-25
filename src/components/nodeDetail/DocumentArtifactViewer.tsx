@@ -1,4 +1,4 @@
-import type { TeammateDocumentRef } from '../../demoContent/teammateTypes';
+import type { TeammateDocumentRef } from "../../datasets/built-in/campus-marketplace/content/teammateTypes";
 
 type DocumentArtifactViewerProps = {
   documents: TeammateDocumentRef[];
@@ -22,7 +22,7 @@ export function DocumentArtifactViewer({
   const inner = (
     <>
       <div className="panel-header">
-        <h2>{active?.label ?? '文档'}</h2>
+        <h2>{active?.label ?? "文档"}</h2>
         <span className="panel-meta">只读</span>
       </div>
       <div className="panel-body document-artifact-body">
@@ -34,7 +34,7 @@ export function DocumentArtifactViewer({
               role="tab"
               aria-selected={doc.id === active?.id}
               className={`document-artifact-tab${
-                doc.id === active?.id ? ' is-active' : ''
+                doc.id === active?.id ? " is-active" : ""
               }`}
               onClick={() => onSelectDoc(doc.id)}
             >
@@ -43,7 +43,7 @@ export function DocumentArtifactViewer({
           ))}
         </div>
 
-        {active?.mimeType === 'application/pdf' && active.href ? (
+        {active?.mimeType === "application/pdf" && active.href ? (
           <iframe
             className="document-artifact-frame"
             title={active.label}

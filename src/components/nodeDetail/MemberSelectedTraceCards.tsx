@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Bot, MessageSquarePlus } from 'lucide-react';
-import type { TeammateTraceCard } from '../../demoContent/teammateTypes';
-import { EmptyState } from '../common/EmptyState';
+import { useState } from "react";
+import { Bot, MessageSquarePlus } from "lucide-react";
+import type { TeammateTraceCard } from "../../datasets/built-in/campus-marketplace/content/teammateTypes";
+import { EmptyState } from "../common/EmptyState";
 
 type MemberSelectedTraceCardsProps = {
   cards: TeammateTraceCard[];
@@ -49,8 +49,8 @@ export function MemberSelectedTraceCards({
           return (
             <li key={card.id}>
               <article
-                className={`ai-theme-card${activeCardId === card.id ? ' is-active' : ''}${
-                  expanded ? ' is-expanded' : ''
+                className={`ai-theme-card${activeCardId === card.id ? " is-active" : ""}${
+                  expanded ? " is-expanded" : ""
                 }`}
                 onMouseEnter={() => setHoveredId(card.id)}
                 onMouseLeave={() => setHoveredId(null)}
@@ -59,7 +59,7 @@ export function MemberSelectedTraceCards({
                 <header className="ai-theme-card-head">
                   <span className="ai-theme-card-index">
                     {card.topic} · {card.displayTitle}
-                    {card.titleEdited ? '（已改标题）' : ''}
+                    {card.titleEdited ? "（已改标题）" : ""}
                   </span>
                 </header>
                 <p className="ai-theme-card-summary">{card.selectionNote}</p>
@@ -71,7 +71,7 @@ export function MemberSelectedTraceCards({
                       {card.fragments.map((frag, index) => (
                         <li key={`${card.id}-f${index}`}>
                           <span>
-                            {frag.speaker === '当前队友'
+                            {frag.speaker === "当前队友"
                               ? memberLabel
                               : frag.speaker}
                           </span>

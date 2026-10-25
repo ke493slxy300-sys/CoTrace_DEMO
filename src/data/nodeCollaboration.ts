@@ -10,12 +10,12 @@ import type {
   CodeFile,
   CourseProject,
   Discussion,
-} from '../types';
+} from "../types";
 import {
   BLUEPRINT_OWNER_PENDING_LABEL,
   formatBlueprintOwnerLabel,
-} from './blueprint';
-import { getBlueprintNodeDetail } from './blueprintDetail';
+} from "./blueprint";
+import { getBlueprintNodeDetail } from "./blueprintDetail";
 import {
   getSelectedTeammateTraceCards,
   getTeammateDatabaseFiles,
@@ -26,28 +26,28 @@ import {
   getTeammateTraceMeta,
   isTeammatePackNode,
   resolveTeammateOwnerLabel,
-} from '../demoContent/teammatePack';
+} from "../datasets/built-in/campus-marketplace/content/teammatePack";
 import type {
   TeammateDocumentRef,
   TeammateTraceCard,
-} from '../demoContent/teammateTypes';
+} from "../datasets/built-in/campus-marketplace/content/teammateTypes";
 import {
   getSubmission,
   type DemoSubmission,
   type DemoSubmissionTraceCard,
-} from './demoSubmission';
-import { getPresetDiscussionsForTask } from './discussions';
-import { getPresetTracesForTask } from './traces';
+} from "./demoSubmission";
+import { getPresetDiscussionsForTask } from "./discussions";
+import { getPresetTracesForTask } from "./traces";
 
 export type RelatedOutput = {
   id: string;
   label: string;
-  kind: 'code' | 'doc' | 'test';
+  kind: "code" | "doc" | "test";
 };
 
 export type AiTraceDialogueTurn = {
   id: string;
-  role: 'user' | 'agent';
+  role: "user" | "agent";
   author: string;
   content: string;
 };
@@ -122,7 +122,7 @@ export type BlueprintNodeDetailData = {
   teammateTraceCards: TeammateTraceCard[];
   teammateTraceMeta: { sourcePolicy: string; organizedBy: string } | null;
   /** 主区域类型 */
-  primaryKind: 'code' | 'document';
+  primaryKind: "code" | "document";
   documents: TeammateDocumentRef[];
   /** 兼容旧 Discussion */
   teamDiscussions: Discussion[];
@@ -149,28 +149,27 @@ function mapArtifacts(nodeId: string): RelatedOutput[] {
 function integrationCards(): AiTraceThemeCard[] {
   return [
     {
-      id: 'card-int-gate',
-      theme: '联调前置条件',
-      stage: '协作阶段 · 等待依赖',
-      summary: 'Jordan 与 Agent 梳理联调阻塞项。',
-      problem: '错误响应结构未稳定，集成用例无法开测。',
-      agentAdvice: '待后端提交结构化错误后再启动主路径联调。',
-      adoption: '未开始实现',
-      initiator: 'Jordan Lin',
-      createdAt: '2026-10-15T12:00:00.000Z',
+      id: "card-int-gate",
+      theme: "联调前置条件",
+      stage: "协作阶段 · 等待依赖",
+      summary: "Jordan 与 Agent 梳理联调阻塞项。",
+      problem: "错误响应结构未稳定，集成用例无法开测。",
+      agentAdvice: "待后端提交结构化错误后再启动主路径联调。",
+      adoption: "未开始实现",
+      initiator: "Jordan Lin",
+      createdAt: "2026-10-15T12:00:00.000Z",
       dialogues: [
         {
-          id: 'int1',
-          role: 'user',
-          author: 'Jordan Lin',
-          content: '联调现在可以开始吗？',
+          id: "int1",
+          role: "user",
+          author: "Jordan Lin",
+          content: "联调现在可以开始吗？",
         },
         {
-          id: 'int2',
-          role: 'agent',
-          author: '编程 Agent',
-          content:
-            '建议等待后端错误码与前端提示对齐。当前节点尚无代码仓内容。',
+          id: "int2",
+          role: "agent",
+          author: "编程 Agent",
+          content: "建议等待后端错误码与前端提示对齐。当前节点尚无代码仓内容。",
         },
       ],
     },
@@ -179,10 +178,10 @@ function integrationCards(): AiTraceThemeCard[] {
 
 function cardsForNode(nodeId: string): AiTraceThemeCard[] {
   switch (nodeId) {
-    case 'node-backend':
+    case "node-backend":
       /** 公开溯源仅在 DemoSubmission 写入后出现 */
       return [];
-    case 'node-integration':
+    case "node-integration":
       return integrationCards();
     default:
       /** 前端 / 数据库 / 需求改用 teammateTraceCards */
@@ -201,9 +200,9 @@ function submissionsForNode(_nodeId: string): SubmissionRecord[] {
  * - 其他：队友 Content Pack
  */
 function viewFilesForNode(nodeId: string): CodeFile[] {
-  if (nodeId === 'node-backend') return [];
-  if (nodeId === 'node-frontend') return getTeammateFrontendFiles();
-  if (nodeId === 'node-database') return getTeammateDatabaseFiles();
+  if (nodeId === "node-backend") return [];
+  if (nodeId === "node-frontend") return getTeammateFrontendFiles();
+  if (nodeId === "node-database") return getTeammateDatabaseFiles();
   return [];
 }
 
@@ -223,9 +222,7 @@ export function getBlueprintNodeDetailData(
       )
     : (() => {
         const ownerInProject = node.ownerId
-          ? project.collaborators.some(
-              (item) => item.memberId === node.ownerId,
-            )
+          ? project.collaborators.some((item) => item.memberId === node.ownerId)
           : false;
         return {
           ownerId: ownerInProject ? (node.ownerId ?? undefined) : undefined,
@@ -238,12 +235,10 @@ export function getBlueprintNodeDetailData(
   const updatedAt =
     node.editHistory && node.editHistory.length > 0
       ? node.editHistory[node.editHistory.length - 1]
-      : detail.evolution[detail.evolution.length - 1] ??
-        '暂无更新记录';
+      : (detail.evolution[detail.evolution.length - 1] ?? "暂无更新记录");
 
   const packTitle = getTeammateNodeTitle(node.id);
-  const primaryKind =
-    node.id === 'node-requirements' ? 'document' : 'code';
+  const primaryKind = node.id === "node-requirements" ? "document" : "code";
 
   if (demoSubmission) {
     return detailFromDemoSubmission({
@@ -274,12 +269,10 @@ export function getBlueprintNodeDetailData(
     teammateTraceCards: usesTeammatePack
       ? getSelectedTeammateTraceCards(node.id)
       : [],
-    teammateTraceMeta: usesTeammatePack
-      ? getTeammateTraceMeta(node.id)
-      : null,
+    teammateTraceMeta: usesTeammatePack ? getTeammateTraceMeta(node.id) : null,
     primaryKind,
     documents:
-      node.id === 'node-requirements' ? getTeammateResearchDocuments() : [],
+      node.id === "node-requirements" ? getTeammateResearchDocuments() : [],
     teamDiscussions: getPresetDiscussionsForTask(node.id),
     annotations: [],
     submissions: submissionsForNode(node.id),
@@ -316,10 +309,10 @@ function detailFromDemoSubmission(input: {
     teammateTraceCards: submission.traceCards.map(mapDemoTraceToTeammateCard),
     teammateTraceMeta: {
       sourcePolicy:
-        '以下仅包含负责人在本次提交中勾选公开的主题溯源，不包含完整原始对话。',
-      organizedBy: '项目理解 Agent',
+        "以下仅包含负责人在本次提交中勾选公开的主题溯源，不包含完整原始对话。",
+      organizedBy: "项目理解 Agent",
     },
-    primaryKind: 'code',
+    primaryKind: "code",
     documents: [],
     teamDiscussions: input.teamDiscussions,
     annotations: [],
@@ -333,7 +326,7 @@ function detailFromDemoSubmission(input: {
         relatedOutputs: submission.codeFiles.map((file) => file.name),
       },
     ],
-    updatedAt: `Demo 提交 · ${new Date(submission.createdAt).toLocaleString('zh-CN')}`,
+    updatedAt: `Demo 提交 · ${new Date(submission.createdAt).toLocaleString("zh-CN")}`,
     usesTeammatePack: true,
     fromDemoSubmission: true,
   };
@@ -347,17 +340,15 @@ function mapDemoTraceToTeammateCard(
     generatedTitle: card.title,
     displayTitle: card.title,
     titleEdited: false,
-    topic: '公开溯源',
+    topic: "公开溯源",
     selectedByCurrentMember: true,
     selectionNote: card.fragmentSummary,
-    fragments: [
-      { speaker: '片段摘要', text: card.fragmentSummary },
-    ],
+    fragments: [{ speaker: "片段摘要", text: card.fragmentSummary }],
     humanUnderstanding: card.humanUnderstanding,
     humanDecision: card.humanDecision,
     affectedArtifacts: [],
-    unresolved: '—',
-    memoryCandidate: '',
+    unresolved: "—",
+    memoryCandidate: "",
   };
 }
 

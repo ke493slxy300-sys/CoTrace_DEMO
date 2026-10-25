@@ -1,33 +1,30 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Code2, FileCode2, FileText } from 'lucide-react';
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Code2, FileCode2, FileText } from "lucide-react";
 import {
   AnnotationComposeModal,
   type AnnotationComposeDraft,
-} from '../components/nodeDetail/AnnotationComposeModal';
-import { AiTraceThemeCards } from '../components/nodeDetail/AiTraceThemeCards';
-import { DocumentArtifactViewer } from '../components/nodeDetail/DocumentArtifactViewer';
-import { MemberSelectedTraceCards } from '../components/nodeDetail/MemberSelectedTraceCards';
-import { AnnotationNoteModal } from '../components/nodeDetail/AnnotationNoteModal';
-import { ProjectAnnotationPanel } from '../components/nodeDetail/ProjectAnnotationPanel';
-import { TeamDiscussionWindow } from '../components/nodeDetail/TeamDiscussionWindow';
+} from "../components/nodeDetail/AnnotationComposeModal";
+import { AiTraceThemeCards } from "../components/nodeDetail/AiTraceThemeCards";
+import { DocumentArtifactViewer } from "../components/nodeDetail/DocumentArtifactViewer";
+import { MemberSelectedTraceCards } from "../components/nodeDetail/MemberSelectedTraceCards";
+import { AnnotationNoteModal } from "../components/nodeDetail/AnnotationNoteModal";
+import { ProjectAnnotationPanel } from "../components/nodeDetail/ProjectAnnotationPanel";
+import { TeamDiscussionWindow } from "../components/nodeDetail/TeamDiscussionWindow";
 import {
   DiscussionModal,
   type DiscussionDraft,
-} from '../components/discussion/DiscussionModal';
-import { AnnotationToolbar } from '../components/editor/AnnotationToolbar';
-import { CodeViewer } from '../components/editor/CodeViewer';
-import { AppHeader } from '../components/layout/AppHeader';
-import { PageTitleBar } from '../components/layout/PageTitleBar';
-import { Toast } from '../components/common/Toast';
-import { BLUEPRINT_STATUS_LABELS } from '../data/blueprint';
-import { getSubmission } from '../data/demoSubmission';
-import { getBlueprintNodeDetailData } from '../data/nodeCollaboration';
-import { createAnnotation } from '../data/nodeCollaborationStore';
-import { EXPERIENCE_MEMBER_ID, getExperienceMember } from '../data/members';
-import {
-  getOwnerWorkspaceCtaLabel,
-  isNodeOwner,
-} from '../data/workspaceEntry';
+} from "../components/discussion/DiscussionModal";
+import { AnnotationToolbar } from "../components/editor/AnnotationToolbar";
+import { CodeViewer } from "../components/editor/CodeViewer";
+import { AppHeader } from "../components/layout/AppHeader";
+import { PageTitleBar } from "../components/layout/PageTitleBar";
+import { Toast } from "../components/common/Toast";
+import { BLUEPRINT_STATUS_LABELS } from "../data/blueprint";
+import { getSubmission } from "../data/demoSubmission";
+import { getBlueprintNodeDetailData } from "../data/nodeCollaboration";
+import { createAnnotation } from "../data/nodeCollaborationStore";
+import { EXPERIENCE_MEMBER_ID, getExperienceMember } from "../data/members";
+import { getOwnerWorkspaceCtaLabel, isNodeOwner } from "../data/workspaceEntry";
 import {
   backendBaselineSnapshot,
   findCodeFileByPath,
@@ -35,23 +32,23 @@ import {
   getDocumentIdsForPublishedTrace,
   getFilePathsForPublishedTrace,
   packSharedDocuments,
-} from '../demoContent/backendPack';
-import { BACKEND_APP_NODE_ID } from '../demoContent/packIds';
+} from "../datasets/built-in/campus-marketplace/content/backendPack";
+import { BACKEND_APP_NODE_ID } from "../datasets/built-in/campus-marketplace/content/packIds";
 import {
   findTeammateFileByArtifactPath,
   getTeammateDefaultFileId,
   getTeammateResearchMarkdown,
-} from '../demoContent/teammatePack';
+} from "../datasets/built-in/campus-marketplace/content/teammatePack";
 import {
   DISCUSSION_TYPE_LABELS,
   formatRelativeTime,
-} from '../utils/discussionLabels';
+} from "../utils/discussionLabels";
 import type {
   BlueprintNode,
   CourseProject,
   DiscussionType,
   LineSelection,
-} from '../types';
+} from "../types";
 
 type BlueprintNodeDetailPageProps = {
   project: CourseProject;
@@ -69,8 +66,7 @@ export function BlueprintNodeDetailPage({
   onContinueWork,
 }: BlueprintNodeDetailPageProps) {
   const me = getExperienceMember();
-  const submissionKey =
-    getSubmission(node.id, project.id)?.id ?? 'none';
+  const submissionKey = getSubmission(node.id, project.id)?.id ?? "none";
   const baseData = useMemo(
     () => getBlueprintNodeDetailData(node, project),
     [node, project, submissionKey],
@@ -78,12 +74,11 @@ export function BlueprintNodeDetailPage({
   const isOwner = isNodeOwner(node, me.id);
   const ownerCtaLabel = getOwnerWorkspaceCtaLabel(node.id, project.id);
   const hasPublicCode =
-    baseData.primaryKind === 'code' && baseData.viewFiles.length > 0;
+    baseData.primaryKind === "code" && baseData.viewFiles.length > 0;
   const hasPublicDocs =
-    baseData.primaryKind === 'document' && baseData.documents.length > 0;
+    baseData.primaryKind === "document" && baseData.documents.length > 0;
   const hasPublicTraces =
-    baseData.teammateTraceCards.length > 0 ||
-    baseData.aiTraceCards.length > 0;
+    baseData.teammateTraceCards.length > 0 || baseData.aiTraceCards.length > 0;
   const isUnassigned = !baseData.ownerId;
   const [activeFileId, setActiveFileId] = useState<string | null>(() =>
     resolveDefaultFileId(node.id, baseData),
@@ -119,7 +114,7 @@ export function BlueprintNodeDetailPage({
     baseData.teammateTraceCards.find((card) => card.id === annotateCardId)
       ?.displayTitle ??
     baseData.aiTraceCards.find((card) => card.id === annotateCardId)?.theme ??
-    '';
+    "";
 
   useEffect(() => {
     if (!activeCardId) return;
@@ -129,7 +124,7 @@ export function BlueprintNodeDetailPage({
         (item) => item.id === activeCardId,
       );
       const path = card?.affectedArtifacts[0];
-      if (path && baseData.primaryKind === 'code') {
+      if (path && baseData.primaryKind === "code") {
         const file = findTeammateFileByArtifactPath(baseData.viewFiles, path);
         if (file) {
           setActiveFileId(file.id);
@@ -152,12 +147,10 @@ export function BlueprintNodeDetailPage({
       }
       const docIds = getDocumentIdsForPublishedTrace(activeCardId);
       const titles = docIds
-        .map(
-          (id) => packSharedDocuments.find((doc) => doc.id === id)?.title,
-        )
+        .map((id) => packSharedDocuments.find((doc) => doc.id === id)?.title)
         .filter((title): title is string => Boolean(title));
       setLinkedDocHint(
-        titles.length > 0 ? `关联共享文档：${titles.join('、')}` : null,
+        titles.length > 0 ? `关联共享文档：${titles.join("、")}` : null,
       );
       return;
     }
@@ -188,7 +181,7 @@ export function BlueprintNodeDetailPage({
       summary: draft.content,
       content,
       target: {
-        kind: 'trace',
+        kind: "trace",
         traceCardId: annotateCardId,
         traceTitle: annotateTheme || undefined,
       },
@@ -212,7 +205,7 @@ export function BlueprintNodeDetailPage({
       summary: draft.content,
       content: draft.content,
       target: {
-        kind: 'lines',
+        kind: "lines",
         fileId: draft.fileId,
         lineStart: draft.lineStart,
         lineEnd: draft.lineEnd,
@@ -227,7 +220,7 @@ export function BlueprintNodeDetailPage({
   }
 
   function openTeammateArtifact(path: string) {
-    if (baseData.primaryKind !== 'code') return;
+    if (baseData.primaryKind !== "code") return;
     const file = findTeammateFileByArtifactPath(baseData.viewFiles, path);
     if (file) {
       setActiveFileId(file.id);
@@ -235,7 +228,7 @@ export function BlueprintNodeDetailPage({
     }
   }
 
-  const isDocumentPrimary = baseData.primaryKind === 'document';
+  const isDocumentPrimary = baseData.primaryKind === "document";
 
   return (
     <div className="app-shell">
@@ -272,8 +265,8 @@ export function BlueprintNodeDetailPage({
         </div>
         <div className="node-detail-summary-meta">
           <span>
-            负责人 {isUnassigned ? '暂未分配' : baseData.ownerLabel}
-            {isOwner ? ' · 你' : ''}
+            负责人 {isUnassigned ? "暂未分配" : baseData.ownerLabel}
+            {isOwner ? " · 你" : ""}
           </span>
           <span>更新 {baseData.updatedAt}</span>
         </div>
@@ -281,7 +274,7 @@ export function BlueprintNodeDetailPage({
           <div className="node-detail-summary-subs">
             {baseData.submissions.map((item) => (
               <span key={item.id} className="node-detail-sub-chip">
-                Demo 提交 · {item.title} · {item.author} ·{' '}
+                Demo 提交 · {item.title} · {item.author} ·{" "}
                 {formatRelativeTime(item.createdAt)}
               </span>
             ))}
@@ -302,7 +295,7 @@ export function BlueprintNodeDetailPage({
           <div className="node-detail-summary-subs">
             {baseData.submissions.map((item) => (
               <span key={item.id} className="node-detail-sub-chip">
-                提交 · {item.title} · {item.author} ·{' '}
+                提交 · {item.title} · {item.author} ·{" "}
                 {formatRelativeTime(item.createdAt)}
               </span>
             ))}
@@ -310,9 +303,7 @@ export function BlueprintNodeDetailPage({
         ) : (
           <div className="node-detail-summary-subs">
             <span className="node-detail-sub-chip is-muted">
-              {isUnassigned
-                ? '暂未分配 · 尚无公开成果'
-                : '暂无公开成果'}
+              {isUnassigned ? "暂未分配 · 尚无公开成果" : "暂无公开成果"}
             </span>
           </div>
         )}
@@ -321,7 +312,7 @@ export function BlueprintNodeDetailPage({
       <main className="workbench node-collab-layout" aria-label="节点协作内容">
         <aside className="panel sidebar-panel" aria-label="产出目录">
           <div className="panel-header">
-            <h2>{isDocumentPrimary ? '文档库' : '代码仓'}</h2>
+            <h2>{isDocumentPrimary ? "文档库" : "代码仓"}</h2>
             <span className="panel-meta">只读</span>
           </div>
           <div className="panel-body node-file-list">
@@ -333,11 +324,15 @@ export function BlueprintNodeDetailPage({
                       <button
                         type="button"
                         className={`node-file-item${
-                          doc.id === activeDocId ? ' is-active' : ''
+                          doc.id === activeDocId ? " is-active" : ""
                         }`}
                         onClick={() => setActiveDocId(doc.id)}
                       >
-                        <FileText size={14} strokeWidth={1.5} aria-hidden="true" />
+                        <FileText
+                          size={14}
+                          strokeWidth={1.5}
+                          aria-hidden="true"
+                        />
                         {doc.label}
                       </button>
                     </li>
@@ -353,14 +348,18 @@ export function BlueprintNodeDetailPage({
                     <button
                       type="button"
                       className={`node-file-item${
-                        file.id === activeFileId ? ' is-active' : ''
+                        file.id === activeFileId ? " is-active" : ""
                       }`}
                       onClick={() => {
                         setActiveFileId(file.id);
                         setSelection(null);
                       }}
                     >
-                      <FileCode2 size={14} strokeWidth={1.5} aria-hidden="true" />
+                      <FileCode2
+                        size={14}
+                        strokeWidth={1.5}
+                        aria-hidden="true"
+                      />
                       {file.name}
                     </button>
                   </li>
@@ -369,8 +368,8 @@ export function BlueprintNodeDetailPage({
             ) : (
               <p className="blueprint-detail-note">
                 {isUnassigned
-                  ? '暂未分配负责人，尚无公开成果。'
-                  : '尚无公开成果。可在右侧查看项目标注与团队讨论。'}
+                  ? "暂未分配负责人，尚无公开成果。"
+                  : "尚无公开成果。可在右侧查看项目标注与团队讨论。"}
               </p>
             )}
           </div>
@@ -405,20 +404,22 @@ export function BlueprintNodeDetailPage({
           ) : (
             <>
               <div className="panel-header">
-                <h2>{isDocumentPrimary ? '文档详细展示' : '代码详细展示'}</h2>
+                <h2>{isDocumentPrimary ? "文档详细展示" : "代码详细展示"}</h2>
                 <span className="panel-meta">只读</span>
               </div>
               <div className="panel-body coding-editor-empty">
                 <strong>尚无公开成果</strong>
                 <p>
                   {isUnassigned
-                    ? '该节点暂未分配负责人，不展示伪造代码或文档。'
+                    ? "该节点暂未分配负责人，不展示伪造代码或文档。"
                     : isOwner
-                      ? '个人工作区中的未提交内容不会出现在此。可通过页头进入个人工作区。'
-                      : '负责人尚未确认提交团队可见的代码或文档。'}
+                      ? "个人工作区中的未提交内容不会出现在此。可通过页头进入个人工作区。"
+                      : "负责人尚未确认提交团队可见的代码或文档。"}
                 </p>
                 {baseData.description ? (
-                  <p className="blueprint-detail-note">{baseData.description}</p>
+                  <p className="blueprint-detail-note">
+                    {baseData.description}
+                  </p>
                 ) : null}
               </div>
             </>
@@ -433,10 +434,10 @@ export function BlueprintNodeDetailPage({
                 <h2>AI 溯源</h2>
                 <span className="badge">
                   {baseData.fromDemoSubmission
-                    ? '本次公开溯源'
+                    ? "本次公开溯源"
                     : baseData.usesTeammatePack
-                      ? '队友选取片段'
-                      : '模拟内容'}
+                      ? "队友选取片段"
+                      : "模拟内容"}
                 </span>
               </div>
               <div className="panel-body discussion-panel-body">
@@ -531,7 +532,7 @@ export function BlueprintNodeDetailPage({
         onDiscussionCreated={(discussionId) => {
           setOpenAnnotationId(null);
           setOpenDiscussionId(discussionId);
-          setToast('已创建团队讨论');
+          setToast("已创建团队讨论");
           window.setTimeout(() => setToast(null), 2000);
         }}
       />
@@ -547,21 +548,18 @@ function resolveDefaultFileId(
 ): string | null {
   if (nodeId === BACKEND_APP_NODE_ID) {
     if (baseData.viewFiles.length === 0) return null;
-    return getBackendDefaultFileId(
-      baseData.viewFiles,
-      backendBaselineSnapshot,
-    );
+    return getBackendDefaultFileId(baseData.viewFiles, backendBaselineSnapshot);
   }
-  if (nodeId === 'node-frontend') {
+  if (nodeId === "node-frontend") {
     return getTeammateDefaultFileId(
       baseData.viewFiles,
-      'src/components/PurchasePanel.jsx',
+      "src/components/PurchasePanel.jsx",
     );
   }
-  if (nodeId === 'node-database') {
+  if (nodeId === "node-database") {
     return getTeammateDefaultFileId(
       baseData.viewFiles,
-      'sql/create_order_transaction.sql',
+      "sql/create_order_transaction.sql",
     );
   }
   return baseData.viewFiles[0]?.id ?? null;

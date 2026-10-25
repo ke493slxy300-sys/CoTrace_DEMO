@@ -1,4 +1,4 @@
-import type { DutyId } from '../types';
+import type { DutyId } from "../../../../types";
 
 export type TeammateOwnerRef = {
   memberId: string;
@@ -48,9 +48,9 @@ export type TeammateDocumentRef = {
 
 /** 包内职责 ID → 应用 DutyId */
 export const PACK_DUTY_TO_APP: Record<string, DutyId> = {
-  'frontend-page': 'frontend-pages',
-  'frontend-pages': 'frontend-pages',
-  'database-design': 'database-design',
-  'product-analysis': 'product-analysis',
-  'backend-api': 'backend-api',
+  "frontend-page": "frontend-pages",
+  "frontend-pages": "frontend-pages",
+  "database-design": "database-design",
+  "product-analysis": "product-analysis",
+  "backend-api": "backend-api",
 };

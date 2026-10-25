@@ -1,21 +1,21 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
-import { CodeEditorMock } from '../components/coding/CodeEditorMock';
-import { CodingAgentPanel } from '../components/coding/CodingAgentPanel';
-import { AppHeader } from '../components/layout/AppHeader';
-import { PageTitleBar } from '../components/layout/PageTitleBar';
-import { FileNav } from '../components/sidebar/FileNav';
-import { getCodingAgentPreset } from '../data/codingAgent';
-import { getPresetFilesForTask } from '../data/files';
-import { getExperienceMember, getMemberById } from '../data/members';
-import { resolveWorkbenchContext } from '../data/workbenchContext';
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft } from "lucide-react";
+import { CodeEditorMock } from "../components/coding/CodeEditorMock";
+import { CodingAgentPanel } from "../components/coding/CodingAgentPanel";
+import { AppHeader } from "../components/layout/AppHeader";
+import { PageTitleBar } from "../components/layout/PageTitleBar";
+import { FileNav } from "../components/sidebar/FileNav";
+import { getCodingAgentPreset } from "../data/codingAgent";
+import { getPresetFilesForTask } from "../data/files";
+import { getExperienceMember, getMemberById } from "../data/members";
+import { resolveWorkbenchContext } from "../data/workbenchContext";
 import {
   backendBaselineSnapshot,
   findCodeFileByPath,
   getBackendDefaultFileId,
-} from '../demoContent/backendPack';
-import { BACKEND_APP_NODE_ID } from '../demoContent/packIds';
-import type { BlueprintNode, CodeFile, CourseProject } from '../types';
+} from "../datasets/built-in/campus-marketplace/content/backendPack";
+import { BACKEND_APP_NODE_ID } from "../datasets/built-in/campus-marketplace/content/packIds";
+import type { BlueprintNode, CodeFile, CourseProject } from "../types";
 
 export type CodingWorkspaceSession = {
   files: CodeFile[];
@@ -66,8 +66,8 @@ export function PersonalCodingWorkspace({
 
   const activeFile = files.find((file) => file.id === activeFileId) ?? null;
   const owner = getMemberById(ownerId);
-  const ownerLabel = owner?.name ?? '待分配';
-  const isEmptyRepo = context.repositoryStatus === 'empty';
+  const ownerLabel = owner?.name ?? "待分配";
+  const isEmptyRepo = context.repositoryStatus === "empty";
 
   function openFileByPath(path: string) {
     const hit = findCodeFileByPath(files, path);
@@ -80,7 +80,7 @@ export function PersonalCodingWorkspace({
       <PageTitleBar
         title={node.name}
         subtitle={`${project.name} · 个人编码工作区 · 负责人 ${ownerLabel}${
-          ownerId === me.id ? ' · 你' : ''
+          ownerId === me.id ? " · 你" : ""
         }`}
         leading={
           <button type="button" className="btn btn-ghost" onClick={onBack}>
@@ -118,9 +118,7 @@ export function PersonalCodingWorkspace({
         <CodeEditorMock
           file={activeFile}
           empty={isEmptyRepo}
-          onSubmitTask={() =>
-            onSubmitTask({ files, activeFileId })
-          }
+          onSubmitTask={() => onSubmitTask({ files, activeFileId })}
         />
 
         <CodingAgentPanel
@@ -133,8 +131,8 @@ export function PersonalCodingWorkspace({
       <footer className="app-footer">
         <span>
           {node.id === BACKEND_APP_NODE_ID
-            ? 'Content Pack · baseline 代码 + 原始 Agent 对话 · 不接入真实大模型'
-            : '个人编码工作区骨架 · 本地预置 · 不接入真实大模型'}
+            ? "Content Pack · baseline 代码 + 原始 Agent 对话 · 不接入真实大模型"
+            : "个人编码工作区骨架 · 本地预置 · 不接入真实大模型"}
         </span>
         <span>当前成员：{me.name}</span>
       </footer>
