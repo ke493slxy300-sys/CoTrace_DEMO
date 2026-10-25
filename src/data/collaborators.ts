@@ -1,20 +1,19 @@
-import type { DutyId, ProjectCollaborator, TeamMember } from '../types';
-import { formatDutyLabels } from './duties';
+import type { DutyId, ProjectCollaborator, TeamMember } from "../types";
+import { formatDutyLabels } from "./duties";
 import {
   EXPERIENCE_MEMBER_ID,
   getExperienceMember,
   getMemberById,
   getSelectableMembers,
-} from './members';
+} from "./members";
+import collaboratorSeedData from "./collaborators-seeds.json";
+import blueprintNodeDutyData from "./blueprint-node-duty.json";
+import experienceCollaboratorData from "./experience-collaborator.json";
 
-/** Maya 固定协作快照：项目负责人 + 后端 API */
 export function createLockedExperienceCollaborator(): ProjectCollaborator {
   return {
-    memberId: EXPERIENCE_MEMBER_ID,
-    primaryDutyId: 'project-owner',
-    additionalDutyId: 'backend-api',
-    locked: true,
-  };
+    ...experienceCollaboratorData,
+  } as ProjectCollaborator;
 }
 
 export type CollaboratorSelectionInput = {
@@ -44,7 +43,7 @@ export function buildProjectCollaborators(
     const primary =
       selection.primaryDutyId ||
       member.defaultPrimaryDutyId ||
-      'database-design';
+      "database-design";
     const additional = selection.additionalDutyId ?? null;
 
     if (additional && additional === primary) {
@@ -91,34 +90,18 @@ export function resolveOwnerForDuty(
   return hit?.memberId ?? null;
 }
 
-/** 蓝图节点名称 → 主职责（用于后续 createInitialBlueprintNodes） */
-export const BLUEPRINT_NODE_DUTY: Record<string, DutyId | null> = {
-  /**
-   * Demo：需求与流程确认挂 project-owner（Maya），同时约定 product-analysis 演示上亦归 Maya。
-   * 产品风险：真实场景 product-analysis 未必属于项目负责人——见 PROJECT_STATUS。
-   */
-  需求与流程确认: 'project-owner',
-  数据库设计: 'database-design',
-  '后端 API': 'backend-api',
-  前端页面: 'frontend-pages',
-  交易流程联调: 'trade-integration',
-  集成测试: 'test-acceptance',
-  项目验收: 'project-owner',
-};
+/** 当前Demo的蓝图节点与职责对应关系 */
+export const BLUEPRINT_NODE_DUTY = blueprintNodeDutyData as Record<
+  string,
+  DutyId | null
+>;
 
 /**
  * 伪项目演示协作班底（Demo 锁定）：仅此三人可选入协作。
  * 注册未选手动成员时仍并入；注册侧禁止增删改。
  */
-export const DEMO_CAST_SEEDS: CollaboratorSelectionInput[] = [
-  { memberId: 'member-alex', primaryDutyId: 'database-design' },
-  { memberId: 'member-priya', primaryDutyId: 'frontend-pages' },
-  {
-    memberId: 'member-jordan',
-    primaryDutyId: 'test-acceptance',
-    additionalDutyId: 'trade-integration',
-  },
-];
+export const DEMO_CAST_SEEDS =
+  collaboratorSeedData as CollaboratorSelectionInput[];
 
 export const DEMO_CAST_MEMBER_IDS = DEMO_CAST_SEEDS.map(
   (seed) => seed.memberId,
