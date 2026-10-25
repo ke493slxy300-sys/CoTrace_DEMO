@@ -63,8 +63,10 @@ export function resolveArtifactEmptyKind(
   node: BlueprintNode,
 ): ArtifactEmptyKind | null {
   const detail = getBlueprintNodeDetail(node.id);
+
   if (detail.artifacts.length > 0) return null;
   if (!node.ownerId) return "unassigned";
   if (node.ownerId === EXPERIENCE_MEMBER_ID) return "maya-working";
+
   return "none";
 }

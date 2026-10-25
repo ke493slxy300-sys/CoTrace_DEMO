@@ -37,7 +37,7 @@ type NodeSeed = {
   y: number;
 };
 
-const NODE_SEEDS = blueprintNodeData as unknown as NodeSeed[];
+const NODE_SEEDS = blueprintNodeData as NodeSeed[];
 
 function selectedIdSet(collaborators: ProjectCollaborator[]): Set<string> {
   return new Set(collaborators.map((item) => item.memberId));
