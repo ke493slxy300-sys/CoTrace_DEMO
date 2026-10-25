@@ -1,0 +1,19 @@
+{
+  "intro": "根据预置业务流程与当前协作分工，已生成初始任务蓝图。以下为静默建议，不会自动修改任务或责任归属。",
+  "nextStepHint": "建议先打开「后端 API」节点，确认错误码约定，再处理团队提出的待办事项。",
+  "nextStepNodeId": "node-backend",
+  "suggestions": [
+    {
+      "id": "sug-error-codes",
+      "title": "前端错误提示仍缺明确错误码",
+      "detail": "购买失败目前可能只显示通用失败。建议后端约定 LISTING_NOT_FOUND / LISTING_UNAVAILABLE。",
+      "relatedNodeId": "node-backend"
+    },
+    {
+      "id": "sug-integration",
+      "title": "联调依赖后端与前端接口对齐",
+      "detail": "交易流程联调节点仍待开始，建议先稳定错误响应结构再开测。",
+      "relatedNodeId": "node-integration"
+    }
+  ]
+}

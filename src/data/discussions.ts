@@ -1,32 +1,22 @@
 /**
- * @deprecated 团队讨论主路径已迁至 `nodeCollaborationStore`。
- * 保留兼容导出，避免旧引用断裂。
+ * @deprecated 团队讨论主路径已迁至 nodeCollaborationStore。
+ * 此文件仅兼容旧工作台的代码行讨论结构。
  */
-import type { Discussion } from '../types';
-import { BACKEND_TASK_ID } from './files';
 
-/** @deprecated */
-export const presetDiscussions: Discussion[] = [
-  {
-    id: 'discussion-001',
-    type: 'question',
-    author: 'Maya Chen',
-    fileId: 'file-order-service',
-    lineStart: 5,
-    lineEnd: 11,
-    content:
-      '商品不可购买时，抛出 LISTING_UNAVAILABLE 是否足够？前端目前只能显示通用失败提示。',
-    status: 'open',
-    relatedTraceId: 'trace-002',
-    replies: [],
-    createdAt: '2026-10-15T08:00:00.000Z',
-  },
-];
+import type { Discussion } from "../types";
+import { campusMarketplaceDataset } from "../datasets";
+
+const workspaceDiscussionData = campusMarketplaceDataset.workspaceDiscussions;
+
+/** @deprecated 旧工作台代码行讨论 */
+export const presetDiscussions: Discussion[] =
+  workspaceDiscussionData.discussions;
 
 export function getPresetDiscussionsForTask(taskId: string): Discussion[] {
-  if (taskId !== BACKEND_TASK_ID) return [];
+  if (taskId !== workspaceDiscussionData.taskId) return [];
+
   return presetDiscussions.map((item) => ({
     ...item,
-    replies: [...item.replies],
+    replies: item.replies.map((reply) => ({ ...reply })),
   }));
 }

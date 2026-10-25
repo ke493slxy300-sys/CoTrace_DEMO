@@ -3,13 +3,14 @@ import { campusMarketplaceDataset } from "../datasets";
 
 const memberData = campusMarketplaceDataset.members;
 /** 体验角色固定为 Maya Chen */
-export const EXPERIENCE_MEMBER_ID = "member-maya";
+export const EXPERIENCE_MEMBER_ID =
+  campusMarketplaceDataset.experienceCollaborator.memberId;
 
 /**
  * 头像放在 public/avatars/，JPG 命名与下方 avatarUrl 一致。
  * 未放置文件或加载失败时，UI 自动回退为姓名缩写。
  */
-export const teamMembers = memberData as TeamMember[];
+export const teamMembers: TeamMember[] = memberData;
 
 export function getMemberById(id: string): TeamMember | undefined {
   return teamMembers.find((member) => member.id === id);

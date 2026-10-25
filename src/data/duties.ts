@@ -5,7 +5,7 @@ import { campusMarketplaceDataset } from "../datasets";
 const dutyData = campusMarketplaceDataset.duties;
 
 /** 当前Demo的初始职责目录 */
-export const DUTY_CATALOG = dutyData as DutyDefinition[];
+export const DUTY_CATALOG: DutyDefinition[] = dutyData;
 
 /** 可选成员可分配的职责（不含 Maya 固定项） */
 export const ASSIGNABLE_DUTIES: DutyDefinition[] = DUTY_CATALOG.filter(

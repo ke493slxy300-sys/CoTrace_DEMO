@@ -10,6 +10,8 @@ import blueprintNodesRaw from "./blueprint-nodes.json";
 import blueprintDetailsRaw from "./blueprint-details.json";
 import personalTodosRaw from "./personal-todos.json";
 import collaborationSeedRaw from "./collaboration-seed.json";
+import aiAssistantRaw from "./ai-assistant.json";
+import workspaceDiscussionsRaw from "./workspace-discussions.json";
 
 export const campusMarketplaceDataset = ProjectDatasetSchema.parse({
   id: "campus-marketplace",
@@ -28,4 +30,6 @@ export const campusMarketplaceDataset = ProjectDatasetSchema.parse({
 
   personalTodos: personalTodosRaw,
   collaborationSeed: collaborationSeedRaw,
+  aiAssistant: aiAssistantRaw,
+  workspaceDiscussions: workspaceDiscussionsRaw,
 });

@@ -3,7 +3,6 @@ import { MessagesSquare } from "lucide-react";
 import { getSubmission } from "../../data/demoSubmission";
 import { BACKEND_APP_NODE_ID } from "../../datasets/built-in/campus-marketplace/content/packIds";
 import {
-  DEMO_ANNOTATION_IDS,
   getDecisionBadge,
   getDiscussionByAnnotationId,
   getDiscussionViewStatus,
@@ -23,11 +22,10 @@ import { EmptyState } from "../common/EmptyState";
  * 后端 API：提交前只展示 A/C 两条标注；
  * 《购买失败需区分错误码后再改提示》(B) 提交后再出现。
  */
-function isBackendAnnotationVisibleBeforeSubmit(annotationId: string): boolean {
-  return (
-    annotationId === DEMO_ANNOTATION_IDS.A ||
-    annotationId === DEMO_ANNOTATION_IDS.C
-  );
+function isAnnotationVisibleBeforeSubmit(
+  annotation: ProjectAnnotation,
+): boolean {
+  return !annotation.visibleAfterSubmissionOnly;
 }
 
 type FilterKey = "all" | DiscussionViewStatus;
@@ -72,7 +70,7 @@ export function ProjectAnnotationPanel({
             return false;
           }
           if (nodeId === BACKEND_APP_NODE_ID && !hasBackendSubmission) {
-            return isBackendAnnotationVisibleBeforeSubmit(item.id);
+            return isAnnotationVisibleBeforeSubmit(item);
           }
           return true;
         })

@@ -274,6 +274,46 @@ export const AiTraceSchema = z.object({
 
 export const NodeAiTracesSchema = z.array(AiTraceSchema);
 
+export const AiSilentSuggestionSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  detail: z.string(),
+  relatedNodeId: z.string().optional(),
+});
+
+export const AiAssistantContentSchema = z.object({
+  intro: z.string(),
+  nextStepHint: z.string(),
+  nextStepNodeId: z.string(),
+  suggestions: z.array(AiSilentSuggestionSchema),
+});
+
+export const DiscussionReplySchema = z.object({
+  id: z.string(),
+  author: z.string(),
+  content: z.string(),
+  createdAt: z.string(),
+});
+
+export const WorkspaceDiscussionSchema = z.object({
+  id: z.string(),
+  type: z.enum(["question", "discussion", "review"]),
+  author: z.string(),
+  fileId: z.string(),
+  lineStart: z.number(),
+  lineEnd: z.number(),
+  content: z.string(),
+  status: z.enum(["open", "resolved"]),
+  relatedTraceId: z.string().nullable().optional(),
+  replies: z.array(DiscussionReplySchema),
+  createdAt: z.string(),
+});
+
+export const WorkspaceDiscussionsSeedSchema = z.object({
+  taskId: z.string(),
+  discussions: z.array(WorkspaceDiscussionSchema),
+});
+
 /** 一套完整的 CoTrace 项目数据集 */
 export const ProjectDatasetSchema = z.object({
   id: z.string(),
@@ -288,4 +328,6 @@ export const ProjectDatasetSchema = z.object({
   blueprintDetails: BlueprintDetailsSchema,
   personalTodos: PersonalTodosSchema,
   collaborationSeed: CollaborationStoreDataSchema,
+  aiAssistant: AiAssistantContentSchema,
+  workspaceDiscussions: WorkspaceDiscussionsSeedSchema,
 });

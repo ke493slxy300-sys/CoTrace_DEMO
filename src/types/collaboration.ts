@@ -3,17 +3,17 @@
  * 与旧 types/index.ts 中 Discussion / open|resolved 并存。
  */
 
-export type DiscussionLifecycle = 'open' | 'ready_to_archive' | 'archived';
+export type DiscussionLifecycle = "open" | "ready_to_archive" | "archived";
 
 /** 相对当前查看者；不入库 */
 export type DiscussionViewStatus =
-  | 'needs_my_reply'
-  | 'waiting_for_teammate'
-  | 'ready_to_archive'
-  | 'archived';
+  | "needs_my_reply"
+  | "waiting_for_teammate"
+  | "ready_to_archive"
+  | "archived";
 
-export type DecisionStatus = 'none' | 'generating' | 'draft' | 'confirmed';
-export type DecisionSource = 'member' | 'project-agent';
+export type DecisionStatus = "none" | "generating" | "draft" | "confirmed";
+export type DecisionSource = "member" | "project-agent";
 
 export type TeamDecision = {
   status: DecisionStatus;
@@ -34,17 +34,17 @@ export type CollaborationMessage = {
 };
 
 export type AnnotationTarget =
-  | { kind: 'node' }
-  | { kind: 'file'; fileId: string; fileLabel?: string }
+  | { kind: "node" }
+  | { kind: "file"; fileId: string; fileLabel?: string }
   | {
-      kind: 'lines';
+      kind: "lines";
       fileId: string;
       lineStart: number;
       lineEnd: number;
       fileLabel?: string;
     }
   | {
-      kind: 'trace';
+      kind: "trace";
       traceCardId: string;
       traceTitle?: string;
     };
@@ -59,6 +59,8 @@ export type ProjectAnnotation = {
   content: string;
   target: AnnotationTarget;
   affectsCode: boolean;
+  /** true 表示只有节点产生提交后才显示 */
+  visibleAfterSubmissionOnly?: boolean;
   createdAt: string;
   updatedAt: string;
 };

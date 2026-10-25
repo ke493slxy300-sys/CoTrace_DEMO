@@ -42,24 +42,6 @@ function cloneStore(data: CollaborationStoreData): CollaborationStoreData {
 
 /** —— 三种 Demo 场景种子（固定 id，本地同 id 优先） —— */
 
-export const DEMO_ANNOTATION_IDS = {
-  A: "anno-demo-a-order-status",
-  B: "anno-demo-b-error-codes",
-  C: "anno-demo-c-awaiting-maya",
-  DB: "anno-demo-db-order-status",
-  FE: "anno-demo-fe-error-copy",
-  INT: "anno-demo-int-error-shape",
-} as const;
-
-export const DEMO_DISCUSSION_IDS = {
-  A: "disc-demo-a-archived-member",
-  B: "disc-demo-b-ready-archive",
-  C: "disc-demo-c-needs-maya-reply",
-  DB: "disc-demo-db-archived-member",
-  FE: "disc-demo-fe-waiting-backend",
-  INT: "disc-demo-int-waiting-maya",
-} as const;
-
 function buildSeedData(): CollaborationStoreData {
   return structuredClone(campusMarketplaceDataset.collaborationSeed);
 }
