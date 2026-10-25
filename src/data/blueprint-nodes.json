@@ -1,0 +1,86 @@
+[
+  {
+    "id": "node-requirements",
+    "name": "需求与流程确认",
+    "summary": "确认校园二手交易核心流程、业务对象与验收边界。",
+    "suggestedCollaboratorIds": ["member-maya"],
+    "status": "done",
+    "dependsOn": [],
+    "acceptance": ["核心业务流程已对齐", "业务对象清单已确认"],
+    "x": 48,
+    "y": 48
+  },
+  {
+    "id": "node-database",
+    "name": "数据库设计",
+    "summary": "设计 users、listings、orders 等核心表及订单快照规则。",
+    "suggestedCollaboratorIds": ["member-alex"],
+    "status": "done",
+    "dependsOn": ["node-requirements"],
+    "acceptance": ["订单保存 listing 标题与价格快照", "商品与订单状态枚举齐全"],
+    "x": 280,
+    "y": 48
+  },
+  {
+    "id": "node-backend",
+    "name": "后端 API",
+    "summary": "实现购买申请等后端接口，处理商品状态与订单创建。",
+    "suggestedCollaboratorIds": ["member-alex", "member-priya"],
+    "status": "in-progress",
+    "dependsOn": ["node-database"],
+    "acceptance": [
+      "createOrder 可创建 pending 订单",
+      "商品不存在/不可购买返回明确错误"
+    ],
+    "x": 512,
+    "y": 48
+  },
+  {
+    "id": "node-frontend",
+    "name": "前端页面",
+    "summary": "商品列表、详情与购买申请页面，对接后端接口。",
+    "suggestedCollaboratorIds": ["member-priya"],
+    "status": "in-progress",
+    "dependsOn": ["node-requirements"],
+    "acceptance": ["列表筛选可用", "购买申请可发起"],
+    "x": 280,
+    "y": 220
+  },
+  {
+    "id": "node-integration",
+    "name": "交易流程联调",
+    "summary": "打通浏览、申请、确认到收货的端到端交易路径。",
+    "suggestedCollaboratorIds": ["member-jordan", "member-priya"],
+    "status": "todo",
+    "dependsOn": ["node-backend", "node-frontend"],
+    "acceptance": ["主路径可演示", "关键状态流转正确"],
+    "x": 512,
+    "y": 220
+  },
+  {
+    "id": "node-testing",
+    "name": "集成测试",
+    "summary": "覆盖订单快照一致性与关键错误场景。",
+    "suggestedCollaboratorIds": ["member-jordan"],
+    "status": "todo",
+    "dependsOn": ["node-integration"],
+    "acceptance": ["快照一致性用例通过", "错误码场景有测试"],
+    "x": 744,
+    "y": 220
+  },
+  {
+    "id": "node-acceptance",
+    "name": "项目验收",
+    "summary": "对照课程作业要求完成整体验收。",
+    "suggestedCollaboratorIds": [
+      "member-alex",
+      "member-priya",
+      "member-jordan"
+    ],
+    "status": "todo",
+    "dependsOn": ["node-testing"],
+    "acceptance": ["演示路径完整", "已知限制已记录"],
+    "x": 744,
+    "y": 392
+  }
+]
