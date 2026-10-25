@@ -1,0 +1,292 @@
+{
+  "version": 1,
+  "annotations": [
+    {
+      "id": "anno-demo-a-order-status",
+      "projectId": "project-campus-marketplace",
+      "nodeId": "node-backend",
+      "authorId": "member-alex",
+      "typeLabel": "建议",
+      "summary": "订单状态应由后端统一维护",
+      "content": "订单状态应该由后端统一维护，否则前端显示会不一致。",
+      "target": {
+        "kind": "node"
+      },
+      "affectsCode": true,
+      "createdAt": "2026-10-14T16:00:00.000Z",
+      "updatedAt": "2026-10-14T17:00:00.000Z"
+    },
+    {
+      "id": "anno-demo-b-error-codes",
+      "projectId": "project-campus-marketplace",
+      "nodeId": "node-backend",
+      "authorId": "member-priya",
+      "typeLabel": "建议",
+      "summary": "购买失败需区分错误码后再改提示",
+      "content": "当前只能显示通用“请求失败”，希望后端约定错误码。",
+      "target": {
+        "kind": "trace",
+        "traceCardId": "trace-gap-analysis",
+        "traceTitle": "识别订单创建流程缺口"
+      },
+      "affectsCode": true,
+      "createdAt": "2026-10-15T11:30:00.000Z",
+      "updatedAt": "2026-10-15T12:00:00.000Z"
+    },
+    {
+      "id": "anno-demo-c-awaiting-maya",
+      "projectId": "project-campus-marketplace",
+      "nodeId": "node-backend",
+      "authorId": "member-priya",
+      "typeLabel": "提问",
+      "summary": "LISTING_UNAVAILABLE 时前端应展示什么文案？",
+      "content": "后端返回 LISTING_UNAVAILABLE 时，前端是提示“商品已售出”还是“暂时无法购买”？需要你拍板一句可落地文案。",
+      "target": {
+        "kind": "file",
+        "fileId": "src/services/orderService.js",
+        "fileLabel": "src/services/orderService.js"
+      },
+      "affectsCode": true,
+      "createdAt": "2026-10-15T13:10:00.000Z",
+      "updatedAt": "2026-10-15T13:10:00.000Z"
+    },
+    {
+      "id": "anno-demo-db-order-status",
+      "projectId": "project-campus-marketplace",
+      "nodeId": "node-database",
+      "authorId": "member-alex",
+      "typeLabel": "建议",
+      "summary": "订单状态应由后端统一维护",
+      "content": "订单状态应该由后端统一维护，否则前端显示会不一致。",
+      "target": {
+        "kind": "node"
+      },
+      "affectsCode": true,
+      "createdAt": "2026-10-14T16:00:00.000Z",
+      "updatedAt": "2026-10-14T17:00:00.000Z"
+    },
+    {
+      "id": "anno-demo-fe-error-copy",
+      "projectId": "project-campus-marketplace",
+      "nodeId": "node-frontend",
+      "authorId": "member-priya",
+      "typeLabel": "建议",
+      "summary": "购买失败需区分错误码后再改提示",
+      "content": "当前只能显示通用“请求失败”，希望后端约定错误码。",
+      "target": {
+        "kind": "node"
+      },
+      "affectsCode": true,
+      "createdAt": "2026-10-15T11:30:00.000Z",
+      "updatedAt": "2026-10-15T12:00:00.000Z"
+    },
+    {
+      "id": "anno-demo-int-error-shape",
+      "projectId": "project-campus-marketplace",
+      "nodeId": "node-integration",
+      "authorId": "member-jordan",
+      "typeLabel": "讨论",
+      "summary": "联调前请确认错误响应结构",
+      "content": "集成测试用例依赖稳定错误码，现在开测会反复返工。",
+      "target": {
+        "kind": "node"
+      },
+      "affectsCode": false,
+      "createdAt": "2026-10-15T12:30:00.000Z",
+      "updatedAt": "2026-10-15T13:00:00.000Z"
+    }
+  ],
+  "discussions": [
+    {
+      "id": "disc-demo-a-archived-member",
+      "projectId": "project-campus-marketplace",
+      "nodeId": "node-backend",
+      "annotationId": "anno-demo-a-order-status",
+      "title": "订单状态应由后端统一维护",
+      "participantIds": ["member-alex", "member-priya", "member-maya"],
+      "lifecycle": "archived",
+      "messages": [
+        {
+          "id": "msg-a-1",
+          "authorId": "member-alex",
+          "content": "订单状态应该由后端统一维护，否则前端显示会不一致。",
+          "createdAt": "2026-10-14T16:00:00.000Z"
+        },
+        {
+          "id": "msg-a-2",
+          "authorId": "member-priya",
+          "content": "前端需要一个明确的异常状态返回值。",
+          "createdAt": "2026-10-14T16:20:00.000Z"
+        },
+        {
+          "id": "msg-a-3",
+          "authorId": "member-alex",
+          "content": "已在数据模型侧对齐：订单保存交易时快照字段，状态枚举由后端定义。本讨论可以归档。",
+          "createdAt": "2026-10-14T17:00:00.000Z"
+        }
+      ],
+      "teamDecision": {
+        "status": "confirmed",
+        "source": "member",
+        "content": "订单保存交易时快照字段，状态枚举由后端定义。",
+        "confirmedBy": "member-alex",
+        "confirmedAt": "2026-10-14T17:00:00.000Z"
+      },
+      "archivedBy": "member-alex",
+      "archivedAt": "2026-10-14T17:00:00.000Z",
+      "createdAt": "2026-10-14T16:00:00.000Z",
+      "updatedAt": "2026-10-14T17:00:00.000Z"
+    },
+    {
+      "id": "disc-demo-b-ready-archive",
+      "projectId": "project-campus-marketplace",
+      "nodeId": "node-backend",
+      "annotationId": "anno-demo-b-error-codes",
+      "title": "购买失败需区分错误码后再改提示",
+      "participantIds": ["member-priya", "member-maya"],
+      "lifecycle": "ready_to_archive",
+      "waitingOnMemberId": "member-maya",
+      "messages": [
+        {
+          "id": "msg-b-1",
+          "authorId": "member-priya",
+          "content": "当前只能显示通用“请求失败”，希望后端约定错误码。",
+          "createdAt": "2026-10-15T11:30:00.000Z"
+        },
+        {
+          "id": "msg-b-2",
+          "authorId": "member-maya",
+          "content": "决定：后端提交 LISTING_NOT_FOUND / LISTING_UNAVAILABLE；前端联调节点等待该版本后再改提示文案。我认为可以归档了。",
+          "createdAt": "2026-10-15T12:00:00.000Z"
+        }
+      ],
+      "teamDecision": {
+        "status": "none"
+      },
+      "decisionDraftPreset": "后端在 createOrder 响应中提供稳定错误码 LISTING_NOT_FOUND 与 LISTING_UNAVAILABLE；前端在接口版本就绪后再分支文案，暂不根据原始 message 展示。",
+      "createdAt": "2026-10-15T11:30:00.000Z",
+      "updatedAt": "2026-10-15T12:00:00.000Z"
+    },
+    {
+      "id": "disc-demo-c-needs-maya-reply",
+      "projectId": "project-campus-marketplace",
+      "nodeId": "node-backend",
+      "annotationId": "anno-demo-c-awaiting-maya",
+      "title": "LISTING_UNAVAILABLE 时前端应展示什么文案？",
+      "participantIds": ["member-priya", "member-maya"],
+      "lifecycle": "open",
+      "waitingOnMemberId": "member-maya",
+      "messages": [
+        {
+          "id": "msg-c-1",
+          "authorId": "member-priya",
+          "content": "后端返回 LISTING_UNAVAILABLE 时，前端是提示“商品已售出”还是“暂时无法购买”？需要你拍板一句可落地文案。",
+          "createdAt": "2026-10-15T13:10:00.000Z"
+        }
+      ],
+      "teamDecision": {
+        "status": "none"
+      },
+      "createdAt": "2026-10-15T13:10:00.000Z",
+      "updatedAt": "2026-10-15T14:00:00.000Z"
+    },
+    {
+      "id": "disc-demo-db-archived-member",
+      "projectId": "project-campus-marketplace",
+      "nodeId": "node-database",
+      "annotationId": "anno-demo-db-order-status",
+      "title": "订单状态应由后端统一维护",
+      "participantIds": ["member-alex", "member-priya", "member-maya"],
+      "lifecycle": "archived",
+      "messages": [
+        {
+          "id": "msg-db-1",
+          "authorId": "member-alex",
+          "content": "订单状态应该由后端统一维护，否则前端显示会不一致。",
+          "createdAt": "2026-10-14T16:00:00.000Z"
+        },
+        {
+          "id": "msg-db-2",
+          "authorId": "member-priya",
+          "content": "前端需要一个明确的异常状态返回值。",
+          "createdAt": "2026-10-14T16:20:00.000Z"
+        },
+        {
+          "id": "msg-db-3",
+          "authorId": "member-maya",
+          "content": "决定新增快照字段，并在 API 返回中补充状态字段，供联调使用。",
+          "createdAt": "2026-10-14T17:00:00.000Z"
+        }
+      ],
+      "teamDecision": {
+        "status": "confirmed",
+        "source": "member",
+        "content": "订单保存交易时快照字段，状态枚举由后端定义。",
+        "confirmedBy": "member-alex",
+        "confirmedAt": "2026-10-14T17:00:00.000Z"
+      },
+      "archivedBy": "member-alex",
+      "archivedAt": "2026-10-14T17:00:00.000Z",
+      "createdAt": "2026-10-14T16:00:00.000Z",
+      "updatedAt": "2026-10-14T17:00:00.000Z"
+    },
+    {
+      "id": "disc-demo-fe-waiting-backend",
+      "projectId": "project-campus-marketplace",
+      "nodeId": "node-frontend",
+      "annotationId": "anno-demo-fe-error-copy",
+      "title": "购买失败需区分错误码后再改提示",
+      "participantIds": ["member-priya", "member-maya"],
+      "lifecycle": "open",
+      "waitingOnMemberId": "member-priya",
+      "messages": [
+        {
+          "id": "msg-fe-1",
+          "authorId": "member-priya",
+          "content": "当前只能显示通用“请求失败”，希望后端约定错误码。",
+          "createdAt": "2026-10-15T11:30:00.000Z"
+        },
+        {
+          "id": "msg-fe-2",
+          "authorId": "member-maya",
+          "content": "后端会在提交中带上 LISTING_* 错误码，前端再改文案。",
+          "createdAt": "2026-10-15T12:00:00.000Z"
+        }
+      ],
+      "teamDecision": {
+        "status": "none"
+      },
+      "createdAt": "2026-10-15T11:30:00.000Z",
+      "updatedAt": "2026-10-15T12:00:00.000Z"
+    },
+    {
+      "id": "disc-demo-int-waiting-maya",
+      "projectId": "project-campus-marketplace",
+      "nodeId": "node-integration",
+      "annotationId": "anno-demo-int-error-shape",
+      "title": "联调前请确认错误响应结构",
+      "participantIds": ["member-jordan", "member-maya"],
+      "lifecycle": "open",
+      "waitingOnMemberId": "member-jordan",
+      "messages": [
+        {
+          "id": "msg-int-1",
+          "authorId": "member-jordan",
+          "content": "集成测试用例依赖稳定错误码，现在开测会反复返工。",
+          "createdAt": "2026-10-15T12:30:00.000Z"
+        },
+        {
+          "id": "msg-int-2",
+          "authorId": "member-maya",
+          "content": "同意。后端提交后再通知联调与测试节点。",
+          "createdAt": "2026-10-15T13:00:00.000Z"
+        }
+      ],
+      "teamDecision": {
+        "status": "none"
+      },
+      "createdAt": "2026-10-15T12:30:00.000Z",
+      "updatedAt": "2026-10-15T13:00:00.000Z"
+    }
+  ]
+}

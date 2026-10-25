@@ -162,6 +162,104 @@ export const BlueprintNodeSeedsSchema = z.array(BlueprintNodeSeedSchema);
 
 export type BlueprintNodeSeedData = z.infer<typeof BlueprintNodeSeedSchema>;
 
+export type ProjectDataset = z.infer<typeof ProjectDatasetSchema>;
+
+export const DiscussionLifecycleSchema = z.enum([
+  "open",
+  "ready_to_archive",
+  "archived",
+]);
+
+export const DecisionStatusSchema = z.enum([
+  "none",
+  "generating",
+  "draft",
+  "confirmed",
+]);
+
+export const DecisionSourceSchema = z.enum(["member", "project-agent"]);
+
+export const TeamDecisionSchema = z.object({
+  status: DecisionStatusSchema,
+  source: DecisionSourceSchema.optional(),
+  draftContent: z.string().optional(),
+  content: z.string().optional(),
+  confirmedBy: z.string().optional(),
+  confirmedAt: z.string().optional(),
+  generationRequestedAt: z.string().optional(),
+});
+
+export const CollaborationMessageSchema = z.object({
+  id: z.string(),
+  authorId: z.string(),
+  content: z.string(),
+  createdAt: z.string(),
+});
+
+export const AnnotationTargetSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("node"),
+  }),
+
+  z.object({
+    kind: z.literal("file"),
+    fileId: z.string(),
+    fileLabel: z.string().optional(),
+  }),
+
+  z.object({
+    kind: z.literal("lines"),
+    fileId: z.string(),
+    lineStart: z.number(),
+    lineEnd: z.number(),
+    fileLabel: z.string().optional(),
+  }),
+
+  z.object({
+    kind: z.literal("trace"),
+    traceCardId: z.string(),
+    traceTitle: z.string().optional(),
+  }),
+]);
+
+export const ProjectAnnotationSchema = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  nodeId: z.string(),
+  authorId: z.string(),
+  typeLabel: z.string(),
+  summary: z.string(),
+  content: z.string(),
+  target: AnnotationTargetSchema,
+  affectsCode: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const TeamDiscussionSchema = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  nodeId: z.string(),
+  annotationId: z.string().optional(),
+  title: z.string(),
+  participantIds: z.array(z.string()),
+  lifecycle: DiscussionLifecycleSchema,
+  waitingOnMemberId: z.string().optional(),
+  messages: z.array(CollaborationMessageSchema),
+  teamDecision: TeamDecisionSchema,
+  archivedBy: z.string().optional(),
+  archivedAt: z.string().optional(),
+  decisionDraftPreset: z.string().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const CollaborationStoreDataSchema = z.object({
+  version: z.literal(1),
+  annotations: z.array(ProjectAnnotationSchema),
+  discussions: z.array(TeamDiscussionSchema),
+});
+
 /** 一套完整的 CoTrace 项目数据集 */
 export const ProjectDatasetSchema = z.object({
   id: z.string(),
@@ -175,6 +273,5 @@ export const ProjectDatasetSchema = z.object({
   blueprintNodes: BlueprintNodeSeedsSchema,
   blueprintDetails: BlueprintDetailsSchema,
   personalTodos: PersonalTodosSchema,
+  collaborationSeed: CollaborationStoreDataSchema,
 });
-
-export type ProjectDataset = z.infer<typeof ProjectDatasetSchema>;
