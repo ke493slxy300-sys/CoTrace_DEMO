@@ -1,34 +1,13 @@
-import type { AiTrace } from '../types';
-import { BACKEND_TASK_ID } from './files';
+import type { AiTrace } from "../types";
+import { NodeAiTracesSchema } from "../datasets/schema";
+import nodeAiTracesRaw from "../datasets/built-in/campus-marketplace/content/data/node-ai-traces.json";
+import { BACKEND_TASK_ID } from "./files";
 
-export const presetTraces: AiTrace[] = [
-  {
-    id: 'trace-001',
-    fileId: 'file-order-service',
-    lineStart: 1,
-    lineEnd: 18,
-    sourceType: 'simulated',
-    label: '模拟 AI 记录',
-    input: '请解释 createOrder 函数中每一部分的作用。',
-    suggestion:
-      '这段函数完成商品查询、存在性判断、商品状态判断和订单创建。当前用 throw Error 传递错误码，前端还无法直接映射为明确提示。',
-    status: 'viewed',
-  },
-  {
-    id: 'trace-002',
-    fileId: 'file-order-service',
-    lineStart: 5,
-    lineEnd: 11,
-    sourceType: 'simulated',
-    label: '模拟 AI 记录',
-    input: '请增加功能：商品已被购买时，接口需要返回明确的错误状态。',
-    suggestion:
-      '建议商品不存在返回 404（LISTING_NOT_FOUND），商品状态冲突返回 409（LISTING_UNAVAILABLE），并输出结构化错误响应供前端区分提示。',
-    status: 'pending-confirm',
-  },
-];
+export const presetTraces: AiTrace[] =
+  NodeAiTracesSchema.parse(nodeAiTracesRaw);
 
 export function getPresetTracesForTask(taskId: string): AiTrace[] {
   if (taskId !== BACKEND_TASK_ID) return [];
+
   return presetTraces.map((item) => ({ ...item }));
 }

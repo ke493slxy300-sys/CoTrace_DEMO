@@ -260,6 +260,20 @@ export const CollaborationStoreDataSchema = z.object({
   discussions: z.array(TeamDiscussionSchema),
 });
 
+export const AiTraceSchema = z.object({
+  id: z.string(),
+  fileId: z.string(),
+  lineStart: z.number(),
+  lineEnd: z.number(),
+  sourceType: z.literal("simulated"),
+  label: z.string(),
+  input: z.string(),
+  suggestion: z.string(),
+  status: z.enum(["ai-suggestion", "viewed", "pending-confirm"]),
+});
+
+export const NodeAiTracesSchema = z.array(AiTraceSchema);
+
 /** 一套完整的 CoTrace 项目数据集 */
 export const ProjectDatasetSchema = z.object({
   id: z.string(),
