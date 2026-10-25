@@ -1,0 +1,32 @@
+[
+  {
+    "id": "pending-error-codes",
+    "title": "前端需区分购买失败错误码",
+    "fromMemberName": "Priya Shah",
+    "summary": "当前只能显示通用“请求失败”，希望后端约定 LISTING_NOT_FOUND / LISTING_UNAVAILABLE。",
+    "status": "open",
+    "relatedNodeId": "node-frontend",
+    "relatedDiscussionId": "disc-demo-fe-waiting-backend",
+    "track": "ready"
+  },
+  {
+    "id": "pending-integration-gate",
+    "title": "联调前请确认错误响应结构",
+    "fromMemberName": "Jordan Lin",
+    "summary": "集成测试用例依赖稳定错误码，待后端版本确认后再开测。",
+    "status": "waiting",
+    "relatedNodeId": "node-integration",
+    "relatedDiscussionId": "disc-demo-int-waiting-maya",
+    "track": "later"
+  },
+  {
+    "id": "pending-review-ai-draft",
+    "title": "审查 AI 生成的接口草案说明",
+    "fromMemberName": "Alex Lee",
+    "summary": "数据库快照字段已就绪，请对照后端 createOrder 入参是否一致。",
+    "status": "open",
+    "relatedNodeId": "node-database",
+    "relatedDiscussionId": "disc-demo-db-archived-member",
+    "track": "ready"
+  }
+]
