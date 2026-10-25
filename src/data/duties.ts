@@ -1,45 +1,9 @@
-import type { DutyDefinition, DutyId } from '../types';
+import type { DutyDefinition, DutyId } from "../types";
 
-/** 预置职责目录（注册分配 + 后续蓝图节点映射） */
-export const DUTY_CATALOG: DutyDefinition[] = [
-  {
-    id: 'project-owner',
-    label: '项目负责人',
-    assignable: false,
-    lockedToExperience: true,
-  },
-  {
-    id: 'backend-api',
-    label: '后端 API',
-    assignable: false,
-    lockedToExperience: true,
-  },
-  {
-    id: 'database-design',
-    label: '数据库设计',
-    assignable: true,
-  },
-  {
-    id: 'frontend-pages',
-    label: '前端页面',
-    assignable: true,
-  },
-  {
-    id: 'test-acceptance',
-    label: '测试与验收',
-    assignable: true,
-  },
-  {
-    id: 'trade-integration',
-    label: '交易流程联调',
-    assignable: true,
-  },
-  {
-    id: 'product-analysis',
-    label: '产品与需求分析',
-    assignable: true,
-  },
-];
+import dutyData from "./duties.json";
+
+/** 当前Demo的初始职责目录 */
+export const DUTY_CATALOG = dutyData as DutyDefinition[];
 
 /** 可选成员可分配的职责（不含 Maya 固定项） */
 export const ASSIGNABLE_DUTIES: DutyDefinition[] = DUTY_CATALOG.filter(

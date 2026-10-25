@@ -1,0 +1,44 @@
+[
+  {
+    "id": "project-owner",
+    "label": "项目负责人",
+    "assignable": false,
+    "lockedToExperience": true
+  },
+  {
+    "id": "backend-api",
+    "label": "后端 API",
+    "assignable": false,
+    "lockedToExperience": true
+  },
+  {
+    "id": "database-design",
+    "label": "数据库设计",
+    "assignable": true,
+    "lockedToExperience": false
+  },
+  {
+    "id": "frontend-pages",
+    "label": "前端页面",
+    "assignable": true,
+    "lockedToExperience": false
+  },
+  {
+    "id": "test-acceptance",
+    "label": "测试与验收",
+    "assignable": true,
+    "lockedToExperience": false
+  },
+  {
+    "id": "trade-integration",
+    "label": "交易流程联调",
+    "assignable": true,
+    "lockedToExperience": false
+  },
+  {
+    "id": "product-analysis",
+    "label": "产品与需求分析",
+    "assignable": true,
+    "lockedToExperience": false
+  }
+]
