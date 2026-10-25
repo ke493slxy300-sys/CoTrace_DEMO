@@ -1,6 +1,8 @@
 import type { DutyDefinition, DutyId } from "../types";
 
-import dutyData from "./duties.json";
+import { campusMarketplaceDataset } from "../datasets";
+
+const dutyData = campusMarketplaceDataset.duties;
 
 /** 当前Demo的初始职责目录 */
 export const DUTY_CATALOG = dutyData as DutyDefinition[];

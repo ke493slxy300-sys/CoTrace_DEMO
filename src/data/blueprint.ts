@@ -7,7 +7,9 @@ import type {
 import { BLUEPRINT_NODE_DUTY, resolveOwnerForDuty } from "./collaborators";
 import { getMemberById } from "./members";
 
-import blueprintNodeData from "./blueprint-nodes.json";
+import { campusMarketplaceDataset } from "../datasets";
+
+const blueprintNodeData = campusMarketplaceDataset.blueprintNodes;
 
 export const BLUEPRINT_STATUS_LABELS: Record<BlueprintNodeStatus, string> = {
   todo: "待开始",

@@ -6,9 +6,13 @@ import {
   getMemberById,
   getSelectableMembers,
 } from "./members";
-import collaboratorSeedData from "./collaborators-seeds.json";
-import blueprintNodeDutyData from "./blueprint-node-duty.json";
-import experienceCollaboratorData from "./experience-collaborator.json";
+
+import { campusMarketplaceDataset } from "../datasets";
+
+const collaboratorSeedData = campusMarketplaceDataset.collaboratorSeeds;
+const blueprintNodeDutyData = campusMarketplaceDataset.blueprintNodeDuty;
+const experienceCollaboratorData =
+  campusMarketplaceDataset.experienceCollaborator;
 
 export function createLockedExperienceCollaborator(): ProjectCollaborator {
   return {

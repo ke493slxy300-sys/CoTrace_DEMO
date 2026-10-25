@@ -3,7 +3,9 @@
  * 团队提出的待办可关联协作 store 中的讨论 id，二次单击打开团队讨论窗。
  */
 
-import personalTodoData from "./personal-todos.json";
+import { campusMarketplaceDataset } from "../datasets";
+
+const personalTodoData = campusMarketplaceDataset.personalTodos;
 
 export type PersonalTodoStatus = "open" | "waiting" | "done" | "blocked-later";
 

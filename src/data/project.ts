@@ -1,6 +1,8 @@
 import type { CourseProject } from "../types";
 import { createLockedExperienceCollaborator } from "./collaborators";
-import projectTemplateData from "./project_templates.json";
+
+import { campusMarketplaceDataset } from "../datasets";
+const projectTemplateData = campusMarketplaceDataset.project;
 
 export const COURSE_NAME = projectTemplateData.courseName;
 

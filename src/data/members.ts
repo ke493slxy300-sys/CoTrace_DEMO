@@ -1,6 +1,7 @@
 import type { DutyId, TeamMember } from "../types";
-import memberData from "./members.json";
+import { campusMarketplaceDataset } from "../datasets";
 
+const memberData = campusMarketplaceDataset.members;
 /** 体验角色固定为 Maya Chen */
 export const EXPERIENCE_MEMBER_ID = "member-maya";
 

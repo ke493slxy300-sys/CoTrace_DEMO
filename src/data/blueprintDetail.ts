@@ -1,7 +1,9 @@
 import type { BlueprintNode } from "../types";
 import { EXPERIENCE_MEMBER_ID } from "./members";
 
-import blueprintDetailData from "./blueprint-details.json";
+import { campusMarketplaceDataset } from "../datasets";
+
+const blueprintDetailData = campusMarketplaceDataset.blueprintDetails;
 
 export type BlueprintArtifact = {
   id: string;
