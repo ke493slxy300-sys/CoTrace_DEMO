@@ -1,0 +1,17 @@
+[
+  {
+    "memberId": "member-alex",
+    "primaryDutyId": "database-design",
+    "additionalDutyId": null
+  },
+  {
+    "memberId": "member-priya",
+    "primaryDutyId": "frontend-pages",
+    "additionalDutyId": null
+  },
+  {
+    "memberId": "member-jordan",
+    "primaryDutyId": "test-acceptance",
+    "additionalDutyId": "trade-integration"
+  }
+]

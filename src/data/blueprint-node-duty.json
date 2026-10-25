@@ -1,0 +1,9 @@
+{
+  "需求与流程确认": "project-owner",
+  "数据库设计": "database-design",
+  "后端 API": "backend-api",
+  "前端页面": "frontend-pages",
+  "交易流程联调": "trade-integration",
+  "集成测试": "test-acceptance",
+  "项目验收": "project-owner"
+}
