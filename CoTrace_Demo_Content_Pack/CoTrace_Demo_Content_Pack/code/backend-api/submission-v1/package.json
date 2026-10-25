@@ -1,9 +1,0 @@
-{
-  "name": "campus-market-order-api-submission-v1",
-  "version": "0.2.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "test": "node --test"
-  }
-}

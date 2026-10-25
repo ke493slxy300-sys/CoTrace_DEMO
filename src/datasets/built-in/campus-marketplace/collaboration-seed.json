@@ -30,6 +30,7 @@
         "traceTitle": "识别订单创建流程缺口"
       },
       "affectsCode": true,
+      "visibleAfterSubmissionOnly": true,
       "createdAt": "2026-10-15T11:30:00.000Z",
       "updatedAt": "2026-10-15T12:00:00.000Z"
     },

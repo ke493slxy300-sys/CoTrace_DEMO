@@ -232,6 +232,7 @@ export const ProjectAnnotationSchema = z.object({
   content: z.string(),
   target: AnnotationTargetSchema,
   affectsCode: z.boolean(),
+  visibleAfterSubmissionOnly: z.boolean().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
