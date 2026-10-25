@@ -14,14 +14,18 @@ import collaborationSeedRaw from "./collaboration-seed.json";
 export const campusMarketplaceDataset = ProjectDatasetSchema.parse({
   id: "campus-marketplace",
   label: "校园二手交易平台",
+
   project: projectRaw,
   members: membersRaw,
   duties: dutiesRaw,
+
   collaboratorSeeds: collaboratorSeedsRaw,
   experienceCollaborator: experienceCollaboratorRaw,
+
   blueprintNodeDuty: blueprintNodeDutyRaw,
   blueprintNodes: blueprintNodesRaw,
   blueprintDetails: blueprintDetailsRaw,
+
   personalTodos: personalTodosRaw,
   collaborationSeed: collaborationSeedRaw,
 });
