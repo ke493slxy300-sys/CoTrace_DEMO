@@ -1,0 +1,99 @@
+{
+  "base": "http://localhost:5173",
+  "at": "2026-11-06T13:53:10.816Z",
+  "checks": [
+    {
+      "name": "默认态验收节点可见 1536x1024",
+      "pass": true,
+      "detail": "{\"ok\":true,\"dockH\":0,\"nodeTop\":638,\"nodeBottom\":716,\"wrapBottom\":1008,\"wrapH\":803} · D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\blueprint-default-accept-1536x1024.png"
+    },
+    {
+      "name": "默认态验收节点可见 1440x960",
+      "pass": true,
+      "detail": "{\"ok\":true,\"dockH\":0,\"nodeTop\":638,\"nodeBottom\":716,\"wrapBottom\":944,\"wrapH\":739} · D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\blueprint-default-accept-1440x960.png"
+    },
+    {
+      "name": "蓝图交互连续截帧",
+      "pass": true,
+      "detail": "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\blueprint-detail-flow\\00-before.png | D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\blueprint-detail-flow\\01.png | D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\blueprint-detail-flow\\02.png | D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\blueprint-detail-flow\\03.png | D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\blueprint-detail-flow\\04.png | D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\blueprint-detail-flow\\05.png | D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\blueprint-detail-flow\\06.png | D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\blueprint-detail-flow\\07.png | D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\blueprint-detail-flow\\08.png | D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\blueprint-detail-flow\\99-after.png"
+    },
+    {
+      "name": "详情为底部浮层",
+      "pass": true,
+      "detail": "{\"dockOpen\":true,\"detailOpacity\":\"1\",\"wrapH\":803,\"dockPosition\":\"absolute\",\"hasClose\":true,\"title\":\"后端接口 · 订单创建服务 v0.4\"}"
+    },
+    {
+      "name": "Esc 关闭并回焦节点",
+      "pass": true,
+      "detail": "{\"open\":false,\"focus\":\"node-backend\"}"
+    },
+    {
+      "name": "个人工作区阅读态（Alex 视角）",
+      "pass": true,
+      "detail": "{\"shell\":true,\"kicker\":\"校园二手交易平台 · 个人工作区 · 负责人 Maya Chen · 当前视角 Alex Lee\",\"hasIdeSubmit\":false,\"hasPublish\":true,\"fileCount\":8,\"annoCount\":3,\"aiLock\":\"AI 只解释现有材料并帮助接手 · 禁止生成代码 / 补丁 / 测试 / 命令 · 禁止执行与写入\"} · D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\coding-work-read-1536x1024.png"
+    },
+    {
+      "name": "批注回到材料证据",
+      "pass": true,
+      "detail": "{\"anno\":\"提问ITEM_NOT_AVAILABLE 时前端应展示什么文案？Priya Shah · src/services/orderService.js · L26–L38对照 baseline / submission\",\"fileOn\":\"src/services/orderService.js\",\"highlight\":0,\"explain\":\"针对批注「ITEM_NOT_AVAILABLE 时前端应展示什么文案？」：\\n\\nsubmission-v1 的 orderService 在商品不可购买时抛出 ITEM_NOT_AVAILABLE（见 L26–L38）。前端是提示“商品已售出”还是“暂时无法购买”？需要拍板一句可落地文案。材料里的 LISTING_UNA\",\"hasCode\":true} · frames=10"
+    },
+    {
+      "name": "工作区交互连续截帧",
+      "pass": true,
+      "detail": "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\workspace-anno-flow\\00-before.png | D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\workspace-anno-flow\\01.png | D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\workspace-anno-flow\\02.png | D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\workspace-anno-flow\\03.png | D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\workspace-anno-flow\\04.png | D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\workspace-anno-flow\\05.png | D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\workspace-anno-flow\\06.png | D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\workspace-anno-flow\\07.png | D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\workspace-anno-flow\\08.png | D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\workspace-anno-flow\\99-after.png"
+    },
+    {
+      "name": "Alex 发布交付",
+      "pass": true,
+      "detail": "等待接收/已发布"
+    },
+    {
+      "name": "Priya 确认接收",
+      "pass": true,
+      "detail": "clicked"
+    },
+    {
+      "name": "联调进入进行中",
+      "pass": true,
+      "detail": "{\"text\":\"交易流程联调进行中联调进行中\",\"badge\":\"订单创建服务 v0.4· Alex → Priya 已接手\"} · D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\blueprint-received-live-1536x1024.png"
+    }
+  ],
+  "recordings": [
+    {
+      "name": "blueprint-detail-flow",
+      "frames": [
+        "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\blueprint-detail-flow\\00-before.png",
+        "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\blueprint-detail-flow\\01.png",
+        "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\blueprint-detail-flow\\02.png",
+        "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\blueprint-detail-flow\\03.png",
+        "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\blueprint-detail-flow\\04.png",
+        "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\blueprint-detail-flow\\05.png",
+        "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\blueprint-detail-flow\\06.png",
+        "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\blueprint-detail-flow\\07.png",
+        "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\blueprint-detail-flow\\08.png",
+        "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\blueprint-detail-flow\\99-after.png"
+      ]
+    },
+    {
+      "name": "workspace-anno-flow",
+      "frames": [
+        "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\workspace-anno-flow\\00-before.png",
+        "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\workspace-anno-flow\\01.png",
+        "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\workspace-anno-flow\\02.png",
+        "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\workspace-anno-flow\\03.png",
+        "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\workspace-anno-flow\\04.png",
+        "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\workspace-anno-flow\\05.png",
+        "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\workspace-anno-flow\\06.png",
+        "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\workspace-anno-flow\\07.png",
+        "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\workspace-anno-flow\\08.png",
+        "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_p0\\workspace-anno-flow\\99-after.png"
+      ]
+    }
+  ],
+  "untested": [
+    "旧版 #/blueprint（非 next）画布未走查",
+    "教师指导台反馈发送后学生侧回看未走查",
+    "真实摄像头录屏文件未导出（本轮以连续截帧代替）",
+    "新建自定义项目全流程未走查"
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "base": "http://localhost:5173",
+  "at": "2026-11-06T14:35:46.533Z",
+  "checks": [
+    {
+      "name": "启动默认完整蓝图且未选中",
+      "pass": true,
+      "detail": "{\"hash\":\"#/next/blueprint\",\"hasBlueprint\":true,\"selected\":0,\"dockOpen\":false,\"zoomInTools\":true,\"acceptance\":{\"fully\":true,\"nodeBottom\":716,\"wrapBottom\":1008}}"
+    },
+    {
+      "name": "缩放控件在画布框架工具条",
+      "pass": true,
+      "detail": "wbp-canvas-wrap > tools > zoom"
+    },
+    {
+      "name": "默认态验收节点可见 1536x1024",
+      "pass": true,
+      "detail": "{\"fully\":true,\"nodeBottom\":716,\"wrapBottom\":1008}"
+    },
+    {
+      "name": "侧栏进入项目首页",
+      "pass": true,
+      "detail": "{\"hash\":\"#/next/projects\",\"title\":\"项目列表\",\"cards\":2}"
+    },
+    {
+      "name": "项目首页刷新保持",
+      "pass": true,
+      "detail": "#/next/projects"
+    },
+    {
+      "name": "点项目卡进入蓝图未选中",
+      "pass": true,
+      "detail": "{\"hash\":\"#/next/blueprint\",\"selected\":0,\"hasBlueprint\":true}"
+    },
+    {
+      "name": "浏览器后退回项目列表",
+      "pass": true,
+      "detail": "{\"hash\":\"#/next/projects\",\"title\":\"项目列表\"}"
+    },
+    {
+      "name": "节点浮卡精简且不重排画布",
+      "pass": true,
+      "detail": "{\"open\":true,\"hasClose\":false,\"title\":\"需求分析\",\"status\":\"已完成\",\"key\":\"流程确认纪要.md\",\"actions\":1,\"actionText\":\"回看成果\",\"wrapH\":803,\"wrapHBefore\":803,\"zoomBottom\":1007}"
+    },
+    {
+      "name": "换节点更新内容且缩放控件位置稳定",
+      "pass": true,
+      "detail": "{\"title\":\"后端接口 · 订单创建服务 v0.4\",\"action\":\"发布交付\",\"stillOpen\":true,\"selected\":\"node-backend\",\"zoomBottom\":1007,\"zoomBottomBefore\":1007}"
+    },
+    {
+      "name": "点同一节点收起且不预留空区",
+      "pass": true,
+      "detail": "{\"open\":false,\"selected\":0,\"dockH\":\"0px\"}"
+    },
+    {
+      "name": "待开始浮卡突出前置条件",
+      "pass": true,
+      "detail": "{\"title\":\"项目验收\",\"key\":\"前置：集成测试\",\"action\":\"查看任务说明\"}"
+    },
+    {
+      "name": "点画布空白收起",
+      "pass": true,
+      "detail": "{\"open\":false,\"selected\":0}"
+    },
+    {
+      "name": "缩放生效且控件位置稳定",
+      "pass": true,
+      "detail": "{\"label\":\"110%\",\"toolsBottom\":1007,\"slotH\":616,\"before\":{\"label\":\"100%\",\"toolsBottom\":1007,\"slotH\":560}}"
+    },
+    {
+      "name": "默认态验收节点可见 1440x960",
+      "pass": true,
+      "detail": "{\"ok\":true,\"zoom\":\"100%\"}"
+    }
+  ],
+  "shots": {
+    "round-blueprint-default": "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\round-blueprint-default-1536x1024.png",
+    "round-project-home": "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\round-project-home-1536x1024.png",
+    "round-node-selected": "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\round-node-selected-1536x1024.png"
+  },
+  "untested": [
+    "未手测教师端与发布/接收完整路径（本轮范围外）",
+    "未测 API 实验（按要求不做）"
+  ]
+}

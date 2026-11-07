@@ -1,0 +1,171 @@
+{
+  "base": "http://127.0.0.1:5173",
+  "at": "2026-11-07T15:09:42.184Z",
+  "aiMode": "mock",
+  "rows": [
+    {
+      "scenario": "环境",
+      "role": "-",
+      "input": "GET /api/health",
+      "ai": "mock",
+      "action": "-",
+      "state": "-",
+      "result": "PASS · aiMode=mock",
+      "kind": "mock"
+    },
+    {
+      "scenario": "A",
+      "role": "Alex",
+      "input": "mat-code-order-v04 + mat-chat-order-v04",
+      "ai": "match; pending=2; cite=2",
+      "action": "handoff-analysis",
+      "state": "-",
+      "result": "PASS · 相符",
+      "kind": "mock"
+    },
+    {
+      "scenario": "A",
+      "role": "Alex",
+      "input": "mat-code-order-v03 + mat-chat-order-v03",
+      "ai": "suspect-wrong-version; pending=1; cite=2",
+      "action": "handoff-analysis",
+      "state": "-",
+      "result": "PASS · 疑似错版",
+      "kind": "mock"
+    },
+    {
+      "scenario": "A",
+      "role": "Alex",
+      "input": "mat-code-unrelated-frontend + mat-chat-unrelated-seat",
+      "ai": "irrelevant; pending=1; cite=2",
+      "action": "handoff-analysis",
+      "state": "-",
+      "result": "PASS · 无关",
+      "kind": "mock"
+    },
+    {
+      "scenario": "A",
+      "role": "Alex",
+      "input": "mat-code-order-v04 + mat-chat-order-no-test",
+      "ai": "insufficient-evidence; pending=1; cite=2",
+      "action": "handoff-analysis",
+      "state": "-",
+      "result": "PASS · 证据不足",
+      "kind": "mock"
+    },
+    {
+      "scenario": "A-UI",
+      "role": "Alex",
+      "input": "正确版代码+对话 · 上传页分析",
+      "ai": "{\"verdict\":\"相符\",\"hasPending\":true,\"hasError\":false,\"hint\":\"判定：相符 · 模拟结果 mock/mock-handoff-analysis\"}",
+      "action": "点击分析材料",
+      "state": "draft",
+      "result": "PASS · 判定相符且展示待确认项",
+      "kind": "mock"
+    },
+    {
+      "scenario": "B1",
+      "role": "Alex",
+      "input": "编辑协作日志摘要后发布",
+      "ai": "沿用分析草稿",
+      "action": "确认并发布",
+      "state": "published · 等待确认接收",
+      "result": "PASS · 发布回执可见；人工句检出=true",
+      "kind": "user-action"
+    },
+    {
+      "scenario": "B2",
+      "role": "Priya",
+      "input": "打开已发布快照（业务层传 sharedLog）",
+      "ai": "focus items≈0; publisherTask=false",
+      "action": "自动 handoff-focus",
+      "state": "published",
+      "result": "PASS · 同句可见且关注项无发布者任务",
+      "kind": "mock"
+    },
+    {
+      "scenario": "B3",
+      "role": "Priya",
+      "input": "请补充 ITEM_NOT_AVAILABLE 与页面提示对照",
+      "ai": "只读",
+      "action": "提修改意见",
+      "state": "needs-revision",
+      "result": "PASS",
+      "kind": "user-action"
+    },
+    {
+      "scenario": "B4",
+      "role": "Alex",
+      "input": "修订后重发",
+      "ai": "再分析或沿用草稿",
+      "action": "发布新版本",
+      "state": "published",
+      "result": "PASS",
+      "kind": "user-action"
+    },
+    {
+      "scenario": "B5",
+      "role": "Priya",
+      "input": "确认接收当前版本",
+      "ai": "-",
+      "action": "确认接收",
+      "state": "received · 联调进行中",
+      "result": "PASS · 蓝图联调进入进行中",
+      "kind": "user-action"
+    },
+    {
+      "scenario": "C1",
+      "role": "Priya",
+      "input": "联调时商品详情页提示与 ITEM_NOT_AVAILABLE 对不上，已试过刷新仍失败。",
+      "ai": "student-clarify（可选）",
+      "action": "提交联调求助",
+      "state": "help open",
+      "result": "PASS",
+      "kind": "user-action"
+    },
+    {
+      "scenario": "C2",
+      "role": "周老师",
+      "input": "从待办打开同一求助 ID",
+      "ai": "无/失败可手写",
+      "action": "查看求助",
+      "state": "待指导",
+      "result": "PASS · 原文+日志分区，发布不作学生问题",
+      "kind": "mock"
+    },
+    {
+      "scenario": "C3",
+      "role": "周老师",
+      "input": "请先核对联调接口版本，再补错误码与页面提示对照记录。",
+      "ai": "建议可预填，正式反馈人工发送",
+      "action": "发送正式反馈",
+      "state": "guided",
+      "result": "PASS",
+      "kind": "user-action"
+    },
+    {
+      "scenario": "C4",
+      "role": "Priya/Alex 项目记录",
+      "input": "同一求助 eventId",
+      "ai": "-",
+      "action": "回看项目记录 / 共享事件",
+      "state": "feedback bound",
+      "result": "PASS · 页面回显=false; store=true",
+      "kind": "user-action"
+    },
+    {
+      "scenario": "D",
+      "role": "Priya",
+      "input": "强制 help-context 422",
+      "ai": "失败",
+      "action": "保留原文与手动提交",
+      "state": "received",
+      "result": "PASS · 失败后原文仍在且可手提交流",
+      "kind": "simulated-failure"
+    }
+  ],
+  "untested": [
+    "live DeepSeek 全链路浏览器回归未在本轮执行（当前 aiMode=mock）",
+    "四组材料 UI 逐一点选仅抽检了相符一组，其余三组以同源 API 实测"
+  ]
+}

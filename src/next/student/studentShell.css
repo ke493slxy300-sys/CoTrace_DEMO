@@ -1,0 +1,148 @@
+@import '../tokens.css';
+
+.stu-shell,
+.stu-shell * {
+  box-sizing: border-box;
+}
+
+.stu-shell {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--ct-subtle);
+  color: var(--ct-text);
+  font-family: var(--ct-font);
+}
+
+.stu-shell button {
+  font-family: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.stu-top {
+  position: relative;
+  z-index: 5;
+  height: var(--ct-topbar);
+  flex: 0 0 var(--ct-topbar);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 22px 0 18px;
+  background: var(--ct-surface);
+  border-bottom: 1px solid var(--ct-divider);
+}
+
+.stu-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.stu-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #101514;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+}
+
+/* 首页：无项目内侧栏，主区铺满 */
+.stu-home-body {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.stu-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.stu-side {
+  width: var(--ct-sidebar);
+  flex: 0 0 var(--ct-sidebar);
+  background: var(--ct-surface);
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-right: 1px solid var(--ct-divider);
+}
+
+.stu-back {
+  height: 40px;
+  width: 100%;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  text-align: left;
+  font-size: var(--ct-fs-aux);
+  color: var(--ct-text-secondary);
+  margin-bottom: 4px;
+}
+
+.stu-back:hover {
+  background: var(--ct-subtle);
+  color: var(--ct-text);
+}
+
+.stu-project-name {
+  margin: 0 0 12px;
+  padding: 0 12px 12px;
+  border-bottom: 1px solid var(--ct-divider);
+  color: var(--ct-text);
+  font-size: var(--ct-fs-meta-role);
+  line-height: var(--ct-lh);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stu-nav {
+  height: 60px;
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  text-align: left;
+  font-size: var(--ct-fs-nav);
+}
+
+.stu-nav.is-on {
+  background: var(--ct-brand-soft);
+  color: var(--ct-brand);
+  font-weight: 700;
+}
+
+.stu-nav:disabled {
+  cursor: default;
+}
+
+.stu-content {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}

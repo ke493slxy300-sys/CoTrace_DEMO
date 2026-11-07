@@ -2,6 +2,7 @@ import { LoaderCircle, Sparkles } from 'lucide-react';
 import { getCollaboratorDisplayLabel } from '../../data/collaborators';
 import { getMemberById } from '../../data/members';
 import type { ProjectCollaborator } from '../../types';
+import '../../next/student/registerModal.css';
 
 type AiBlueprintOverlayProps = {
   open: boolean;
@@ -28,7 +29,7 @@ export function AiBlueprintOverlay({
 
   return (
     <div className="modal-backdrop ai-overlay" role="status" aria-live="polite">
-      <div className="ai-overlay-card">
+      <div className="ai-overlay-card ct-ai-card">
         <div className="ai-overlay-icon">
           <Sparkles size={20} strokeWidth={1.5} aria-hidden="true" />
         </div>

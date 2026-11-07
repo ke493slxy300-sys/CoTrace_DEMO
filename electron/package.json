@@ -1,0 +1,11 @@
+{
+  "name": "cotrace-desktop-shell",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Optional local Electron install for CoTrace desktop shell (does not replace root package.json merge).",
+  "type": "module",
+  "main": "main.mjs",
+  "dependencies": {
+    "electron": "^36.0.0"
+  }
+}

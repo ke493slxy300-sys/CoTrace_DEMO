@@ -3,6 +3,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type PointerEvent,
 } from 'react';
 import {
@@ -27,7 +28,12 @@ import {
   resolveArtifactEmptyKind,
 } from '../data/blueprintDetail';
 import { DEMO_LOCKED_MESSAGE, isPresetBlueprintNode } from '../data/demoLock';
-import { getExperienceMember, getMemberById } from '../data/members';
+import {
+  EXPERIENCE_MEMBER_ID,
+  getCurrentMember,
+  getExperienceMember,
+  getMemberById,
+} from '../data/members';
 import { INITIAL_TEAM_PENDING_ITEMS } from '../data/personalTodos';
 import { PRESET_SHARED_DOCS, type SharedDoc } from '../data/sharedDocs';
 import {
@@ -35,8 +41,14 @@ import {
   buildEntryFromPersonalTodo,
   type WorkspaceEntry,
 } from '../data/workspaceEntry';
-import { EXPERIENCE_MEMBER_ID } from '../data/members';
 import { TeamDiscussionWindow } from '../components/nodeDetail/TeamDiscussionWindow';
+import type { HandoffDockAction } from '../components/blueprint/BlueprintBottomDock';
+import { useDelivery } from '../data/deliveryStore';
+import { useDemoRole } from '../data/demoRoleStore';
+import {
+  getAllFeedbacks,
+  subscribeProcessEvents,
+} from '../data/processEventStore';
 import type { BlueprintNode, CourseProject } from '../types';
 
 type BlueprintPageProps = {
@@ -51,6 +63,8 @@ type BlueprintPageProps = {
   onRenameBlankNode: (nodeId: string, name: string) => void;
   onDeleteBlankNode: (nodeId: string) => void;
   onOpenWorkspace: (entry: WorkspaceEntry) => void;
+  onOpenDeliveryPublish: () => void;
+  onOpenDeliveryReceive: () => void;
   onToast: (message: string) => void;
 };
 
@@ -69,9 +83,19 @@ export function BlueprintPage({
   onRenameBlankNode,
   onDeleteBlankNode,
   onOpenWorkspace,
+  onOpenDeliveryPublish,
+  onOpenDeliveryReceive,
   onToast,
 }: BlueprintPageProps) {
-  const me = getExperienceMember();
+  const experienceMember = getExperienceMember();
+  const me = getCurrentMember();
+  const role = useDemoRole();
+  const delivery = useDelivery();
+  const teacherFeedbacks = useSyncExternalStore(
+    subscribeProcessEvents,
+    getAllFeedbacks,
+    getAllFeedbacks,
+  );
   const [selectedId, setSelectedId] = useState<string | null>(
     () => preferredSelectedNodeId,
   );
@@ -110,9 +134,45 @@ export function BlueprintPage({
     : null;
 
   const ownedNodes = useMemo(
-    () => nodes.filter((node) => node.ownerId === me.id),
-    [nodes, me.id],
+    () => nodes.filter((node) => node.ownerId === experienceMember.id),
+    [nodes, experienceMember.id],
   );
+
+  const handoffActions = useMemo<HandoffDockAction[]>(() => {
+    const actions: HandoffDockAction[] = [];
+    if (role === 'alex') {
+      actions.push({
+        id: 'handoff-publish',
+        title: `${delivery.title} ${delivery.version}`,
+        meta:
+          delivery.status === 'draft'
+            ? '发布给 Priya'
+            : delivery.status === 'published'
+              ? '已发布 · 等待接收'
+              : '已完成交接',
+        statusLabel:
+          delivery.status === 'draft'
+            ? '待发布'
+            : delivery.status === 'published'
+              ? '等待接收'
+              : '已接收',
+        onOpen: onOpenDeliveryPublish,
+      });
+    }
+    if (role === 'priya' && delivery.status !== 'draft') {
+      actions.push({
+        id: 'handoff-receive',
+        title: `接收 ${delivery.title} ${delivery.version}`,
+        meta:
+          delivery.status === 'received'
+            ? delivery.nextStep
+            : '确认接收后开始联调',
+        statusLabel: delivery.status === 'received' ? '已接收' : '待接收',
+        onOpen: onOpenDeliveryReceive,
+      });
+    }
+    return actions;
+  }, [role, delivery, onOpenDeliveryPublish, onOpenDeliveryReceive]);
 
   const unassignedCount = useMemo(
     () => nodes.filter((node) => !node.ownerId).length,
@@ -621,15 +681,36 @@ export function BlueprintPage({
         </aside>
       </main>
 
+      {teacherFeedbacks.length > 0 ? (
+        <div
+          className="blueprint-teacher-feedback-strip"
+          role="status"
+          style={{
+            margin: '0 16px 8px',
+            padding: '10px 14px',
+            borderRadius: 8,
+            background: '#2a3e56',
+            color: '#e6eaf2',
+            fontSize: 13,
+          }}
+        >
+          <strong>教师反馈 · </strong>
+          {teacherFeedbacks[teacherFeedbacks.length - 1]?.content}
+        </div>
+      ) : null}
+
       <BlueprintBottomDock
         ownedNodes={ownedNodes}
         pendingItems={pendingItems}
         docs={docs}
+        handoffActions={handoffActions}
         onJumpToNode={selectNode}
         onOpenPersonalCoding={(nodeId) => {
           const node = nodes.find((item) => item.id === nodeId);
           if (!node) return;
-          onOpenWorkspace(buildEntryFromPersonalTodo(project, node, me.id));
+          onOpenWorkspace(
+            buildEntryFromPersonalTodo(project, node, experienceMember.id),
+          );
         }}
         onOpenPendingDiscussion={setOpenDiscussionId}
         onUploadDocs={handleUploadDocs}
@@ -639,7 +720,7 @@ export function BlueprintPage({
         open={Boolean(openDiscussionId)}
         discussionId={openDiscussionId}
         currentUserId={EXPERIENCE_MEMBER_ID}
-        viewerName={me.name}
+        viewerName={experienceMember.name}
         onClose={() => setOpenDiscussionId(null)}
       />
 

@@ -5,8 +5,6 @@ import { EmptyState } from "../common/EmptyState";
 
 type MemberSelectedTraceCardsProps = {
   cards: TeammateTraceCard[];
-  sourcePolicy: string;
-  organizedBy: string;
   /** 卡片里「当前队友」替换成节点负责人姓名 */
   memberLabel: string;
   activeCardId: string | null;
@@ -17,8 +15,6 @@ type MemberSelectedTraceCardsProps = {
 
 export function MemberSelectedTraceCards({
   cards,
-  sourcePolicy,
-  organizedBy,
   memberLabel,
   activeCardId,
   onSelectCard,
@@ -39,13 +35,13 @@ export function MemberSelectedTraceCards({
 
   return (
     <div className="member-trace-wrap">
-      <p className="member-trace-policy">
-        由当前队友选取片段，{organizedBy}按任务主题整理。不包含完整原始对话。
-      </p>
-      <p className="member-trace-policy is-muted">{sourcePolicy}</p>
       <ul className="ai-theme-card-list">
         {cards.map((card) => {
           const expanded = hoveredId === card.id || activeCardId === card.id;
+          const hasDetail =
+            Boolean(card.selectionNote) ||
+            card.fragments.length > 0 ||
+            Boolean(card.humanUnderstanding);
           return (
             <li key={card.id}>
               <article
@@ -62,35 +58,18 @@ export function MemberSelectedTraceCards({
                     {card.titleEdited ? "（已改标题）" : ""}
                   </span>
                 </header>
-                <p className="ai-theme-card-summary">{card.selectionNote}</p>
 
-                <div className="ai-theme-card-detail">
-                  <div className="member-trace-fragments">
-                    <strong>选中片段</strong>
-                    <ul>
-                      {card.fragments.map((frag, index) => (
-                        <li key={`${card.id}-f${index}`}>
-                          <span>
-                            {frag.speaker === "当前队友"
-                              ? memberLabel
-                              : frag.speaker}
-                          </span>
-                          <p>{frag.text}</p>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <p className="ai-theme-card-line">
-                    <strong>人的理解：</strong>
-                    {card.humanUnderstanding}
-                  </p>
-                  <p className="ai-theme-card-line">
-                    <strong>人的决定：</strong>
+                <p className="ai-theme-card-decision">
+                  <span className="ai-theme-card-label">决定</span>
+                  <span className="ai-theme-card-decision-text">
                     {card.humanDecision}
-                  </p>
+                  </span>
+                </p>
+
+                <div className="ai-theme-card-sections">
                   {card.affectedArtifacts.length > 0 ? (
-                    <div className="member-trace-artifacts">
-                      <strong>影响产物</strong>
+                    <div className="ai-theme-card-section">
+                      <span className="ai-theme-card-label">产物</span>
                       <div className="member-trace-artifact-row">
                         {card.affectedArtifacts.map((path) => (
                           <button
@@ -108,14 +87,57 @@ export function MemberSelectedTraceCards({
                       </div>
                     </div>
                   ) : null}
-                  <p className="ai-theme-card-meta">未决：{card.unresolved}</p>
+                  {card.unresolved ? (
+                    <p className="ai-theme-card-section">
+                      <span className="ai-theme-card-label">未决</span>
+                      <span>{card.unresolved}</span>
+                    </p>
+                  ) : null}
                   {card.memoryCandidate ? (
-                    <p className="ai-theme-card-line">
-                      <strong>记忆候选：</strong>
-                      {card.memoryCandidate}
+                    <p className="ai-theme-card-section">
+                      <span className="ai-theme-card-label">记忆</span>
+                      <span>{card.memoryCandidate}</span>
                     </p>
                   ) : null}
                 </div>
+
+                {hasDetail ? (
+                  <div className="ai-theme-card-detail">
+                    {card.selectionNote ? (
+                      <p className="ai-theme-card-line">
+                        <strong>选取说明</strong>
+                        {card.selectionNote}
+                      </p>
+                    ) : null}
+                    {card.fragments.length > 0 ? (
+                      <div className="member-trace-fragments">
+                        <strong>片段</strong>
+                        <ul>
+                          {card.fragments.map((frag, index) => (
+                            <li key={`${card.id}-f${index}`}>
+                              <span>
+                                {frag.speaker === "当前队友"
+                                  ? memberLabel
+                                  : frag.speaker}
+                              </span>
+                              <p>{frag.text}</p>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                    {card.humanUnderstanding ? (
+                      <p className="ai-theme-card-line">
+                        <strong>理解</strong>
+                        {card.humanUnderstanding}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {!expanded && hasDetail ? (
+                  <p className="ai-theme-card-expand-hint">悬停查看片段与说明</p>
+                ) : null}
 
                 <div className="ai-theme-card-actions">
                   <button

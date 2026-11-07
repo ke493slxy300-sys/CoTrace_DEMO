@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { ArrowLeft, Check } from "lucide-react";
 import { AppHeader } from "../components/layout/AppHeader";
 import { PageTitleBar } from "../components/layout/PageTitleBar";
+import { CollapsibleResizableColumns } from "../components/layout/CollapsibleResizableColumns";
 import { CodeViewer } from "../components/editor/CodeViewer";
 import { BACKEND_APP_NODE_ID } from "../datasets/built-in/campus-marketplace/content/packIds";
 import {
@@ -26,7 +27,6 @@ type TaskSubmitPageProps = {
   files: CodeFile[];
   initialActiveFileId: string | null;
   onBackToWorkspace: (activeFileId: string | null) => void;
-  onBackToBlueprint: () => void;
   /** 确认写入后进入对应节点详情（长期入口） */
   onSubmitSuccess: (options: TaskSubmitSuccessOptions) => void;
 };
@@ -37,7 +37,6 @@ export function TaskSubmitPage({
   files,
   initialActiveFileId,
   onBackToWorkspace,
-  onBackToBlueprint,
   onSubmitSuccess,
 }: TaskSubmitPageProps) {
   const me = getExperienceMember();
@@ -102,15 +101,6 @@ export function TaskSubmitPage({
           >
             <ArrowLeft size={16} strokeWidth={1.5} aria-hidden="true" />
             返回个人工作区
-          </button>
-        }
-        actions={
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={onBackToBlueprint}
-          >
-            返回工作蓝图
           </button>
         }
       />
@@ -194,119 +184,125 @@ export function TaskSubmitPage({
       ) : null}
 
       {step === 2 ? (
-        <main
+        <CollapsibleResizableColumns
+          storageKey="cotrace-workbench-task-submit"
           className="workbench submit-select-layout"
-          aria-label="步骤二：选择公开内容"
-        >
-          <aside className="panel sidebar-panel" aria-label="将提交的代码仓">
-            <div className="panel-header">
-              <h2>代码仓</h2>
-              <span className="panel-meta">全部写入 · 不可取消</span>
-            </div>
-            <div className="panel-body node-file-list">
-              {files.length === 0 ? (
-                <p className="blueprint-detail-note">
-                  暂无代码文件，无法提交。
-                </p>
-              ) : (
-                <ul>
-                  {files.map((file) => (
-                    <li key={file.id}>
-                      <button
-                        type="button"
-                        className={`node-file-item${
-                          file.id === activeFileId ? " is-active" : ""
-                        }`}
-                        onClick={() => setActiveFileId(file.id)}
-                      >
-                        {file.name}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </aside>
-
-          <section className="panel editor-panel" aria-label="代码预览">
-            <CodeViewer
-              file={activeFile}
-              selection={null}
-              ideChrome
-              onSelectionChange={() => undefined}
-            />
-          </section>
-
-          <aside className="panel right-panel" aria-label="选择公开溯源">
-            <div className="panel-header">
-              <h2>公开溯源</h2>
-              <span className="badge">自主勾选</span>
-            </div>
-            <div className="panel-body submit-trace-pick-body">
-              <p className="submit-hint">
-                以下由项目理解 Agent 整理的主题卡。勾选后随本次提交公开；
-                <strong>不会公开完整原始对话</strong>。
-              </p>
-              {candidates.length === 0 ? (
-                <p className="blueprint-detail-note">
-                  当前节点暂无可选主题溯源卡，可直接进入预览（仅提交代码）。
-                </p>
-              ) : (
-                <ul className="submit-trace-pick-list">
-                  {candidates.map((card) => {
-                    const checked = selectedTraceIds.includes(card.id);
-                    return (
-                      <li key={card.id}>
-                        <label
-                          className={`submit-trace-pick-card${
-                            checked ? " is-checked" : ""
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => toggleTrace(card.id)}
-                          />
-                          <span className="submit-trace-pick-title">
-                            {card.title}
-                          </span>
-                          <span className="submit-trace-pick-summary">
-                            {card.fragmentSummary}
-                          </span>
-                          <span className="submit-trace-pick-line">
-                            <strong>人的理解：</strong>
-                            {card.humanUnderstanding}
-                          </span>
-                          <span className="submit-trace-pick-line">
-                            <strong>人的决定：</strong>
-                            {card.humanDecision}
-                          </span>
-                        </label>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-              <div className="submit-actions is-sticky">
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  onClick={() => setStep(1)}
-                >
-                  上一步
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  disabled={files.length === 0}
-                  onClick={() => setStep(3)}
-                >
-                  下一步
-                </button>
+          ariaLabel="步骤二：选择公开内容"
+          leftRailLabel="代码仓"
+          rightRailLabel="公开溯源"
+          left={
+            <aside className="panel sidebar-panel" aria-label="将提交的代码仓">
+              <div className="panel-header">
+                <h2>代码仓</h2>
+                <span className="panel-meta">全部写入 · 不可取消</span>
               </div>
-            </div>
-          </aside>
-        </main>
+              <div className="panel-body node-file-list">
+                {files.length === 0 ? (
+                  <p className="blueprint-detail-note">
+                    暂无代码文件，无法提交。
+                  </p>
+                ) : (
+                  <ul>
+                    {files.map((file) => (
+                      <li key={file.id}>
+                        <button
+                          type="button"
+                          className={`node-file-item${
+                            file.id === activeFileId ? " is-active" : ""
+                          }`}
+                          onClick={() => setActiveFileId(file.id)}
+                        >
+                          {file.name}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </aside>
+          }
+          center={
+            <section className="panel editor-panel" aria-label="代码预览">
+              <CodeViewer
+                file={activeFile}
+                selection={null}
+                ideChrome
+                onSelectionChange={() => undefined}
+              />
+            </section>
+          }
+          right={
+            <aside className="panel right-panel" aria-label="选择公开溯源">
+              <div className="panel-header">
+                <h2>公开溯源</h2>
+                <span className="badge">自主勾选</span>
+              </div>
+              <div className="panel-body submit-trace-pick-body">
+                <p className="submit-hint">
+                  以下由项目理解 Agent 整理的主题卡。勾选后随本次提交公开；
+                  <strong>不会公开完整原始对话</strong>。
+                </p>
+                {candidates.length === 0 ? (
+                  <p className="blueprint-detail-note">
+                    当前节点暂无可选主题溯源卡，可直接进入预览（仅提交代码）。
+                  </p>
+                ) : (
+                  <ul className="submit-trace-pick-list">
+                    {candidates.map((card) => {
+                      const checked = selectedTraceIds.includes(card.id);
+                      return (
+                        <li key={card.id}>
+                          <label
+                            className={`submit-trace-pick-card${
+                              checked ? " is-checked" : ""
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleTrace(card.id)}
+                            />
+                            <span className="submit-trace-pick-title">
+                              {card.title}
+                            </span>
+                            <span className="submit-trace-pick-summary">
+                              {card.fragmentSummary}
+                            </span>
+                            <span className="submit-trace-pick-line">
+                              <strong>人的理解：</strong>
+                              {card.humanUnderstanding}
+                            </span>
+                            <span className="submit-trace-pick-line">
+                              <strong>人的决定：</strong>
+                              {card.humanDecision}
+                            </span>
+                          </label>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+                <div className="submit-actions is-sticky">
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => setStep(1)}
+                  >
+                    上一步
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    disabled={files.length === 0}
+                    onClick={() => setStep(3)}
+                  >
+                    下一步
+                  </button>
+                </div>
+              </div>
+            </aside>
+          }
+        />
       ) : null}
 
       {step === 3 ? (

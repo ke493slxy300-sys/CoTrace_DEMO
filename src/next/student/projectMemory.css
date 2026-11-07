@@ -1,0 +1,381 @@
+/* 项目记忆（历史）。只由 ProjectMemoryPage 引入。 */
+
+@import '../tokens.css';
+
+.pm {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--ct-content-pad);
+  background: var(--ct-subtle);
+  color: var(--ct-text);
+  font-family: var(--ct-font);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pm-kicker {
+  margin: 0;
+  color: var(--ct-brand);
+  font-size: var(--ct-fs-aux);
+  font-weight: 700;
+}
+
+.pm-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pm-head h1 {
+  margin: 0;
+  font-size: var(--ct-fs-page);
+  font-weight: 700;
+  color: var(--ct-ink);
+  line-height: 1.2;
+}
+
+.pm-head p {
+  margin: 6px 0 0;
+  color: var(--ct-text-tertiary);
+  font-size: var(--ct-fs-aux);
+}
+
+.pm-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.pm-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  min-width: 260px;
+  padding: 0 14px;
+  border: 1px solid var(--ct-border);
+  border-radius: var(--ct-radius-ctrl);
+  background: var(--ct-surface);
+}
+
+.pm-search input {
+  border: 0;
+  outline: none;
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  background: transparent;
+}
+
+.pm-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pm-keywords button {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--ct-border);
+  background: var(--ct-surface);
+  color: var(--ct-text-secondary);
+  font-size: 14px;
+}
+
+.pm-keywords button.is-on {
+  border-color: var(--ct-brand);
+  background: var(--ct-brand-soft);
+  color: var(--ct-brand);
+  font-weight: 700;
+}
+
+.pm-notice {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--ct-radius-card);
+  background: #eef6f4;
+  color: var(--ct-text-secondary);
+  font-size: var(--ct-fs-meta);
+  line-height: 1.5;
+}
+
+.pm-empty {
+  margin: 48px auto;
+  max-width: 520px;
+  text-align: center;
+  background: var(--ct-surface);
+  border: 1px solid var(--ct-divider);
+  border-radius: var(--ct-radius-zone);
+  padding: 36px 28px;
+}
+
+.pm-empty.is-quiet {
+  margin: 24px 0 0;
+  max-width: none;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  padding: 8px 0;
+}
+
+.pm-empty.is-quiet p {
+  margin: 0;
+  color: var(--ct-text-tertiary);
+  font-size: var(--ct-fs-aux);
+  font-weight: 400;
+}
+
+.pm-filter {
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--ct-border);
+  border-radius: var(--ct-radius-ctrl);
+  background: var(--ct-surface);
+  font: inherit;
+}
+
+.pm-filter.is-on {
+  border-color: var(--ct-brand);
+  background: var(--ct-brand-soft);
+  color: var(--ct-brand);
+  font-weight: 700;
+}
+
+.pm-summary {
+  margin: 8px 0 0;
+  color: var(--ct-text);
+  font-size: var(--ct-fs-aux);
+  line-height: 1.5;
+}
+
+.pm-tech {
+  margin-top: 8px;
+  color: var(--ct-text-tertiary);
+  font-size: 13px;
+}
+
+.pm-tech summary {
+  cursor: pointer;
+}
+
+.pm-empty h2 {
+  margin: 0 0 8px;
+  font-size: 24px;
+}
+
+.pm-empty p {
+  margin: 0 0 18px;
+  color: var(--ct-text-secondary);
+  font-size: var(--ct-fs-aux);
+  line-height: 1.55;
+}
+
+.pm-empty button {
+  height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: var(--ct-radius-ctrl);
+  background: var(--ct-brand);
+  color: #fff;
+  font-weight: 700;
+}
+
+.pm-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pm-card {
+  border: 1px solid var(--ct-divider);
+  border-radius: var(--ct-radius-zone);
+  background: var(--ct-surface);
+  overflow: hidden;
+  padding: 16px 18px;
+}
+
+.pm-card-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.pm-card-top em {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--ct-text-tertiary, #667085);
+}
+
+.pm-author,
+.pm-meta {
+  margin: 0 0 6px;
+  color: var(--ct-text-secondary, #475467);
+  font-size: 13px;
+}
+
+.pm-evidence {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(16, 21, 20, 0.04);
+  display: grid;
+  gap: 4px;
+}
+
+.pm-evidence.is-teacher {
+  background: rgba(0, 133, 110, 0.08);
+}
+
+.pm-evidence time {
+  font-size: 12px;
+  color: var(--ct-text-tertiary, #667085);
+}
+
+.pm-card-main {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  text-align: left;
+  padding: 16px 18px;
+  border: 0;
+  background: transparent;
+}
+
+.pm-card-main:hover {
+  background: rgba(0, 133, 110, 0.03);
+}
+
+.pm-date {
+  font-size: var(--ct-fs-meta);
+  color: var(--ct-text-tertiary);
+  font-weight: 700;
+}
+
+.pm-card h3 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.pm-decision {
+  margin: 0;
+  color: var(--ct-text-secondary);
+  font-size: var(--ct-fs-aux);
+  line-height: 1.5;
+}
+
+.pm-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--ct-brand-soft);
+  color: var(--ct-brand);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pm-expand {
+  border-top: 1px solid var(--ct-divider);
+  padding: 14px 18px 18px;
+  display: grid;
+  gap: 12px;
+  animation: pm-in 200ms ease;
+}
+
+@keyframes pm-in {
+  from {
+    opacity: 0.4;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.pm-field dt {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--ct-text-tertiary);
+  font-weight: 700;
+}
+
+.pm-field dd {
+  margin: 0;
+  font-size: var(--ct-fs-aux);
+  line-height: 1.55;
+  color: var(--ct-text);
+}
+
+.pm-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pm-meta span {
+  font-size: 13px;
+  color: var(--ct-text-secondary);
+  background: var(--ct-subtle);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.pm-evidence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pm-evidence button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--ct-border);
+  background: var(--ct-subtle);
+  font-size: 13px;
+  color: var(--ct-text-secondary);
+}
+
+.pm-evidence button em {
+  font-style: normal;
+  color: var(--ct-brand);
+  font-weight: 700;
+}
+
+.pm-toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 30;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #101514;
+  color: #fff;
+  font-size: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pm-expand {
+    animation: none;
+  }
+}

@@ -4,20 +4,32 @@
  * - 仅操作 cotrace-demo-* 前缀 key
  * - schemaVersion 变化时丢弃旧缓存并重载预置种子
  *
- * key 字符串与 demoSubmission / nodeCollaborationStore 保持一致。
+ * key 字符串与各 store 文件保持一致（勿改一侧漏改另一侧）。
  */
 
 /** 预置数据或存储结构变更时递增；旧缓存将被清除 */
-export const DEMO_STORAGE_SCHEMA_VERSION = 2;
+export const DEMO_STORAGE_SCHEMA_VERSION = 4;
 
 export const DEMO_STORAGE_META_KEY = 'cotrace-demo-storage-meta';
 export const DEMO_COLLABORATION_KEY = 'cotrace-demo-node-collaboration';
 export const DEMO_SUBMISSIONS_KEY = 'cotrace-demo-submissions';
+/**
+ * 旧交接 key。当前交付写在 cotrace-demo-submissions 的 handoffDelivery 字段。
+ * 重置时仍删除这个残留 key，避免旧缓存被误当成第二份交付。
+ */
+export const DEMO_DELIVERY_KEY = 'cotrace-demo-delivery';
+export const DEMO_PROCESS_EVENTS_KEY = 'cotrace-demo-process-events';
+export const DEMO_ACCEPTANCE_KEY = 'cotrace-demo-acceptance';
+export const DEMO_ROLE_KEY = 'cotrace-demo-role';
 
 /** 当前 Demo 使用的全部 localStorage key（含 meta） */
 export const DEMO_STORAGE_KEYS = [
   DEMO_COLLABORATION_KEY,
   DEMO_SUBMISSIONS_KEY,
+  DEMO_DELIVERY_KEY,
+  DEMO_PROCESS_EVENTS_KEY,
+  DEMO_ACCEPTANCE_KEY,
+  DEMO_ROLE_KEY,
   DEMO_STORAGE_META_KEY,
 ] as const;
 
@@ -59,6 +71,10 @@ function removeDemoDataKeys(): void {
   if (!canUseStorage()) return;
   window.localStorage.removeItem(DEMO_COLLABORATION_KEY);
   window.localStorage.removeItem(DEMO_SUBMISSIONS_KEY);
+  window.localStorage.removeItem(DEMO_DELIVERY_KEY);
+  window.localStorage.removeItem(DEMO_PROCESS_EVENTS_KEY);
+  window.localStorage.removeItem(DEMO_ACCEPTANCE_KEY);
+  window.localStorage.removeItem(DEMO_ROLE_KEY);
 }
 
 /**

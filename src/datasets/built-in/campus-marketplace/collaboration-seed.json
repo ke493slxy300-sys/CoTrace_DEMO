@@ -40,12 +40,14 @@
       "nodeId": "node-backend",
       "authorId": "member-priya",
       "typeLabel": "提问",
-      "summary": "LISTING_UNAVAILABLE 时前端应展示什么文案？",
-      "content": "后端返回 LISTING_UNAVAILABLE 时，前端是提示“商品已售出”还是“暂时无法购买”？需要你拍板一句可落地文案。",
+      "summary": "ITEM_NOT_AVAILABLE 时前端应展示什么文案？",
+      "content": "submission-v1 的 orderService 在商品不可购买时抛出 ITEM_NOT_AVAILABLE（见 L26–L38）。前端是提示“商品已售出”还是“暂时无法购买”？需要拍板一句可落地文案。材料里的 LISTING_UNAVAILABLE 仅出现在接手说明摘录，代码证据以本行段为准。",
       "target": {
-        "kind": "file",
+        "kind": "lines",
         "fileId": "src/services/orderService.js",
-        "fileLabel": "src/services/orderService.js"
+        "fileLabel": "src/services/orderService.js",
+        "lineStart": 26,
+        "lineEnd": 38
       },
       "affectsCode": true,
       "createdAt": "2026-10-15T13:10:00.000Z",

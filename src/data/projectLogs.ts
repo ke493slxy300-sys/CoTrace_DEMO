@@ -10,16 +10,28 @@ import { EXPERIENCE_MEMBER_ID } from "./members";
 
 /** 与 content-state-map 对齐的展示用语（勿混用） */
 export const PUBLICATION_STATE_LABELS = {
-  submitted: "已提交（团队可见快照）",
+  submitted: "已提交（团队可见）",
   not_submitted: "未提交（私人草稿）",
-  seeded_shared: "预置共享（Demo 种子）",
+  seeded_shared: "预置共享",
 } as const;
 
 export const DECISION_STATE_LABELS = {
-  confirmed: "已确认（confirmed_memory）",
+  confirmed: "已确认",
   pending_confirmation: "待确认（草案）",
   none: "无决定",
 } as const;
+
+/** 证据类型：界面展示用，不直接露出内部字段名 */
+export const EVIDENCE_KIND_LABELS: Record<string, string> = {
+  confirmed_memory: "已确认记忆",
+  "ai-trace": "AI 参与记录",
+  ai_trace: "AI 参与记录",
+  code: "代码",
+  doc: "文档",
+  discussion: "讨论记录",
+  test: "测试记录",
+  design: "设计材料",
+};
 
 export const TASK_STATUS_LABELS = {
   completed: "任务已完成",
@@ -178,7 +190,12 @@ export function formatDecisionState(state: string): string {
   if (state === "pending_confirmation") {
     return DECISION_STATE_LABELS.pending_confirmation;
   }
+  if (state === "none") return DECISION_STATE_LABELS.none;
   return state;
+}
+
+export function formatEvidenceKind(kind: string): string {
+  return EVIDENCE_KIND_LABELS[kind] ?? "关联材料";
 }
 
 export function formatTaskStatus(status: string): string {

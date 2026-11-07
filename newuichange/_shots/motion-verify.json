@@ -1,0 +1,98 @@
+{
+  "base": "http://localhost:5173",
+  "at": "2026-11-06T13:56:29.012Z",
+  "checks": [
+    {
+      "name": "首次进入蓝图不自动选中",
+      "pass": true,
+      "detail": "{\"selected\":0,\"open\":false,\"overviewVisible\":true}"
+    },
+    {
+      "name": "首次打开节点详情",
+      "pass": true,
+      "detail": "{\"nodeOn\":true,\"dockOpen\":true,\"detailOpacity\":\"1\",\"related\":2,\"title\":\"需求分析\"}"
+    },
+    {
+      "name": "切节点复用面板外框",
+      "pass": true,
+      "detail": "{\"before\":{\"dockH\":\"220px\",\"detailH\":\"220px\",\"open\":true},\"dockH\":\"220px\",\"detailH\":\"220px\",\"sameDockH\":true,\"stillOpen\":true,\"swapClass\":true,\"title\":\"后端接口 · 订单创建服务 v0.4\",\"selected\":\"node-backend\"}"
+    },
+    {
+      "name": "切节点保持滚动位置",
+      "pass": true,
+      "detail": "{\"ok\":true,\"before\":0,\"after\":0}"
+    },
+    {
+      "name": "关闭详情面板",
+      "pass": true,
+      "detail": "{\"selected\":0,\"open\":false,\"overviewVisible\":true}"
+    },
+    {
+      "name": "连续快速点选终态稳定",
+      "pass": true,
+      "detail": "{\"selected\":\"node-integration\",\"open\":true,\"title\":\"交易流程联调\"}"
+    },
+    {
+      "name": "个人工作区迁入 StudentShell",
+      "pass": true,
+      "detail": "{\"shell\":true,\"kicker\":\"校园二手交易平台 · 个人工作区 · 负责人 Maya Chen · 当前视角 Alex Lee\",\"materials\":true,\"delivery\":true,\"back\":true,\"navWork\":true} · D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\coding-work-1536x1024.png"
+    },
+    {
+      "name": "返回蓝图恢复选中节点",
+      "pass": true,
+      "detail": "{\"selected\":\"node-backend\",\"open\":true,\"title\":\"后端接口 · 订单创建服务 v0.4\"}"
+    },
+    {
+      "name": "发布交付回执",
+      "pass": true,
+      "detail": "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\publish-before-1536x1024.png → D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\publish-after-1536x1024.png"
+    },
+    {
+      "name": "确认接收回执",
+      "pass": true,
+      "detail": "receive-after"
+    },
+    {
+      "name": "项目记忆页可打开",
+      "pass": true,
+      "detail": "seatflow"
+    },
+    {
+      "name": "教师指导台",
+      "pass": true,
+      "detail": "opened"
+    },
+    {
+      "name": "教师阶段汇报页",
+      "pass": true,
+      "detail": "opened"
+    },
+    {
+      "name": "教师核收页",
+      "pass": true,
+      "detail": "opened"
+    },
+    {
+      "name": "reduced-motion 打开直达",
+      "pass": true,
+      "detail": "{\"match\":true,\"open\":true,\"opacity\":\"1\",\"transform\":\"none\",\"transition\":\"0s\"}"
+    },
+    {
+      "name": "reduced-motion 关闭直达",
+      "pass": true,
+      "detail": "{\"open\":false,\"selected\":0,\"opacity\":\"0\",\"transition\":\"0s\"}"
+    }
+  ],
+  "blocked": [],
+  "openFrames": [
+    "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_detail-open-live\\00-before.png",
+    "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_detail-open-live\\01.png",
+    "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_detail-open-live\\02.png",
+    "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_detail-open-live\\03.png",
+    "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_detail-open-live\\04.png",
+    "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_detail-open-live\\05.png",
+    "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_detail-open-live\\06.png",
+    "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\_frames_detail-open-live\\99-after.png"
+  ],
+  "nodeWorkShot": "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\node-work-1536x1024.png"
+}

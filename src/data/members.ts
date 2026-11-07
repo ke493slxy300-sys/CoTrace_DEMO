@@ -1,8 +1,9 @@
-import type { DutyId, TeamMember } from "../types";
-import { campusMarketplaceDataset } from "../datasets";
+import type { DutyId, TeamMember } from '../types';
+import { campusMarketplaceDataset } from '../datasets';
+import { getActiveMemberId } from './demoRoleStore';
 
 const memberData = campusMarketplaceDataset.members;
-/** 体验角色固定为 Maya Chen */
+/** 注册锁定的体验负责人（Maya）；演示视角见 getActiveMemberId / getCurrentMember */
 export const EXPERIENCE_MEMBER_ID =
   campusMarketplaceDataset.experienceCollaborator.memberId;
 
@@ -18,6 +19,12 @@ export function getMemberById(id: string): TeamMember | undefined {
 
 export function getExperienceMember(): TeamMember {
   return teamMembers.find((member) => member.id === EXPERIENCE_MEMBER_ID)!;
+}
+
+/** 当前演示视角对应成员（Alex / Priya / 周老师） */
+export function getCurrentMember(): TeamMember {
+  const activeId = getActiveMemberId();
+  return getMemberById(activeId) ?? getExperienceMember();
 }
 
 /** 侧板可选成员：已启用且非锁定体验者 */

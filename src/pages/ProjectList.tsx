@@ -1,121 +1,216 @@
-import { BookOpen, FolderKanban, Plus } from 'lucide-react';
-import { AppHeader } from '../components/layout/AppHeader';
-import type { CourseProject } from '../types';
-import { COURSE_NAME } from '../data/project';
-import { getExperienceMember } from '../data/members';
+import { Plus } from 'lucide-react';
+import { getMemberById } from '../data/members';
+import { getSessionBlueprintNodes } from '../data/blueprintSession';
+import { COURSE_NAME, projectTemplate } from '../data/project';
 import { getSeatflowProjectCard } from '../data/projectLogs';
+import { useActiveMemberId } from '../data/demoRoleStore';
+import { campusMarketplaceDataset } from '../datasets';
+import {
+  StudentShell,
+  type StudentPlace,
+} from '../next/student/StudentShell';
+import type { CourseProject } from '../types';
+import './projectList.css';
 
 type ProjectListProps = {
   project: CourseProject | null;
+  onNavigate: (place: StudentPlace) => void;
   onOpenRegister: () => void;
   onOpenProject: () => void;
   onOpenProjectLog: (projectId: string) => void;
+  onStartHandoffDemo: () => void;
+  extraProject?: { id: string; name: string; statuses: string[] } | null;
+  onOpenExtraProject?: () => void;
 };
 
+const CAMPUS_MEMBER_IDS = [
+  'member-maya',
+  'member-alex',
+  'member-priya',
+  'member-jordan',
+];
+
+function faceMark(name: string): string {
+  return name.trim().slice(0, 1);
+}
+
+/** 项目整体进度：汇总蓝图节点，不用交付草稿或单个节点。 */
+function projectProgressLabel(
+  statuses: readonly string[],
+): '待开始' | '进行中' | '已完成' {
+  if (statuses.length === 0 || statuses.every((status) => status === 'todo')) {
+    return '待开始';
+  }
+  if (statuses.every((status) => status === 'done' || status === 'accepted')) {
+    return '已完成';
+  }
+  return '进行中';
+}
+
 export function ProjectList({
-  project,
+  onNavigate,
   onOpenRegister,
-  onOpenProject,
   onOpenProjectLog,
+  onStartHandoffDemo,
+  extraProject = null,
+  onOpenExtraProject,
 }: ProjectListProps) {
-  const me = getExperienceMember();
   const seatflow = getSeatflowProjectCard();
+  const me = getMemberById(useActiveMemberId());
+
+  const campusName = projectTemplate.name;
+  const campusMembers = CAMPUS_MEMBER_IDS.map((id) => getMemberById(id)).filter(
+    (member) => member != null,
+  );
+  const progressNodes =
+    getSessionBlueprintNodes().length > 0
+      ? getSessionBlueprintNodes()
+      : campusMarketplaceDataset.blueprintNodes;
+  const campusStatus = projectProgressLabel(
+    progressNodes.map((node) => node.status),
+  );
+
+  const openBlueprint = () => {
+    onStartHandoffDemo();
+  };
+
+  const openSeatflow = () => {
+    onOpenProjectLog(seatflow.id);
+  };
 
   return (
-    <div className="app-shell">
-      <AppHeader />
-      <div className="page-title-bar">
-        <div>
-          <h1>项目列表</h1>
-          <p className="subtitle">
-            {COURSE_NAME} · 体验角色 {me.name}（{me.roleLabel}）
-          </p>
+    <StudentShell place="projects" onNavigate={onNavigate}>
+      <main className="pl-main" data-home-projects="true">
+        <p className="pl-kicker">{COURSE_NAME}</p>
+        <div className="pl-head">
+          <h1>所有项目</h1>
+          <button type="button" className="pl-primary" onClick={onOpenRegister}>
+            <Plus size={18} strokeWidth={1.75} aria-hidden="true" />
+            新建项目
+          </button>
         </div>
-        <button type="button" className="btn btn-primary" onClick={onOpenRegister}>
-          <Plus size={16} strokeWidth={1.5} aria-hidden="true" />
-          新建项目
-        </button>
-      </div>
 
-      <div className="project-list-page">
-        <div className="project-list-grid">
-          {project?.created ? (
+        <div className="pl-grid">
+          <button
+            type="button"
+            className="pl-card"
+            onClick={openBlueprint}
+            aria-label={`打开项目 ${campusName}`}
+          >
+            <div className="pl-shot pl-shot-campus" aria-hidden="true">
+              <span />
+              <i />
+              <b />
+            </div>
+            <h2 className="pl-name">{campusName}</h2>
+            <p className="pl-sub" aria-hidden="true" />
+            <p
+              className={`pl-status${
+                campusStatus === '已完成'
+                  ? ' is-done'
+                  : campusStatus === '进行中'
+                    ? ' is-live'
+                    : ''
+              }`}
+            >
+              <i />
+              {campusStatus}
+            </p>
+            <div className="pl-foot">
+              <span className="pl-members">
+                <span className="pl-faces" aria-hidden="true">
+                  {campusMembers.slice(0, 4).map((member) => (
+                    <span key={member.id} className="pl-face">
+                      {member.initials.slice(0, 1)}
+                    </span>
+                  ))}
+                </span>
+                <span>
+                  {campusMembers
+                    .slice(0, 3)
+                    .map((member) => member.name)
+                    .join('、')}
+                  {campusMembers.length > 3
+                    ? ` 等 ${campusMembers.length} 人`
+                    : ''}
+                </span>
+              </span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            className="pl-card"
+            onClick={openSeatflow}
+            aria-label={`打开项目 ${seatflow.name}`}
+          >
+            <div className="pl-shot pl-shot-seat" aria-hidden="true">
+              <span />
+              <i />
+              <b />
+            </div>
+            <h2 className="pl-name">{seatflow.name}</h2>
+            <p className="pl-sub">{seatflow.subtitle}</p>
+            <p className="pl-status is-done">
+              <i />
+              {seatflow.statusLabel}
+            </p>
+            <div className="pl-foot">
+              <span className="pl-members">
+                <span className="pl-faces" aria-hidden="true">
+                  {seatflow.members.slice(0, 4).map((member) => (
+                    <span key={member.memberId} className="pl-face">
+                      {faceMark(member.displayName)}
+                    </span>
+                  ))}
+                </span>
+                <span>
+                  {seatflow.members
+                    .slice(0, 2)
+                    .map((member) => member.displayName)
+                    .join('、')}
+                  {seatflow.memberCount > 2
+                    ? ` 等 ${seatflow.memberCount} 人`
+                    : ''}
+                </span>
+              </span>
+            </div>
+          </button>
+
+          {extraProject ? (
             <button
               type="button"
-              className="project-card"
-              onClick={onOpenProject}
+              className="pl-card"
+              onClick={onOpenExtraProject}
+              aria-label={`打开项目 ${extraProject.name}`}
             >
-              <div className="project-card-icon" aria-hidden="true">
-                <FolderKanban size={20} strokeWidth={1.5} />
+              <div className="pl-shot pl-shot-seat" aria-hidden="true">
+                <span />
+                <i />
+                <b />
               </div>
-              <div className="project-card-body">
-                <h2>{project.name}</h2>
-                <p>{project.goal}</p>
-                <div className="project-card-meta">
-                  <span>{project.courseName}</span>
-                  <span>已生成任务蓝图</span>
-                </div>
-              </div>
-            </button>
-          ) : (
-            <div className="project-list-empty is-inline">
-              <FolderKanban size={24} strokeWidth={1.5} aria-hidden="true" />
-              <strong>还没有进行中的课程项目</strong>
-              <p>
-                点击「新建项目」创建《校园二手交易平台》并生成任务蓝图。下方可查看虚构历史项目日志。
+              <h2 className="pl-name">{extraProject.name}</h2>
+              <p className="pl-sub">课程流程生成的初始项目</p>
+              <p className="pl-status">
+                <i />
+                {projectProgressLabel(extraProject.statuses)}
               </p>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={onOpenRegister}
-              >
-                新建项目
-              </button>
-            </div>
-          )}
-
-          <article className="project-card is-completed is-history">
-            <div className="project-card-icon is-history" aria-hidden="true">
-              <BookOpen size={20} strokeWidth={1.5} />
-            </div>
-            <div className="project-card-body">
-              <div className="project-card-title-row">
-                <h2>
-                  {seatflow.name}
-                  <span className="project-card-subtitle">
-                    {seatflow.subtitle}
-                  </span>
-                </h2>
-                <span className="status-chip status-node-done">
-                  {seatflow.statusLabel}
+              <div className="pl-foot">
+                <span className="pl-members">
+                  <span>新项目 · 独立于校园二手交易平台</span>
                 </span>
               </div>
-              <p>{seatflow.summary}</p>
-              <p className="project-card-demo-notice">{seatflow.demoNotice}</p>
-              <div className="project-card-meta">
-                <span>{seatflow.dateRange}</span>
-                <span>参与 {seatflow.memberCount} 人</span>
-                <span>决策 {seatflow.logStats.decisionCount}</span>
-                <span>项目经验 {seatflow.logStats.experienceCount}</span>
-              </div>
-              <div className="project-card-actions">
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => onOpenProjectLog(seatflow.id)}
-                >
-                  {seatflow.primaryAction.label}
-                </button>
-              </div>
-            </div>
-          </article>
+            </button>
+          ) : null}
         </div>
-      </div>
 
-      <footer className="app-footer">
-        <span>会话内演示数据 · SeatFlow 为虚构历史项目</span>
-        <span>当前视角：{me.name}</span>
-      </footer>
-    </div>
+        <div className="pl-user" aria-label="当前用户">
+          <span className="pl-user-face" aria-hidden="true">
+            {me?.initials?.slice(0, 1) ?? 'U'}
+          </span>
+          <span>{me?.name ?? '当前用户'}</span>
+        </div>
+      </main>
+    </StudentShell>
   );
 }

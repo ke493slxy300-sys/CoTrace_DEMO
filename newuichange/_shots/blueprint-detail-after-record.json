@@ -1,0 +1,16 @@
+{
+  "tag": "after",
+  "webm": [
+    "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\blueprint-detail-after-open.webm",
+    "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\blueprint-detail-after-switch.webm",
+    "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\blueprint-detail-after-close.webm",
+    "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\blueprint-detail-after-rapid.webm"
+  ],
+  "avi": [
+    "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\blueprint-detail-after-open.avi",
+    "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\blueprint-detail-after-switch.avi",
+    "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\blueprint-detail-after-close.avi",
+    "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\blueprint-detail-after-rapid.avi"
+  ],
+  "ffmpeg": "D:\\JianyingPro\\10.7.0.14095\\ffmpeg.exe"
+}

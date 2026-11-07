@@ -7,6 +7,8 @@ type DocumentArtifactViewerProps = {
   onSelectDoc: (docId: string) => void;
   /** 已由外层 editor-panel 包裹时使用，避免双重 panel */
   embedded?: boolean;
+  /** 左侧目录已承担格式切换时，隐藏正文区重复 tabs */
+  hideFormatTabs?: boolean;
 };
 
 export function DocumentArtifactViewer({
@@ -15,6 +17,7 @@ export function DocumentArtifactViewer({
   markdownContent,
   onSelectDoc,
   embedded = false,
+  hideFormatTabs = false,
 }: DocumentArtifactViewerProps) {
   const active =
     documents.find((doc) => doc.id === activeDocId) ?? documents[0] ?? null;
@@ -26,22 +29,24 @@ export function DocumentArtifactViewer({
         <span className="panel-meta">只读</span>
       </div>
       <div className="panel-body document-artifact-body">
-        <div className="document-artifact-tabs" role="tablist">
-          {documents.map((doc) => (
-            <button
-              key={doc.id}
-              type="button"
-              role="tab"
-              aria-selected={doc.id === active?.id}
-              className={`document-artifact-tab${
-                doc.id === active?.id ? " is-active" : ""
-              }`}
-              onClick={() => onSelectDoc(doc.id)}
-            >
-              {doc.label}
-            </button>
-          ))}
-        </div>
+        {hideFormatTabs ? null : (
+          <div className="document-artifact-tabs" role="tablist">
+            {documents.map((doc) => (
+              <button
+                key={doc.id}
+                type="button"
+                role="tab"
+                aria-selected={doc.id === active?.id}
+                className={`document-artifact-tab${
+                  doc.id === active?.id ? " is-active" : ""
+                }`}
+                onClick={() => onSelectDoc(doc.id)}
+              >
+                {doc.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {active?.mimeType === "application/pdf" && active.href ? (
           <iframe

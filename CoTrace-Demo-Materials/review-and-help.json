@@ -1,0 +1,8 @@
+{
+  "kind": "demo_action_inputs",
+  "roleActions": [
+    {"id":"review-01","actor":"Priya","kind":"request_changes","anchor":"api-v04","text":"请在交付说明中补充 ITEM_NOT_AVAILABLE 的预期前端提示，方便我按同一口径联调。"},
+    {"id":"help-01","actor":"Priya","kind":"submit_help","anchors":["api-v04","run-v04"],"text":"我用一件已售出的商品发起购买，后端返回 409 / ITEM_NOT_AVAILABLE，页面仍提示「商品已售出」。接口说明预期「暂时无法购买」。我该先核对哪里？","observationKind":"simulated_student_report"},
+    {"id":"feedback-01","actor":"周老师","kind":"submit_feedback","target":"help-01","text":"先确认前端连接的是 v0.4 接口，再检查错误码到提示文案的映射。请补一条实际界面验证记录，并注明版本。"}
+  ]
+}

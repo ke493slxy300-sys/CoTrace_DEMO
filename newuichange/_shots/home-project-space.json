@@ -1,0 +1,49 @@
+{
+  "base": "http://localhost:5173",
+  "at": "2026-11-06T15:11:33.298Z",
+  "checks": [
+    {
+      "name": "启动落点为项目空间蓝图",
+      "pass": true,
+      "detail": "{\"hash\":\"#/next/blueprint\",\"hasBlueprint\":true,\"projectSpace\":true,\"homeShell\":false,\"side\":true,\"projectName\":\"校园二手交易平台\",\"backAll\":true,\"navLabels\":[\"蓝图\",\"工作\",\"记录\",\"材料\"]}"
+    },
+    {
+      "name": "进入所有项目首页且无项目内侧栏",
+      "pass": true,
+      "detail": "{\"hash\":\"#/next/projects\",\"title\":\"所有项目\",\"homeShell\":true,\"projectSpace\":false,\"side\":false,\"cards\":2,\"newProject\":true}"
+    },
+    {
+      "name": "刷新仍在首页",
+      "pass": true,
+      "detail": "{\"hash\":\"#/next/projects\",\"homeShell\":true,\"side\":false,\"title\":\"所有项目\"}"
+    },
+    {
+      "name": "选择项目进入项目空间蓝图",
+      "pass": true,
+      "detail": "{\"hash\":\"#/next/blueprint\",\"hasBlueprint\":true,\"projectSpace\":true,\"homeShell\":false,\"side\":true,\"projectName\":\"校园二手交易平台\",\"backAll\":\"所有项目\",\"blueprintOn\":true,\"blueprintLabel\":\"蓝图\"}"
+    },
+    {
+      "name": "刷新蓝图仍在项目空间",
+      "pass": true,
+      "detail": "{\"hash\":\"#/next/blueprint\",\"projectSpace\":true,\"hasBlueprint\":true,\"projectName\":\"校园二手交易平台\"}"
+    },
+    {
+      "name": "返回所有项目",
+      "pass": true,
+      "detail": "{\"hash\":\"#/next/projects\",\"homeShell\":true,\"side\":false}"
+    },
+    {
+      "name": "教师打开学生首页 hash 落到指导台",
+      "pass": true,
+      "detail": "{\"hash\":\"#/next/guide\",\"guide\":true}"
+    }
+  ],
+  "shots": {
+    "home-layout-project-space": "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\home-layout-project-space-1536x1024.png",
+    "home-layout-projects": "D:\\CoTrace\\cotrace_demo_v1.0\\newuichange\\_shots\\home-layout-projects-1536x1024.png"
+  },
+  "untested": [
+    "未手测新建项目完整流程与 SeatFlow 记录页细节",
+    "未测发布/接收完整交接路径（本轮范围外）"
+  ]
+}

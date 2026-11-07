@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"0199a213-81c0-7800-8aa1-bbab2a035a53"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_1","type":"agent_message","text":"根据你的记录，v0.4 增加了可售检查，售出商品返回 409 / ITEM_NOT_AVAILABLE。可以对照 createOrder 和实际测试运行记录确认服务层行为。前端文案映射仍待联调，不能视为已验证。"}}
+{"type":"turn.completed","usage":{"input_tokens":180,"cached_input_tokens":0,"output_tokens":85,"reasoning_output_tokens":0}}

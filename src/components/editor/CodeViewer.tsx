@@ -6,7 +6,7 @@ import {
   type MouseEvent,
   type ReactNode,
 } from 'react';
-import { FileCode2, PencilLine } from 'lucide-react';
+import { FileCode2 } from 'lucide-react';
 import type { CodeFile, LineSelection } from '../../types';
 import { getDisplayLines, normalizeSelection } from '../../utils/codeLines';
 import { renderHighlightedLine } from '../../utils/highlightCode';
@@ -24,7 +24,7 @@ type CodeViewerProps = {
   highlightSelection?: LineSelection | null;
   scrollRequest?: CodeScrollRequest | null;
   toolbar?: ReactNode;
-  /** 队友节点：语法高亮 + 文件名后的只读标记与「发起修改」占位 */
+  /** 队友节点：语法高亮 + 文件名后的只读标记 */
   ideChrome?: boolean;
   onSelectionChange: (selection: LineSelection | null) => void;
   onUserSelect?: () => void;
@@ -127,15 +127,6 @@ export function CodeViewer({
         {ideChrome ? (
           <div className="code-file-status">
             <span className="badge">只读</span>
-            <button
-              type="button"
-              className="btn btn-ghost btn-compact"
-              title="发起修改（占位，暂无功能）"
-              onClick={(event) => event.preventDefault()}
-            >
-              <PencilLine size={14} strokeWidth={1.5} aria-hidden="true" />
-              发起修改
-            </button>
           </div>
         ) : (
           <span className="panel-meta">{file.language}</span>

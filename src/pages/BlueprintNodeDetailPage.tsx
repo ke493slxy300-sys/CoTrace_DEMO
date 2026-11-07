@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Code2, FileCode2, FileText } from "lucide-react";
+import { Download, FileCode2, FileText } from "lucide-react";
 import {
   AnnotationComposeModal,
   type AnnotationComposeDraft,
@@ -16,15 +16,19 @@ import {
 } from "../components/discussion/DiscussionModal";
 import { AnnotationToolbar } from "../components/editor/AnnotationToolbar";
 import { CodeViewer } from "../components/editor/CodeViewer";
-import { AppHeader } from "../components/layout/AppHeader";
-import { PageTitleBar } from "../components/layout/PageTitleBar";
 import { Toast } from "../components/common/Toast";
-import { BLUEPRINT_STATUS_LABELS } from "../data/blueprint";
+import { CollapsibleResizableColumns } from "../components/layout/CollapsibleResizableColumns";
+import {
+  StudentShell,
+  type StudentPlace,
+} from "../next/student/StudentShell";
+import "../next/student/nodeWork.css";
 import { getSubmission } from "../data/demoSubmission";
 import { getBlueprintNodeDetailData } from "../data/nodeCollaboration";
 import { createAnnotation } from "../data/nodeCollaborationStore";
-import { EXPERIENCE_MEMBER_ID, getExperienceMember } from "../data/members";
-import { getOwnerWorkspaceCtaLabel, isNodeOwner } from "../data/workspaceEntry";
+import { EXPERIENCE_MEMBER_ID, getCurrentMember } from "../data/members";
+import { useActiveMemberId } from "../data/demoRoleStore";
+import { isNodeOwner } from "../data/workspaceEntry";
 import {
   backendBaselineSnapshot,
   findCodeFileByPath,
@@ -39,10 +43,7 @@ import {
   getTeammateDefaultFileId,
   getTeammateResearchMarkdown,
 } from "../datasets/built-in/campus-marketplace/content/teammatePack";
-import {
-  DISCUSSION_TYPE_LABELS,
-  formatRelativeTime,
-} from "../utils/discussionLabels";
+import { DISCUSSION_TYPE_LABELS } from "../utils/discussionLabels";
 import type {
   BlueprintNode,
   CourseProject,
@@ -55,6 +56,7 @@ type BlueprintNodeDetailPageProps = {
   node: BlueprintNode;
   nodes: BlueprintNode[];
   onBack: () => void;
+  onNavigate: (place: StudentPlace) => void;
   /** 负责人进入个人工作区 */
   onContinueWork?: () => void;
 };
@@ -62,17 +64,17 @@ type BlueprintNodeDetailPageProps = {
 export function BlueprintNodeDetailPage({
   project,
   node,
-  onBack,
-  onContinueWork,
+  onNavigate,
+  onContinueWork: _onContinueWork,
 }: BlueprintNodeDetailPageProps) {
-  const me = getExperienceMember();
+  const me = getCurrentMember();
+  const activeMemberId = useActiveMemberId();
   const submissionKey = getSubmission(node.id, project.id)?.id ?? "none";
   const baseData = useMemo(
     () => getBlueprintNodeDetailData(node, project),
     [node, project, submissionKey],
   );
-  const isOwner = isNodeOwner(node, me.id);
-  const ownerCtaLabel = getOwnerWorkspaceCtaLabel(node.id, project.id);
+  const isOwner = isNodeOwner(node, activeMemberId);
   const hasPublicCode =
     baseData.primaryKind === "code" && baseData.viewFiles.length > 0;
   const hasPublicDocs =
@@ -231,265 +233,262 @@ export function BlueprintNodeDetailPage({
   const isDocumentPrimary = baseData.primaryKind === "document";
 
   return (
-    <div className="app-shell">
-      <AppHeader />
-      <PageTitleBar
-        title={baseData.title}
-        subtitle={`${project.name} · 节点协作记录（只读）`}
-        leading={
-          <button type="button" className="btn btn-ghost" onClick={onBack}>
-            <ArrowLeft size={16} strokeWidth={1.5} aria-hidden="true" />
-            返回任务蓝图
+    <StudentShell
+      place="work"
+      projectName={project.name}
+      onNavigate={onNavigate}
+    >
+    <div className="nw">
+      <header className="nw-head">
+        <div>
+          <p className="nw-kicker">{project.name}</p>
+          <h1>{baseData.title}</h1>
+        </div>
+        <div className="nw-actions">
+          <button
+            type="button"
+            className="nw-ghost"
+            disabled={
+              !(
+                (hasPublicCode && activeFile) ||
+                (hasPublicDocs && baseData.documents.length > 0)
+              )
+            }
+            title={
+              hasPublicCode && activeFile
+                ? `下载 ${activeFile.name}`
+                : hasPublicDocs
+                  ? "下载当前文档"
+                  : "暂无可下载内容"
+            }
+            onClick={() => {
+              if (hasPublicCode && activeFile) {
+                const blob = new Blob([activeFile.content], {
+                  type: "text/plain;charset=utf-8",
+                });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download =
+                  activeFile.name.split("/").pop() || activeFile.name;
+                link.click();
+                URL.revokeObjectURL(url);
+                return;
+              }
+              if (hasPublicDocs) {
+                const doc =
+                  baseData.documents.find((item) => item.id === activeDocId) ??
+                  baseData.documents[0];
+                if (!doc) return;
+                const body =
+                  doc.id.includes("research") ||
+                  doc.mimeType === "text/markdown" ||
+                  Boolean(doc.markdownKey)
+                    ? getTeammateResearchMarkdown()
+                    : `${doc.label}\n`;
+                const blob = new Blob([body], {
+                  type: "text/plain;charset=utf-8",
+                });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = `${doc.label}.md`;
+                link.click();
+                URL.revokeObjectURL(url);
+              }
+            }}
+          >
+            <Download size={16} strokeWidth={1.5} aria-hidden="true" />
+            下载文件
           </button>
-        }
-        actions={
-          isOwner && onContinueWork ? (
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={onContinueWork}
-            >
-              <Code2 size={16} strokeWidth={1.5} aria-hidden="true" />
-              {ownerCtaLabel}
-            </button>
-          ) : null
-        }
-      />
-
-      <div className="node-detail-summary is-compact" aria-label="节点摘要">
-        <div className="node-detail-summary-title">
-          <h2>{baseData.title}</h2>
-          <span className={`status-chip status-node-${baseData.status}`}>
-            {BLUEPRINT_STATUS_LABELS[baseData.status]}
-          </span>
         </div>
-        <div className="node-detail-summary-meta">
-          <span>
-            负责人 {isUnassigned ? "暂未分配" : baseData.ownerLabel}
-            {isOwner ? " · 你" : ""}
-          </span>
-          <span>更新 {baseData.updatedAt}</span>
-        </div>
-        {baseData.fromDemoSubmission ? (
-          <div className="node-detail-summary-subs">
-            {baseData.submissions.map((item) => (
-              <span key={item.id} className="node-detail-sub-chip">
-                Demo 提交 · {item.title} · {item.author} ·{" "}
-                {formatRelativeTime(item.createdAt)}
-              </span>
-            ))}
-          </div>
-        ) : node.id === BACKEND_APP_NODE_ID ? (
-          <div className="node-detail-summary-subs">
-            <span className="node-detail-sub-chip is-muted">
-              尚无公开成果 · 提交后展示工作区内容
-            </span>
-          </div>
-        ) : baseData.usesTeammatePack ? (
-          <div className="node-detail-summary-subs">
-            <span className="node-detail-sub-chip is-muted">
-              节点演示内容 · 非提交状态
-            </span>
-          </div>
-        ) : baseData.submissions.length > 0 ? (
-          <div className="node-detail-summary-subs">
-            {baseData.submissions.map((item) => (
-              <span key={item.id} className="node-detail-sub-chip">
-                提交 · {item.title} · {item.author} ·{" "}
-                {formatRelativeTime(item.createdAt)}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <div className="node-detail-summary-subs">
-            <span className="node-detail-sub-chip is-muted">
-              {isUnassigned ? "暂未分配 · 尚无公开成果" : "暂无公开成果"}
-            </span>
-          </div>
-        )}
-      </div>
+      </header>
 
-      <main className="workbench node-collab-layout" aria-label="节点协作内容">
-        <aside className="panel sidebar-panel" aria-label="产出目录">
-          <div className="panel-header">
-            <h2>{isDocumentPrimary ? "文档库" : "代码仓"}</h2>
-            <span className="panel-meta">只读</span>
-          </div>
-          <div className="panel-body node-file-list">
-            {isDocumentPrimary ? (
-              baseData.documents.length > 0 ? (
+      <CollapsibleResizableColumns
+        storageKey="cotrace-workbench-node-detail"
+        className="workbench node-collab-layout"
+        ariaLabel="节点协作内容"
+        leftRailLabel={isDocumentPrimary ? "文档库" : "代码仓"}
+        rightRailLabel="AI 溯源"
+        left={
+          <aside className="panel sidebar-panel" aria-label="产出目录">
+            <div className="panel-header">
+              <h2>{isDocumentPrimary ? "文档库" : "代码仓"}</h2>
+              <span className="panel-meta">只读</span>
+            </div>
+            <div className="panel-body node-file-list">
+              {isDocumentPrimary ? (
+                baseData.documents.length > 0 ? (
+                  <ul>
+                    {baseData.documents.map((doc) => (
+                      <li key={doc.id}>
+                        <button
+                          type="button"
+                          className={`node-file-item${
+                            doc.id === activeDocId ? " is-active" : ""
+                          }`}
+                          onClick={() => setActiveDocId(doc.id)}
+                        >
+                          <FileText
+                            size={14}
+                            strokeWidth={1.5}
+                            aria-hidden="true"
+                          />
+                          {doc.label}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="blueprint-detail-note">暂无文档。</p>
+                )
+              ) : baseData.viewFiles.length > 0 ? (
                 <ul>
-                  {baseData.documents.map((doc) => (
-                    <li key={doc.id}>
+                  {baseData.viewFiles.map((file) => (
+                    <li key={file.id}>
                       <button
                         type="button"
                         className={`node-file-item${
-                          doc.id === activeDocId ? " is-active" : ""
+                          file.id === activeFileId ? " is-active" : ""
                         }`}
-                        onClick={() => setActiveDocId(doc.id)}
+                        onClick={() => {
+                          setActiveFileId(file.id);
+                          setSelection(null);
+                        }}
                       >
-                        <FileText
+                        <FileCode2
                           size={14}
                           strokeWidth={1.5}
                           aria-hidden="true"
                         />
-                        {doc.label}
+                        {file.name}
                       </button>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="blueprint-detail-note">暂无文档。</p>
-              )
-            ) : baseData.viewFiles.length > 0 ? (
-              <ul>
-                {baseData.viewFiles.map((file) => (
-                  <li key={file.id}>
-                    <button
-                      type="button"
-                      className={`node-file-item${
-                        file.id === activeFileId ? " is-active" : ""
-                      }`}
-                      onClick={() => {
-                        setActiveFileId(file.id);
-                        setSelection(null);
-                      }}
-                    >
-                      <FileCode2
-                        size={14}
-                        strokeWidth={1.5}
-                        aria-hidden="true"
-                      />
-                      {file.name}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="blueprint-detail-note">
-                {isUnassigned
-                  ? "暂未分配负责人，尚无公开成果。"
-                  : "尚无公开成果。可在右侧查看项目标注与团队讨论。"}
-              </p>
-            )}
-          </div>
-        </aside>
-
-        {/* LAYOUT-02：中间 = 只读代码/文档详情（必须包在 editor-panel 内，否则会打散三栏网格） */}
-        <section className="panel editor-panel" aria-label="代码或文档详细展示">
-          {isDocumentPrimary && hasPublicDocs ? (
-            <DocumentArtifactViewer
-              documents={baseData.documents}
-              activeDocId={activeDocId}
-              markdownContent={getTeammateResearchMarkdown()}
-              onSelectDoc={setActiveDocId}
-              embedded
-            />
-          ) : activeFile && hasPublicCode ? (
-            <CodeViewer
-              file={activeFile}
-              selection={selection}
-              ideChrome
-              toolbar={
-                selection ? (
-                  <AnnotationToolbar
-                    fileName={activeFile.name}
-                    selection={selection}
-                    onAction={setCodeDiscussType}
-                  />
-                ) : null
-              }
-              onSelectionChange={setSelection}
-            />
-          ) : (
-            <>
-              <div className="panel-header">
-                <h2>{isDocumentPrimary ? "文档详细展示" : "代码详细展示"}</h2>
-                <span className="panel-meta">只读</span>
-              </div>
-              <div className="panel-body coding-editor-empty">
-                <strong>尚无公开成果</strong>
-                <p>
+                <p className="blueprint-detail-note">
                   {isUnassigned
-                    ? "该节点暂未分配负责人，不展示伪造代码或文档。"
-                    : isOwner
-                      ? "个人工作区中的未提交内容不会出现在此。可通过页头进入个人工作区。"
-                      : "负责人尚未确认提交团队可见的代码或文档。"}
+                    ? "暂未分配负责人，尚无公开成果。"
+                    : "尚无公开成果。可在右侧查看项目标注与团队讨论。"}
                 </p>
-                {baseData.description ? (
-                  <p className="blueprint-detail-note">
-                    {baseData.description}
+              )}
+            </div>
+          </aside>
+        }
+        center={
+          <section className="panel editor-panel" aria-label="代码或文档详细展示">
+            {isDocumentPrimary && hasPublicDocs ? (
+              <DocumentArtifactViewer
+                documents={baseData.documents}
+                activeDocId={activeDocId}
+                markdownContent={getTeammateResearchMarkdown()}
+                onSelectDoc={setActiveDocId}
+                embedded
+                hideFormatTabs
+              />
+            ) : activeFile && hasPublicCode ? (
+              <CodeViewer
+                file={activeFile}
+                selection={selection}
+                ideChrome
+                toolbar={
+                  selection ? (
+                    <AnnotationToolbar
+                      fileName={activeFile.name}
+                      selection={selection}
+                      onAction={setCodeDiscussType}
+                    />
+                  ) : null
+                }
+                onSelectionChange={setSelection}
+              />
+            ) : (
+              <>
+                <div className="panel-header">
+                  <h2>{isDocumentPrimary ? "文档详细展示" : "代码详细展示"}</h2>
+                  <span className="panel-meta">只读</span>
+                </div>
+                <div className="panel-body coding-editor-empty">
+                  <strong>尚无公开成果</strong>
+                  <p>
+                    {isUnassigned
+                      ? "该节点暂未分配负责人，不展示伪造代码或文档。"
+                      : isOwner
+                        ? "个人工作区中的未提交内容不会出现在此。可通过页头进入个人工作区。"
+                        : "负责人尚未确认提交团队可见的代码或文档。"}
                   </p>
-                ) : null}
-              </div>
-            </>
-          )}
-        </section>
-
-        {/* LAYOUT-02：右侧 = AI 溯源（上）+ 项目标注（下） */}
-        <aside className="panel right-panel" aria-label="AI 溯源与项目标注">
-          <div className="right-split">
-            <section className="right-section" aria-label="AI 溯源">
-              <div className="panel-header">
-                <h2>AI 溯源</h2>
-                <span className="badge">
-                  {baseData.fromDemoSubmission
-                    ? "本次公开溯源"
-                    : baseData.usesTeammatePack
-                      ? "队友选取片段"
-                      : "模拟内容"}
-                </span>
-              </div>
-              <div className="panel-body discussion-panel-body">
-                {linkedDocHint ? (
-                  <p className="node-trace-doc-hint">{linkedDocHint}</p>
-                ) : null}
-                {!hasPublicTraces ? (
-                  <div className="coding-editor-empty is-compact">
-                    <strong>负责人尚未公开溯源记录</strong>
-                    <p>
-                      AI 溯源由负责人选择协作片段，项目理解 Agent
-                      按任务主题整理后才会出现在此。
+                  {baseData.description ? (
+                    <p className="blueprint-detail-note">
+                      {baseData.description}
                     </p>
-                  </div>
-                ) : baseData.usesTeammatePack && baseData.teammateTraceMeta ? (
-                  <MemberSelectedTraceCards
-                    cards={baseData.teammateTraceCards}
-                    sourcePolicy={baseData.teammateTraceMeta.sourcePolicy}
-                    organizedBy={baseData.teammateTraceMeta.organizedBy}
-                    memberLabel={baseData.ownerLabel}
-                    activeCardId={activeCardId}
-                    onSelectCard={setActiveCardId}
-                    onOpenArtifact={openTeammateArtifact}
-                    onAnnotate={setAnnotateCardId}
+                  ) : null}
+                </div>
+              </>
+            )}
+          </section>
+        }
+        right={
+          <aside className="panel right-panel" aria-label="AI 溯源与项目标注">
+            <div className="right-split">
+              <section className="right-section" aria-label="AI 溯源">
+                <div className="panel-header">
+                  <h2>AI 溯源</h2>
+                  {baseData.fromDemoSubmission ? (
+                    <span className="badge">本次公开溯源</span>
+                  ) : !baseData.usesTeammatePack ? (
+                    <span className="badge">模拟内容</span>
+                  ) : null}
+                </div>
+                <div className="panel-body discussion-panel-body">
+                  {linkedDocHint ? (
+                    <p className="node-trace-doc-hint">{linkedDocHint}</p>
+                  ) : null}
+                  {!hasPublicTraces ? (
+                    <div className="coding-editor-empty is-compact">
+                      <strong>负责人尚未公开溯源记录</strong>
+                      <p>
+                        AI 溯源由负责人选择协作片段，项目理解 Agent
+                        按任务主题整理后才会出现在此。
+                      </p>
+                    </div>
+                  ) : baseData.usesTeammatePack ? (
+                    <MemberSelectedTraceCards
+                      cards={baseData.teammateTraceCards}
+                      memberLabel={baseData.ownerLabel}
+                      activeCardId={activeCardId}
+                      onSelectCard={setActiveCardId}
+                      onOpenArtifact={openTeammateArtifact}
+                      onAnnotate={setAnnotateCardId}
+                    />
+                  ) : (
+                    <AiTraceThemeCards
+                      cards={baseData.aiTraceCards}
+                      activeCardId={activeCardId}
+                      onSelectCard={setActiveCardId}
+                      onAnnotate={setAnnotateCardId}
+                    />
+                  )}
+                </div>
+              </section>
+              <section className="right-section" aria-label="项目标注">
+                <div className="panel-header">
+                  <h2>项目标注</h2>
+                </div>
+                <div className="panel-body discussion-panel-body">
+                  <ProjectAnnotationPanel
+                    projectId={project.id}
+                    nodeId={node.id}
+                    currentUserId={EXPERIENCE_MEMBER_ID}
+                    onOpenDiscussion={setOpenDiscussionId}
+                    onOpenAnnotation={setOpenAnnotationId}
                   />
-                ) : (
-                  <AiTraceThemeCards
-                    cards={baseData.aiTraceCards}
-                    activeCardId={activeCardId}
-                    onSelectCard={setActiveCardId}
-                    onAnnotate={setAnnotateCardId}
-                  />
-                )}
-              </div>
-            </section>
-            <section className="right-section" aria-label="项目标注">
-              <div className="panel-header">
-                <h2>项目标注</h2>
-              </div>
-              <div className="panel-body discussion-panel-body">
-                <ProjectAnnotationPanel
-                  projectId={project.id}
-                  nodeId={node.id}
-                  currentUserId={EXPERIENCE_MEMBER_ID}
-                  onOpenDiscussion={setOpenDiscussionId}
-                  onOpenAnnotation={setOpenAnnotationId}
-                />
-              </div>
-            </section>
-          </div>
-        </aside>
-      </main>
+                </div>
+              </section>
+            </div>
+          </aside>
+        }
+      />
 
       <footer className="app-footer">
         <span>队友视角 · 查看协作与结果 · 不含编程 Agent</span>
@@ -539,6 +538,7 @@ export function BlueprintNodeDetailPage({
 
       <Toast message={toast} />
     </div>
+    </StudentShell>
   );
 }
 

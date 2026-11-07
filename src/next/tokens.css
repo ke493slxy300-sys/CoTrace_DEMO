@@ -1,0 +1,113 @@
+/**
+ * 新版 CoTrace 共用视觉 token。
+ * 来源：原型图与设计规范 PDF「文字与信息层级 / 布局间距 / 控件样例」
+ * 学生端与教师端布局密度可不同，字号与色板从此处引用。
+ */
+
+:root {
+  /* 色板 · 学生端主规范 */
+  --ct-brand: #00856e;
+  --ct-brand-deep: #006b50;
+  --ct-brand-soft: #d9f4ee;
+  --ct-ink: #080d0e;
+  --ct-text: #101514;
+  --ct-text-secondary: #344054;
+  --ct-text-tertiary: #667085;
+  --ct-surface: #ffffff;
+  --ct-subtle: #f5f7f8;
+  --ct-border: #cdd6da;
+  --ct-border-strong: #afbdc6;
+  --ct-divider: #e7ecef;
+  --ct-warning-text: #ad5d00;
+  --ct-warning-bg: #fff0c7;
+  --ct-success: #008762;
+  --ct-success-alt: #008a60;
+  --ct-ai: #8c2eff;
+  --ct-ai-soft: #f0e7ff;
+
+  /* 教师端补充（规范页 8） */
+  --ct-teacher-brand: #007f59;
+  --ct-teacher-selected: #e0f6ed;
+  --ct-teacher-border: #d8dfe5;
+  --ct-teacher-subtle: #f4f7f7;
+  --ct-ai-text: #554095;
+
+  /* 字号层级 · 学生端偏大（规范页 7） */
+  --ct-fs-page: 38px;
+  --ct-fs-section: 28px;
+  --ct-fs-body: 20px;
+  --ct-fs-aux: 16px;
+  --ct-fs-meta: 14px;
+  --ct-fs-nav: 22px;
+  --ct-fs-node: 16px;
+  --ct-fs-stage: 18px;
+
+  /* 文字层级角色（规范页 9）：行高取字号的 150%，字重只用 400 / 700 */
+  --ct-fs-card: 24px;
+  --ct-fs-action: 22px;
+  --ct-fs-meta-role: 18px;
+  --ct-lh: 1.5;
+
+  /* 教师端字号（规范页 9） */
+  --ct-fs-teacher-page: 36px;
+  --ct-fs-teacher-project: 32px;
+  --ct-fs-teacher-section: 26px;
+  --ct-fs-teacher-card: 24px;
+  --ct-fs-teacher-action: 22px;
+  --ct-fs-teacher-body: 20px;
+  --ct-fs-teacher-meta: 18px;
+  --ct-fs-teacher-small: 16px;
+
+  /* 间距 · 4px 基数 */
+  --ct-space-1: 4px;
+  --ct-space-2: 8px;
+  --ct-space-3: 12px;
+  --ct-space-4: 16px;
+  --ct-space-5: 20px;
+  --ct-space-6: 24px;
+  --ct-space-8: 32px;
+
+  /* 布局 */
+  --ct-topbar: 72px;
+  --ct-sidebar: 220px;
+  --ct-content-pad: 28px;
+  --ct-radius-ctrl: 8px;
+  --ct-radius-card: 12px;
+  --ct-radius-zone: 14px;
+  --ct-btn-height: 52px;
+  --ct-node-height: 78px;
+  --ct-edge-width: 1.4px;
+
+  --ct-font: "Noto Sans SC", "Inter", "Microsoft YaHei", sans-serif;
+  --ct-font-mono: "Roboto Mono", "Consolas", monospace;
+
+  /*
+   * AI 结构化理解结果 · 信息等级（接手标注 / 情境整理 / 分析摘要共用）
+   * L1 主张 claim   — 本条结论标题，扫描第一落点
+   * L2a 影响 impact — 为何重要（后果）
+   * L2b 核对 check  — 可执行核对动作（行动）
+   * L3a 风险 risk   — 需显式确认的风险
+   * L3b 不确定 note — 证据边界 / 缺失信息
+   * L4  证据 cite   — 可展开引用，默认弱于正文
+   * 标签与正文同色阶区分：标签 700 + 次要色；正文 400 + 主文色
+   * 标识符（错误码、字段名）走 mono，不靠加粗抢层级
+   */
+  --ct-ai-struct-pad: 14px 16px;
+  --ct-ai-struct-gap: 10px;
+  --ct-ai-struct-field-gap: 8px;
+  --ct-ai-struct-radius: var(--ct-radius-card);
+  --ct-ai-struct-bg: #eef3f5;
+  --ct-ai-struct-border: #d7e0e4;
+  --ct-fs-ai-claim: 15px;
+  --ct-fs-ai-body: 13px;
+  --ct-fs-ai-label: 12px;
+  --ct-fs-ai-cite: 12px;
+  --ct-ai-label-impact: #006b50;
+  --ct-ai-label-check: #175cd3;
+  --ct-ai-label-risk: #ad5d00;
+  --ct-ai-label-note: #667085;
+  --ct-ai-label-cite: #554095;
+  --ct-ai-risk-bg: #fff7e8;
+  --ct-ai-note-bg: #f5f7f8;
+  --ct-ai-code-bg: #e4ebef;
+}

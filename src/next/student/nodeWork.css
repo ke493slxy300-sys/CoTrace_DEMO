@@ -1,0 +1,417 @@
+@import './studentShell.css';
+
+/* 个人工作与节点成果页。只包在新版学生外壳里。 */
+.nw {
+  --bg-page-title: var(--ct-subtle);
+  --bg-editor: var(--ct-surface);
+  --bg-sidebar: var(--ct-surface);
+  --bg-ai-panel: var(--ct-subtle);
+  --bg-card: var(--ct-surface);
+  --bg-input: var(--ct-subtle);
+  --bg-selected: var(--ct-brand-soft);
+  --bg-bottom: var(--ct-surface);
+  --text-primary: var(--ct-text);
+  --text-secondary: var(--ct-text-secondary);
+  --text-muted: var(--ct-text-tertiary);
+  --text-disabled: var(--ct-text-tertiary);
+  --border-default: var(--ct-border);
+  --border-active: var(--ct-brand);
+  --accent-primary: var(--ct-brand);
+  /* 浅色工作台：选中行用品牌软底，避免暗色 --code-selection */
+  --code-selection: color-mix(in srgb, var(--ct-brand-soft) 88%, var(--ct-surface));
+  /* AI 溯源等交互：与全局品牌色一致，不再用暗色紫板 */
+  --semantic-ai: var(--ct-brand-deep);
+  --semantic-ai-bg: var(--ct-brand-soft);
+  --gradient-header: none;
+  --gradient-panel: none;
+  --font-size-title: var(--ct-fs-card);
+  --font-size-module: var(--ct-fs-meta-role);
+  --font-size-body: var(--ct-fs-aux);
+  --font-size-caption: var(--ct-fs-aux);
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--ct-subtle);
+  color: var(--ct-text);
+  font-family: var(--ct-font);
+}
+
+.nw-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px 12px;
+}
+
+.nw-kicker {
+  margin: 0;
+  color: var(--ct-brand);
+  font-size: var(--ct-fs-aux);
+  line-height: var(--ct-lh);
+  font-weight: 700;
+}
+
+.nw-head h1 {
+  margin: 0;
+  font-size: var(--ct-fs-card);
+  line-height: var(--ct-lh);
+  font-weight: 700;
+  color: var(--ct-text);
+}
+
+.nw-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.nw .nw-ghost,
+.nw .btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: var(--ct-btn-height);
+  padding: 0 24px;
+  border-radius: var(--ct-radius-ctrl);
+  border: 1px solid var(--ct-border);
+  background: var(--ct-surface);
+  color: var(--ct-text-secondary);
+  font-family: var(--ct-font);
+  font-size: var(--ct-fs-action);
+  line-height: 1;
+  font-weight: 700;
+}
+
+.nw .nw-ghost:disabled,
+.nw .btn-ghost:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  color: var(--ct-text-tertiary);
+  background: var(--ct-subtle);
+}
+
+.nw .nw-primary,
+.nw .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: var(--ct-btn-height);
+  padding: 0 24px;
+  border: 0;
+  border-radius: var(--ct-radius-ctrl);
+  background: var(--ct-brand);
+  color: #fff;
+  font-family: var(--ct-font);
+  font-size: var(--ct-fs-action);
+  line-height: 1;
+  font-weight: 700;
+}
+
+.nw .app-footer {
+  background: var(--ct-surface);
+  color: var(--ct-text-secondary);
+  border-color: var(--ct-divider);
+  font-size: var(--ct-fs-aux);
+  line-height: var(--ct-lh);
+}
+
+.nw .panel-header h2,
+.nw .status-chip {
+  font-weight: 700;
+  line-height: var(--ct-lh);
+}
+
+.nw .status-chip {
+  font-size: var(--ct-fs-aux);
+  line-height: var(--ct-lh);
+}
+
+.nw .workbench,
+.nw .workbench-columns {
+  background: var(--ct-subtle);
+}
+
+/* 个人工作区：材料 / 版本 / 批注阅读（宽度由 CollapsibleResizableColumns 控制） */
+.nw-work.workbench-columns {
+  flex: 1;
+  min-height: 0;
+  gap: 0;
+  padding: 0 24px 12px;
+  border-bottom: 0;
+}
+
+.nw-work .workbench-col-body > .nw-pane {
+  border-radius: var(--ct-radius-zone);
+  border: 1px solid var(--ct-divider);
+}
+
+.nw-work .workbench-resize-handle {
+  border-left-color: transparent;
+  border-right-color: transparent;
+  margin: 0 3px;
+}
+
+.nw-work .workbench-col.is-collapsed {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.nw-work .workbench-rail-btn {
+  background: transparent;
+  color: transparent;
+  border-color: transparent;
+}
+
+.nw-work .workbench-rail-btn:hover,
+.nw-work .workbench-rail-btn:focus-visible {
+  background: color-mix(in srgb, var(--ct-text-tertiary) 10%, transparent);
+}
+
+.nw-work .workbench-rail-arrow {
+  background: color-mix(in srgb, var(--ct-text-tertiary) 28%, transparent);
+  color: var(--ct-text-tertiary);
+}
+
+.nw-work .workbench-rail-btn:hover .workbench-rail-arrow,
+.nw-work .workbench-rail-btn:focus-visible .workbench-rail-arrow {
+  background: color-mix(in srgb, var(--ct-text-tertiary) 40%, var(--ct-surface));
+  color: var(--ct-text-secondary);
+}
+
+.nw-pane {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--ct-surface);
+  border: 1px solid var(--ct-divider);
+  border-radius: var(--ct-radius-zone);
+  overflow: hidden;
+}
+
+.nw-pane-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--ct-divider);
+}
+
+.nw-pane-head h2 {
+  margin: 0;
+  font-size: var(--ct-fs-aux);
+  font-weight: 700;
+}
+
+.nw-pane-head span {
+  color: var(--ct-text-tertiary);
+  font-size: var(--ct-fs-meta);
+}
+
+.nw-version-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.nw-version-tabs button {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--ct-border);
+  border-radius: 8px;
+  background: var(--ct-surface);
+  color: var(--ct-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.nw-version-tabs button.is-on {
+  border-color: var(--ct-brand);
+  background: var(--ct-brand-soft);
+  color: var(--ct-brand-deep);
+}
+
+.nw-version-tabs button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.nw-file-list,
+.nw-anno-list,
+.nw-diff ul {
+  list-style: none;
+  margin: 0;
+  padding: 8px;
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.nw-file,
+.nw-anno,
+.nw-diff-item {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: inherit;
+}
+
+.nw-file {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.nw-file.is-on,
+.nw-anno.is-on {
+  background: var(--ct-brand-soft);
+}
+
+.nw-file span,
+.nw-anno strong {
+  font-size: var(--ct-fs-aux);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.nw-anno-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ct-brand);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.nw-anno-meta,
+.nw-source-note,
+.nw-diff-lead {
+  color: var(--ct-text-tertiary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.nw-source-note {
+  margin: 0;
+  padding: 8px 12px 12px;
+}
+
+.nw-empty {
+  padding: 24px 16px;
+  color: var(--ct-text-secondary);
+}
+
+.nw-empty strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--ct-text);
+}
+
+.nw-empty p {
+  margin: 0;
+  font-size: var(--ct-fs-aux);
+}
+
+.nw-main .nw-code {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.nw-main .nw-code .code-viewer,
+.nw-main .nw-code .panel {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.nw-diff {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.nw-diff-lead {
+  margin: 0;
+  padding: 10px 14px 0;
+}
+
+.nw-diff-item strong {
+  font-size: var(--ct-fs-aux);
+}
+
+.nw-diff-item span {
+  color: var(--ct-text-secondary);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.nw-side {
+  min-height: 0;
+}
+
+.nw-ai {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--ct-divider);
+  padding: 12px 14px 14px;
+  background: var(--ct-subtle);
+}
+
+.nw-ai h3 {
+  margin: 0 0 8px;
+  font-size: var(--ct-fs-aux);
+  font-weight: 700;
+}
+
+.nw-ai-body {
+  margin: 0;
+  white-space: pre-wrap;
+  color: var(--ct-text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  max-height: 160px;
+  overflow: auto;
+}
+
+.nw-ai-lock {
+  margin: 10px 0 0;
+  color: var(--ct-text-tertiary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.nw-foot {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 24px 14px;
+  color: var(--ct-text-tertiary);
+  font-size: 12px;
+  background: var(--ct-surface);
+  border-top: 1px solid var(--ct-divider);
+}
+
+@media (max-width: 1100px) {
+  .nw-work.workbench-columns {
+    overflow: auto;
+  }
+}

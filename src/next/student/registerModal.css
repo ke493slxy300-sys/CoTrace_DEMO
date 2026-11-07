@@ -1,0 +1,78 @@
+@import '../tokens.css';
+
+.ct-register {
+  background: var(--ct-surface);
+  color: var(--ct-text);
+  border: 1px solid var(--ct-border);
+  font-family: var(--ct-font);
+}
+
+.ct-register .discussion-modal-header h2 {
+  margin: 0;
+  color: var(--ct-text);
+  font-size: var(--ct-fs-section);
+  line-height: var(--ct-lh);
+  font-weight: 700;
+}
+
+.ct-register .discussion-modal-header p,
+.ct-register .register-section h3,
+.ct-register .entry-meta,
+.ct-register .process-steps,
+.ct-register .register-draft-dirty {
+  color: var(--ct-text-secondary);
+  font-size: 18px;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+.ct-register .register-section h3 {
+  color: var(--ct-text);
+  font-weight: 700;
+}
+
+.ct-register .ct-reg-primary {
+  height: 48px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--ct-brand);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1.5;
+  font-weight: 700;
+}
+
+.ct-register .btn-ghost {
+  height: 48px;
+  padding: 0 16px;
+  border-radius: 8px;
+  border: 1px solid var(--ct-border);
+  background: var(--ct-surface);
+  color: var(--ct-text);
+  font-size: 18px;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+.ai-overlay-card.ct-ai-card {
+  background: var(--ct-surface);
+  color: var(--ct-text);
+  border: 1px solid var(--ct-border);
+  font-family: var(--ct-font);
+}
+
+.ai-overlay-card.ct-ai-card h2 {
+  color: var(--ct-text);
+  font-size: var(--ct-fs-section);
+  line-height: var(--ct-lh);
+  font-weight: 700;
+}
+
+.ai-overlay-card.ct-ai-card p,
+.ai-overlay-card.ct-ai-card li {
+  color: var(--ct-text-secondary);
+  font-size: 18px;
+  line-height: 1.5;
+  font-weight: 400;
+}

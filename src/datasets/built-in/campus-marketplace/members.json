@@ -56,6 +56,20 @@
     "roles": ["qa"]
   },
   {
+    "id": "member-teacher",
+    "name": "周老师",
+    "initials": "周",
+    "avatarUrl": "/avatars/david.jpg",
+    "skillTags": ["课程教师", "阶段指导", "项目核收"],
+    "defaultPrimaryDutyId": null,
+    "selectable": false,
+    "locked": true,
+    "enabled": true,
+    "slot": "preset",
+    "roleLabel": "课程教师",
+    "roles": []
+  },
+  {
     "id": "member-david",
     "name": "David Tao",
     "initials": "DT",

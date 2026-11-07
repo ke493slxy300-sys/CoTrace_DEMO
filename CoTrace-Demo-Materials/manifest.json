@@ -1,0 +1,86 @@
+{
+  "projectId": "campus-marketplace",
+  "materials": [
+    {
+      "id": "project",
+      "type": "context",
+      "version": null,
+      "files": [
+        "project-context.md"
+      ]
+    },
+    {
+      "id": "code-v04",
+      "type": "code",
+      "version": "v0.4",
+      "files": [
+        "orderService-v0.4.mjs"
+      ]
+    },
+    {
+      "id": "code-v03",
+      "type": "code",
+      "version": "v0.3",
+      "files": [
+        "orderService-v0.3.mjs"
+      ]
+    },
+    {
+      "id": "seat",
+      "type": "code",
+      "version": null,
+      "files": [
+        "seatReservation.mjs"
+      ]
+    },
+    {
+      "id": "cursor-v04",
+      "type": "conversation",
+      "version": "v0.4",
+      "files": [
+        "cursor-chat.md"
+      ]
+    },
+    {
+      "id": "codex-v04",
+      "type": "conversation",
+      "version": "v0.4",
+      "files": [
+        "codex-invocation.md",
+        "codex-events.jsonl"
+      ]
+    },
+    {
+      "id": "api-v04",
+      "type": "spec",
+      "version": "v0.4",
+      "files": [
+        "order-api-v0.4.md"
+      ]
+    },
+    {
+      "id": "changes",
+      "type": "changelog",
+      "version": "v0.4",
+      "files": [
+        "change-notes.md"
+      ]
+    },
+    {
+      "id": "test-source",
+      "type": "test_source",
+      "version": "v0.4",
+      "files": [
+        "orderService.test.mjs"
+      ]
+    },
+    {
+      "id": "run-v04",
+      "type": "test_run",
+      "version": "v0.4",
+      "files": [
+        "test-run-v0.4.txt"
+      ]
+    }
+  ]
+}

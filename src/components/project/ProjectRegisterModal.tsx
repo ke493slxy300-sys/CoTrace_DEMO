@@ -12,6 +12,7 @@ import type { ProjectCollaborator } from '../../types';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { CollaboratorPickerPanel } from './CollaboratorPickerPanel';
 import { RegisterCollaboratorsSection } from './RegisterCollaboratorsSection';
+import '../../next/student/registerModal.css';
 
 type ProjectRegisterModalProps = {
   open: boolean;
@@ -158,7 +159,7 @@ export function ProjectRegisterModal({
           onMouseDown={(event) => event.stopPropagation()}
         >
           <div
-            className="register-modal"
+            className="register-modal ct-register"
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
@@ -226,7 +227,7 @@ export function ProjectRegisterModal({
               </button>
               <button
                 type="button"
-                className="btn btn-primary"
+                className="btn ct-reg-primary"
                 onClick={handleCreate}
               >
                 创建项目并生成任务蓝图

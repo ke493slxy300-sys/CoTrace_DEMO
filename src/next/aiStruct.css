@@ -1,0 +1,144 @@
+/**
+ * AI 结构化结果排版（全局）
+ * 信息等级见 tokens.css：claim → impact/check → risk/note → cite
+ */
+
+@import './tokens.css';
+
+.ai-struct-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ct-ai-struct-gap);
+}
+
+.ai-struct {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ct-ai-struct-field-gap);
+  margin: 0;
+  padding: var(--ct-ai-struct-pad);
+  border: 1px solid var(--ct-ai-struct-border);
+  border-radius: var(--ct-ai-struct-radius);
+  background: var(--ct-ai-struct-bg);
+  font-family: var(--ct-font);
+}
+
+.ai-struct__claim {
+  margin: 0;
+  color: var(--ct-text);
+  font-size: var(--ct-fs-ai-claim);
+  font-weight: 700;
+  line-height: var(--ct-lh);
+}
+
+.ai-struct__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ct-ai-struct-field-gap);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.ai-struct__field {
+  display: grid;
+  grid-template-columns: 3.25rem minmax(0, 1fr);
+  gap: 8px 10px;
+  align-items: start;
+  margin: 0;
+  padding: 0;
+}
+
+.ai-struct__field.is-risk {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--ct-ai-risk-bg);
+  grid-template-columns: 3.25rem minmax(0, 1fr);
+}
+
+.ai-struct__field.is-note {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--ct-ai-note-bg);
+}
+
+.ai-struct__field.is-cite {
+  grid-template-columns: 3.25rem minmax(0, 1fr);
+}
+
+.ai-struct__label {
+  margin: 0;
+  padding-top: 1px;
+  font-size: var(--ct-fs-ai-label);
+  font-weight: 700;
+  line-height: var(--ct-lh);
+  letter-spacing: 0.02em;
+}
+
+.ai-struct__field.is-impact .ai-struct__label {
+  color: var(--ct-ai-label-impact);
+}
+
+.ai-struct__field.is-check .ai-struct__label {
+  color: var(--ct-ai-label-check);
+}
+
+.ai-struct__field.is-risk .ai-struct__label {
+  color: var(--ct-ai-label-risk);
+}
+
+.ai-struct__field.is-note .ai-struct__label {
+  color: var(--ct-ai-label-note);
+}
+
+.ai-struct__field.is-cite .ai-struct__label {
+  color: var(--ct-ai-label-cite);
+}
+
+.ai-struct__body {
+  margin: 0;
+  color: var(--ct-text-secondary);
+  font-size: var(--ct-fs-ai-body);
+  font-weight: 400;
+  line-height: var(--ct-lh);
+  min-width: 0;
+}
+
+.ai-struct__field.is-cite .ai-struct__body {
+  font-size: var(--ct-fs-ai-cite);
+  color: var(--ct-text-tertiary);
+}
+
+.ai-struct__code {
+  display: inline;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--ct-ai-code-bg);
+  color: var(--ct-text);
+  font-family: var(--ct-font-mono);
+  font-size: 0.92em;
+  font-weight: 400;
+  word-break: break-all;
+}
+
+.ai-struct__cite-note {
+  display: block;
+  margin-top: 2px;
+  color: var(--ct-text-tertiary);
+}
+
+.ai-struct__meta {
+  margin: 6px 0 0;
+  color: var(--ct-text-tertiary);
+  font-size: var(--ct-fs-ai-cite);
+  line-height: var(--ct-lh);
+}
+
+.ai-struct-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ct-ai-struct-field-gap);
+}

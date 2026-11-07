@@ -1,0 +1,90 @@
+.demo-role {
+  position: relative;
+}
+
+.demo-role-btn {
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid #d8dfe5;
+  background: #fff;
+  padding: 0 14px;
+  font-weight: 700;
+  color: #101514;
+}
+
+.demo-role-menu {
+  position: absolute;
+  top: 46px;
+  right: 0;
+  width: 320px;
+  z-index: 20;
+  background: #fff;
+  border: 1px solid #d8dfe5;
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 8px 24px rgba(16, 21, 20, 0.08);
+}
+
+.demo-role-note,
+.demo-role-reset p {
+  margin: 4px 8px 8px;
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.demo-role-menu > button {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  text-align: left;
+  padding: 8px;
+}
+
+.demo-role-menu > button strong,
+.demo-role-menu > button small {
+  display: block;
+}
+
+.demo-role-menu > button small {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.demo-role-menu > button.is-on {
+  background: #d9f4ee;
+  color: #00856e;
+}
+
+.demo-role-reset {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #e7ecef;
+}
+
+.demo-role-reset > button,
+.demo-role-reset-actions button {
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #d8dfe5;
+  background: #fff;
+  padding: 0 10px;
+}
+
+.demo-role-reset-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.demo-role-reset .is-danger {
+  background: #101514;
+  border-color: #101514;
+  color: #fff;
+}

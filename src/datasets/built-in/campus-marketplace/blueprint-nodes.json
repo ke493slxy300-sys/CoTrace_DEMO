@@ -8,7 +8,7 @@
     "dependsOn": [],
     "acceptance": ["核心业务流程已对齐", "业务对象清单已确认"],
     "x": 48,
-    "y": 48
+    "y": 200
   },
   {
     "id": "node-database",
@@ -18,8 +18,8 @@
     "status": "done",
     "dependsOn": ["node-requirements"],
     "acceptance": ["订单保存 listing 标题与价格快照", "商品与订单状态枚举齐全"],
-    "x": 280,
-    "y": 48
+    "x": 320,
+    "y": 110
   },
   {
     "id": "node-backend",
@@ -32,8 +32,8 @@
       "createOrder 可创建 pending 订单",
       "商品不存在/不可购买返回明确错误"
     ],
-    "x": 512,
-    "y": 48
+    "x": 580,
+    "y": 88
   },
   {
     "id": "node-frontend",
@@ -43,8 +43,8 @@
     "status": "in-progress",
     "dependsOn": ["node-requirements"],
     "acceptance": ["列表筛选可用", "购买申请可发起"],
-    "x": 280,
-    "y": 220
+    "x": 800,
+    "y": 88
   },
   {
     "id": "node-integration",
@@ -54,8 +54,8 @@
     "status": "todo",
     "dependsOn": ["node-backend", "node-frontend"],
     "acceptance": ["主路径可演示", "关键状态流转正确"],
-    "x": 512,
-    "y": 220
+    "x": 690,
+    "y": 280
   },
   {
     "id": "node-testing",
@@ -65,8 +65,8 @@
     "status": "todo",
     "dependsOn": ["node-integration"],
     "acceptance": ["快照一致性用例通过", "错误码场景有测试"],
-    "x": 744,
-    "y": 220
+    "x": 960,
+    "y": 280
   },
   {
     "id": "node-acceptance",
@@ -80,7 +80,7 @@
     "status": "todo",
     "dependsOn": ["node-testing"],
     "acceptance": ["演示路径完整", "已知限制已记录"],
-    "x": 744,
-    "y": 392
+    "x": 960,
+    "y": 420
   }
 ]

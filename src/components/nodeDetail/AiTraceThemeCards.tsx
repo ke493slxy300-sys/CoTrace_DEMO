@@ -44,59 +44,78 @@ export function AiTraceThemeCards({
               onClick={() => onSelectCard(card.id)}
             >
               <header className="ai-theme-card-head">
-                <span className="ai-theme-card-index">任务 · {card.theme}</span>
+                <span className="ai-theme-card-index">{card.theme}</span>
                 <span className="ai-theme-card-time">
                   {formatRelativeTime(card.createdAt)} · {card.initiator}
                 </span>
               </header>
-              <p className="ai-theme-card-stage">{card.stage}</p>
-              <p className="ai-theme-card-summary">{card.summary}</p>
+              {card.stage ? (
+                <p className="ai-theme-card-stage">{card.stage}</p>
+              ) : null}
+              {card.summary ? (
+                <p className="ai-theme-card-decision">
+                  <span className="ai-theme-card-label">要点</span>
+                  <span className="ai-theme-card-decision-text">
+                    {card.summary}
+                  </span>
+                </p>
+              ) : null}
 
-              <div className="ai-theme-card-detail">
+              <div className="ai-theme-card-sections">
                 {card.problem ? (
-                  <p className="ai-theme-card-line">
-                    <strong>识别问题：</strong>
-                    {card.problem}
+                  <p className="ai-theme-card-section">
+                    <span className="ai-theme-card-label">问题</span>
+                    <span>{card.problem}</span>
                   </p>
                 ) : null}
                 {card.agentAdvice ? (
-                  <p className="ai-theme-card-line">
-                    <strong>Agent 建议：</strong>
-                    {card.agentAdvice}
+                  <p className="ai-theme-card-section">
+                    <span className="ai-theme-card-label">建议</span>
+                    <span>{card.agentAdvice}</span>
                   </p>
                 ) : null}
                 {card.adoption ? (
-                  <p className="ai-theme-card-line">
-                    <strong>处理结果：</strong>
-                    {card.adoption}
+                  <p className="ai-theme-card-section">
+                    <span className="ai-theme-card-label">结果</span>
+                    <span>{card.adoption}</span>
                   </p>
                 ) : null}
                 {card.relatedFileLabel ? (
-                  <p className="ai-theme-card-meta">
-                    关联产出：{card.relatedFileLabel}
-                    {card.changeRelation ? ` · ${card.changeRelation}` : ''}
+                  <p className="ai-theme-card-section">
+                    <span className="ai-theme-card-label">产物</span>
+                    <span>
+                      {card.relatedFileLabel}
+                      {card.changeRelation ? ` · ${card.changeRelation}` : ''}
+                    </span>
                   </p>
                 ) : null}
-
-                {card.dialogues.length > 0 ? (
-                  <div className="ai-theme-card-dialogue">
-                    <div className="ai-theme-card-dialogue-title">
-                      多轮对话（模拟） · 第 {index + 1} 张卡片
-                    </div>
-                    <ul>
-                      {card.dialogues.map((turn) => (
-                        <li
-                          key={turn.id}
-                          className={`ai-theme-turn is-${turn.role}`}
-                        >
-                          <span>{turn.author}</span>
-                          <p>{turn.content}</p>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
               </div>
+
+              {card.dialogues.length > 0 ? (
+                <>
+                  <div className="ai-theme-card-detail">
+                    <div className="ai-theme-card-dialogue">
+                      <div className="ai-theme-card-dialogue-title">
+                        对话 · {index + 1}
+                      </div>
+                      <ul>
+                        {card.dialogues.map((turn) => (
+                          <li
+                            key={turn.id}
+                            className={`ai-theme-turn is-${turn.role}`}
+                          >
+                            <span>{turn.author}</span>
+                            <p>{turn.content}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                  {!expanded ? (
+                    <p className="ai-theme-card-expand-hint">悬停查看对话</p>
+                  ) : null}
+                </>
+              ) : null}
 
               <div className="ai-theme-card-actions">
                 <button

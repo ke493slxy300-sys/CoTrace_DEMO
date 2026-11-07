@@ -15,10 +15,19 @@ import {
 } from '../../data/sharedDocs';
 import type { BlueprintNode } from '../../types';
 
+export type HandoffDockAction = {
+  id: string;
+  title: string;
+  meta: string;
+  statusLabel: string;
+  onOpen: () => void;
+};
+
 type BlueprintBottomDockProps = {
   ownedNodes: BlueprintNode[];
   pendingItems: TeamPendingItem[];
   docs: SharedDoc[];
+  handoffActions?: HandoffDockAction[];
   onJumpToNode: (nodeId: string) => void;
   /** 第二次单击我负责的任务 → 个人编码工作区 */
   onOpenPersonalCoding: (nodeId: string) => void;
@@ -31,6 +40,7 @@ export function BlueprintBottomDock({
   ownedNodes,
   pendingItems,
   docs,
+  handoffActions = [],
   onJumpToNode,
   onOpenPersonalCoding,
   onOpenPendingDiscussion,
@@ -38,7 +48,10 @@ export function BlueprintBottomDock({
 }: BlueprintBottomDockProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedTodoId, setSelectedTodoId] = useState<string | null>(null);
-  const hasTodoCards = ownedNodes.length > 0 || pendingItems.length > 0;
+  const hasTodoCards =
+    ownedNodes.length > 0 ||
+    pendingItems.length > 0 ||
+    handoffActions.length > 0;
 
   return (
     <section className="blueprint-bottom-dock" aria-label="个人待办与共享文档">
@@ -55,6 +68,39 @@ export function BlueprintBottomDock({
               role="list"
               aria-label="待办卡片，可左右滚动"
             >
+              {handoffActions.map((action) => {
+                const selected = selectedTodoId === action.id;
+                return (
+                  <button
+                    key={action.id}
+                    type="button"
+                    role="listitem"
+                    className={`blueprint-todo-card${selected ? ' is-selected' : ''}`}
+                    title={
+                      selected ? '再次单击打开交接页' : '单击选中交接待办'
+                    }
+                    onClick={() => {
+                      if (selectedTodoId === action.id) {
+                        action.onOpen();
+                        return;
+                      }
+                      setSelectedTodoId(action.id);
+                    }}
+                  >
+                    <span className="blueprint-todo-card-kind">交接演示</span>
+                    <span className="blueprint-todo-card-title">
+                      {action.title}
+                    </span>
+                    <span className="status-chip status-node-in-progress blueprint-todo-card-status">
+                      {action.statusLabel}
+                    </span>
+                    <span className="blueprint-todo-card-meta">
+                      {action.meta}
+                    </span>
+                  </button>
+                );
+              })}
+
               {ownedNodes.map((node) => {
                 const selected = selectedTodoId === node.id;
                 return (
