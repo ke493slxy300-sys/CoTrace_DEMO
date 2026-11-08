@@ -1,3 +1,4 @@
+import { Download, ExternalLink } from "lucide-react";
 import type { TeammateDocumentRef } from "../../datasets/built-in/campus-marketplace/content/teammateTypes";
 
 type DocumentArtifactViewerProps = {
@@ -21,6 +22,7 @@ export function DocumentArtifactViewer({
 }: DocumentArtifactViewerProps) {
   const active =
     documents.find((doc) => doc.id === activeDocId) ?? documents[0] ?? null;
+  const isPdf = active?.mimeType === "application/pdf" && Boolean(active.href);
 
   const inner = (
     <>
@@ -48,12 +50,35 @@ export function DocumentArtifactViewer({
           </div>
         )}
 
-        {active?.mimeType === "application/pdf" && active.href ? (
-          <iframe
-            className="document-artifact-frame"
-            title={active.label}
-            src={active.href}
-          />
+        {isPdf && active.href ? (
+          <>
+            <div className="document-artifact-pdf-bar" role="status">
+              <p>
+                当前环境无法内嵌显示 PDF，已改用 Markdown
+                源文预览。完整版请新窗口打开。
+              </p>
+              <div className="document-artifact-pdf-actions">
+                <a
+                  className="document-artifact-pdf-link"
+                  href={active.href}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <ExternalLink size={14} strokeWidth={1.75} aria-hidden="true" />
+                  新窗口打开 PDF
+                </a>
+                <a
+                  className="document-artifact-pdf-link is-ghost"
+                  href={active.href}
+                  download
+                >
+                  <Download size={14} strokeWidth={1.75} aria-hidden="true" />
+                  下载 PDF
+                </a>
+              </div>
+            </div>
+            <pre className="document-artifact-markdown">{markdownContent}</pre>
+          </>
         ) : (
           <pre className="document-artifact-markdown">{markdownContent}</pre>
         )}

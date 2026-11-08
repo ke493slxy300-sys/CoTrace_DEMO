@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Check, FileCode2, FileText } from 'lucide-react';
 import {
   confirmAcceptance,
@@ -11,8 +11,44 @@ import {
 } from '../../data/handoffDemoSeed';
 import { useDemoRole } from '../../data/demoRoleStore';
 import { takeTeacherFocusSubmission } from '../../pages/teacher/teacherFocus';
+import { FindingList } from '../FindingList';
+import { VerdictBanner } from '../VerdictBanner';
 import { TeacherShell, type TeacherPlace } from './TeacherShell';
+import '../readingLayout.css';
 import './accept.css';
+
+function splitAcceptanceSummary(summary: string): {
+  title: string;
+  findings: { id: string; title: string; body: string; severity: 'ok' | 'neutral' }[];
+} {
+  const text = summary.trim();
+  if (!text) {
+    return { title: '待核收', findings: [] };
+  }
+  const parts = text
+    .split(/[。；;\n]+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const head = parts[0] ?? text;
+  const rest = parts.slice(1);
+  return {
+    title: '可核收',
+    findings: [
+      {
+        id: 'ai-summary-0',
+        title: '摘要',
+        body: head,
+        severity: 'ok' as const,
+      },
+      ...rest.map((body, index) => ({
+        id: `ai-summary-${index + 1}`,
+        title: '要点',
+        body,
+        severity: 'neutral' as const,
+      })),
+    ],
+  };
+}
 
 type AcceptancePageProps = {
   onNavigate: (place: TeacherPlace) => void;
@@ -23,7 +59,6 @@ export function AcceptancePage({ onNavigate }: AcceptancePageProps) {
   const submission = useFinalSubmission();
   const acceptance = useAcceptance();
   const [note, setNote] = useState(acceptance.note || '');
-  const [openId, setOpenId] = useState<string | null>(submission.evidence[0]?.id ?? null);
   const [notice, setNotice] = useState('');
 
   useEffect(() => {
@@ -31,6 +66,10 @@ export function AcceptancePage({ onNavigate }: AcceptancePageProps) {
   }, []);
 
   const accepted = acceptance.status === 'accepted';
+  const aiBrief = useMemo(
+    () => splitAcceptanceSummary(submission.aiSummary),
+    [submission.aiSummary],
+  );
 
   const confirm = () => {
     if (role !== 'teacher' || accepted) return;
@@ -82,25 +121,17 @@ export function AcceptancePage({ onNavigate }: AcceptancePageProps) {
 
             <h2>核收证据</h2>
             <ul className="cta-evidence">
-              {submission.evidence.map((item) => {
-                const open = openId === item.id;
-                return (
-                  <li key={item.id}>
-                    <button
-                      type="button"
-                      aria-expanded={open}
-                      onClick={() => setOpenId(open ? null : item.id)}
-                    >
-                      <span className={`cta-kind is-${item.kind}`}>{item.label}</span>
-                      <span>
-                        <strong>{item.summary}</strong>
-                        <small>{item.at}</small>
-                      </span>
-                      <em>{open ? '收起' : item.linkLabel}</em>
-                    </button>
-                  </li>
-                );
-              })}
+              {submission.evidence.map((item) => (
+                <li key={item.id}>
+                  <div className="cta-evidence-row">
+                    <span className={`cta-kind is-${item.kind}`}>{item.label}</span>
+                    <span>
+                      <strong>{item.summary}</strong>
+                      <small>{item.at}</small>
+                    </span>
+                  </div>
+                </li>
+              ))}
             </ul>
             <button type="button" className="cta-jump" onClick={() => onNavigate('stage')}>
               查看阶段指导 →
@@ -109,10 +140,23 @@ export function AcceptancePage({ onNavigate }: AcceptancePageProps) {
 
           <aside className="cta-side" aria-label="教师确认">
             <h2>AI 核收摘要</h2>
-            <p className="cta-ai">
-              <span>AI 整理 · 待复核</span>
-              {submission.aiSummary}
-            </p>
+            <div className="cta-ai-struct">
+              <span className="cta-ai-badge">AI 整理 · 待复核</span>
+              <VerdictBanner
+                title={accepted ? '已核收' : aiBrief.title}
+                detail="结论优先；明细可展开核对。"
+                tone={accepted ? 'ok' : 'neutral'}
+              />
+              <FindingList
+                items={aiBrief.findings}
+                maxVisible={3}
+                clampLines={2}
+              />
+              <details className="cta-ai-raw">
+                <summary>原始摘要</summary>
+                <p>{submission.aiSummary}</p>
+              </details>
+            </div>
             <h2>教师核收意见</h2>
             {accepted ? (
               <div className="cta-done">
@@ -132,9 +176,6 @@ export function AcceptancePage({ onNavigate }: AcceptancePageProps) {
                   onChange={(event) => setNote(event.target.value)}
                 />
                 <div className="cta-actions">
-                  <button type="button" className="is-ghost" disabled>
-                    需补交
-                  </button>
                   <button
                     type="button"
                     className="is-primary"

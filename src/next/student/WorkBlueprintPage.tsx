@@ -6,10 +6,11 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Check, Minus, Plus } from 'lucide-react';
+import { Check, Link2, Minus, Plus, Unlink } from 'lucide-react';
 import type { BlueprintNode, BlueprintNodeStatus } from '../../types';
 import { BLUEPRINT_STATUS_LABELS } from '../../data/blueprint';
 import { getBlueprintNodeDetail } from '../../data/blueprintDetail';
+import { handoffStatusLine } from '../../data/deliveryChain';
 import { useDelivery } from '../../data/deliveryStore';
 import { useDemoRole } from '../../data/demoRoleStore';
 import { applyDeliveryToBlueprint } from '../../data/handoffBlueprint';
@@ -18,12 +19,14 @@ import {
   HANDOFF_NODE_INTEGRATION,
   HANDOFF_PROJECT_ID,
 } from '../../data/handoffDemoSeed';
-import {
-  getMaterialVersion,
-  listMaterialsForNode,
-} from '../../data/teamMaterials';
-import { hashMaterials, parseHash } from './studentRoutes';
+import { getMemberById } from '../../data/members';
 import { StudentShell, type StudentPlace } from './StudentShell';
+import { StudentTrail } from './StudentTrail';
+import {
+  hashNodeDetail,
+  hashPublish,
+  hashReceive,
+} from './studentRoutes';
 import './blueprint.css';
 
 type WorkBlueprintPageProps = {
@@ -34,7 +37,6 @@ type WorkBlueprintPageProps = {
   onSelect: (nodeId: string | null) => void;
   onNavigate: (place: StudentPlace) => void;
   onOpenNode: (nodeId: string) => void;
-  onOpenHash?: (hash: string) => void;
 };
 
 /** SeatFlow / 无蓝图项目：侧栏仍属当前项目，不跳校园蓝图 */
@@ -43,7 +45,7 @@ export function ProjectSpaceUnavailable({
   reason,
   onNavigate,
   place = 'blueprint',
-  title = '工作蓝图',
+  title = '蓝图',
 }: {
   projectName: string;
   reason: string;
@@ -58,15 +60,21 @@ export function ProjectSpaceUnavailable({
       onNavigate={onNavigate}
     >
       <div className="wbp">
-        <p className="wbp-kicker">{projectName}</p>
-        <div className="wbp-head">
-          <h1>{title}</h1>
+        <div className="wbp-title">
+          <div className="wbp-head">
+            <div>
+              <StudentTrail
+                segments={[{ label: projectName }, { label: title }]}
+              />
+              <h1>{title}</h1>
+            </div>
+          </div>
         </div>
         <div className="wbp-empty" role="status">
           <h2>暂不可用</h2>
           <p>{reason}</p>
           <button type="button" onClick={() => onNavigate('history')}>
-            查看项目记忆
+            查看记录
           </button>
         </div>
       </div>
@@ -80,7 +88,18 @@ type DetailBrief = {
   keyLine: string;
   actionLabel: string;
   onAction: () => void;
+  /** 画布/坞内可切到底部交付详情的节点（后端接口、联调） */
+  showDeliveryChip: boolean;
 };
+
+function ownerFace(ownerId: string | null): { initial: string; name: string } {
+  const member = ownerId ? getMemberById(ownerId) : undefined;
+  if (!member) return { initial: '?', name: '待分配' };
+  return {
+    initial: member.initials.slice(0, 1),
+    name: member.name,
+  };
+}
 
 function usePrefersReducedMotion(): boolean {
   const [reduce, setReduce] = useState(false);
@@ -188,9 +207,9 @@ export function WorkBlueprintPage({
   selectedId,
   onSelect,
   onNavigate,
-  onOpenNode,
-  onOpenHash,
+  onOpenNode: _onOpenNode,
 }: WorkBlueprintPageProps) {
+  void _onOpenNode;
   const delivery = useDelivery();
   const role = useDemoRole();
   const live =
@@ -210,6 +229,10 @@ export function WorkBlueprintPage({
   /** 仅切节点时给内容加 swap，首次打开只做面板进入 */
   const [contentSwap, setContentSwap] = useState(false);
   const [zoomPercent, setZoomPercent] = useState(100);
+  /** 底部坞展示交付详情（复用 wbp-detail，不用居中弹窗） */
+  const [deliveryDockOpen, setDeliveryDockOpen] = useState(false);
+  const [deliveryLinkIn, setDeliveryLinkIn] = useState(false);
+  const wasReceivedRef = useRef(received);
   const panelOpenRef = useRef(Boolean(selected));
   const shownIdRef = useRef(selected?.id ?? null);
   const canvasWrapRef = useRef<HTMLDivElement>(null);
@@ -217,11 +240,23 @@ export function WorkBlueprintPage({
   const detailRef = useRef<HTMLElement>(null);
   const lastFocusedNodeId = useRef<string | null>(null);
 
+  useEffect(() => {
+    if (received && !wasReceivedRef.current) {
+      setDeliveryLinkIn(true);
+      const timer = window.setTimeout(() => setDeliveryLinkIn(false), 700);
+      wasReceivedRef.current = true;
+      return () => window.clearTimeout(timer);
+    }
+    wasReceivedRef.current = received;
+    return undefined;
+  }, [received]);
+
   const closeDetail = useCallback(
     (restoreFocus: boolean) => {
       const focusId = lastFocusedNodeId.current ?? selectedId;
       panelOpenRef.current = false;
       shownIdRef.current = null;
+      setDeliveryDockOpen(false);
       setPanelOpen(false);
       setContentSwap(false);
       onSelect(null);
@@ -237,8 +272,18 @@ export function WorkBlueprintPage({
     [onSelect, selectedId],
   );
 
+  const openDeliveryDock = useCallback(() => {
+    const switching = panelOpenRef.current || deliveryDockOpen;
+    setContentSwap(switching && !reduceMotion);
+    setDeliveryDockOpen(true);
+    panelOpenRef.current = true;
+    setPanelOpen(true);
+    onSelect(null);
+  }, [deliveryDockOpen, onSelect, reduceMotion]);
+
   useEffect(() => {
     if (selected) {
+      setDeliveryDockOpen(false);
       const switching = panelOpenRef.current;
       const idChanged = shownIdRef.current !== selected.id;
       shownIdRef.current = selected.id;
@@ -260,23 +305,45 @@ export function WorkBlueprintPage({
       });
       return () => cancelAnimationFrame(frame);
     }
+    if (deliveryDockOpen) {
+      panelOpenRef.current = true;
+      setPanelOpen(true);
+      return;
+    }
     panelOpenRef.current = false;
     shownIdRef.current = null;
     setPanelOpen(false);
     setContentSwap(false);
-  }, [selectedId, reduceMotion, selected]);
+  }, [selectedId, reduceMotion, selected, deliveryDockOpen]);
 
   useEffect(() => {
-    if (!panelOpen) return;
+    if (!panelOpen && !deliveryDockOpen) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        closeDetail(true);
-      }
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      closeDetail(true);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [panelOpen, closeDetail]);
+  }, [panelOpen, deliveryDockOpen, closeDetail]);
+
+  const openDeliveryPage = useCallback(() => {
+    const hash =
+      role === 'priya'
+        ? hashReceive(projectId, { from: 'blueprint' })
+        : hashPublish(projectId, { from: 'blueprint' });
+    window.location.hash = hash;
+  }, [projectId, role]);
+
+  const enterNode = useCallback(
+    (nodeId: string) => {
+      window.location.hash = hashNodeDetail(projectId, {
+        node: nodeId,
+        from: 'blueprint',
+      });
+    },
+    [projectId],
+  );
 
   useLayoutEffect(() => {
     const wrap = canvasWrapRef.current;
@@ -381,22 +448,21 @@ export function WorkBlueprintPage({
 
   const deliveryEdge = edges.find((edge) => edge.isDelivery);
 
+  const audience = role === 'priya' ? 'receiver' : 'publisher';
+  const handoffLine = handoffStatusLine(delivery.status, audience);
+
   const nodeAction = (node: BlueprintNode): string | null => {
     if (node.id === HANDOFF_NODE_BACKEND && delivery.status === 'draft' && role === 'alex') {
       return '发布交付';
     }
     if (node.id === HANDOFF_NODE_BACKEND && waiting) {
-      return role === 'priya'
-        ? '待确认接收'
-        : '已发布 · 等待 Priya 接收';
+      return handoffLine;
     }
     if (node.id === HANDOFF_NODE_BACKEND && received) {
-      return `已交接 ${delivery.version}`;
+      return '已确认';
     }
     if (node.id === HANDOFF_NODE_INTEGRATION && waiting) {
-      return role === 'priya'
-        ? `等待确认接收 · ${delivery.version}`
-        : `已发布 · 等待 Priya 接收`;
+      return handoffLine;
     }
     if (node.id === HANDOFF_NODE_INTEGRATION && received) {
       return '联调进行中';
@@ -406,10 +472,7 @@ export function WorkBlueprintPage({
 
   const buildBrief = useCallback(
     (node: BlueprintNode): DetailBrief => {
-      const title =
-        projectId === HANDOFF_PROJECT_ID && node.id === HANDOFF_NODE_BACKEND
-          ? `后端接口 · ${delivery.title} ${delivery.version}`
-          : nodeDisplayName(node);
+      const title = nodeDisplayName(node);
       const status: BlueprintNodeStatus =
         node.id === HANDOFF_NODE_INTEGRATION && received
           ? 'in-progress'
@@ -418,52 +481,53 @@ export function WorkBlueprintPage({
         node.id === HANDOFF_NODE_INTEGRATION && received
           ? '进行中'
           : BLUEPRINT_STATUS_LABELS[node.status];
+      const showDeliveryChip =
+        projectId === HANDOFF_PROJECT_ID &&
+        (node.id === HANDOFF_NODE_BACKEND ||
+          node.id === HANDOFF_NODE_INTEGRATION);
+      const enter = () => enterNode(node.id);
 
-      // 交付相关：突出当前可执行的发布 / 接收 / 查看
+      // 坞内主 CTA 一律进入节点；交付跳转留给画布徽章 / 交付弹层
       if (projectId === HANDOFF_PROJECT_ID && node.id === HANDOFF_NODE_BACKEND) {
         if (role === 'alex' && delivery.status === 'draft') {
           return {
             title,
             statusLabel,
             keyLine: delivery.usageNote || node.summary,
-            actionLabel: '上传并发布',
-            onAction: () => onNavigate('publish'),
+            actionLabel: '进入节点',
+            onAction: enter,
+            showDeliveryChip,
           };
         }
         if (role === 'alex' && needsRevision) {
+          const note = delivery.revisionRequest?.note?.trim();
           return {
             title,
-            statusLabel: '待修改',
-            keyLine:
-              delivery.revisionRequest?.note ||
-              `按 Priya 意见修订 ${delivery.version} 后重发`,
-            actionLabel: '修订并重发',
-            onAction: () => onNavigate('publish'),
+            statusLabel: handoffLine,
+            keyLine: note && note !== handoffLine ? note : node.summary,
+            actionLabel: '进入节点',
+            onAction: enter,
+            showDeliveryChip,
           };
         }
         if (waiting) {
-          // Alex 看发送方回执；Priya 必须进接收页才能确认，避免落在「等待 Priya」回执
           return {
             title,
             statusLabel,
-            keyLine:
-              role === 'priya'
-                ? `已发布 ${delivery.version} · 等待确认接收`
-                : `已发布 ${delivery.version} · 等待 Priya 接收`,
-            actionLabel:
-              role === 'priya' ? `打开并确认接收 ${delivery.version}` : '查看交付',
-            onAction: () =>
-              onNavigate(role === 'priya' ? 'receive' : 'publish'),
+            keyLine: handoffLine,
+            actionLabel: '进入节点',
+            onAction: enter,
+            showDeliveryChip,
           };
         }
         if (received) {
           return {
             title,
             statusLabel,
-            keyLine: `已交接 ${delivery.version} · 可回看交付材料`,
-            actionLabel: '查看交付',
-            onAction: () =>
-              onNavigate(role === 'priya' ? 'receive' : 'publish'),
+            keyLine: '已确认',
+            actionLabel: '进入节点',
+            onAction: enter,
+            showDeliveryChip,
           };
         }
       }
@@ -474,21 +538,11 @@ export function WorkBlueprintPage({
         if (waitingUpstream) {
           return {
             title,
-            statusLabel: '等待确认接收',
-            keyLine:
-              needsRevision
-                ? `上游 ${delivery.title} ${delivery.version} 待修订，确认有效版本后可开始联调。`
-                : role === 'priya'
-                  ? `等待确认接收 ${delivery.title} ${delivery.version}`
-                  : `已发布 ${delivery.version} · 等待 Priya 接收`,
-            actionLabel:
-              role === 'priya'
-                ? needsRevision
-                  ? '查看交付'
-                  : `确认接收 ${delivery.version}`
-                : '查看交付',
-            onAction: () =>
-              onNavigate(role === 'priya' ? 'receive' : 'publish'),
+            statusLabel,
+            keyLine: handoffLine,
+            actionLabel: '进入节点',
+            onAction: enter,
+            showDeliveryChip,
           };
         }
         if (received) {
@@ -496,9 +550,9 @@ export function WorkBlueprintPage({
             title,
             statusLabel,
             keyLine: delivery.nextStep || '联调进行中',
-            actionLabel: '查看交付',
-            onAction: () =>
-              onNavigate(role === 'priya' ? 'receive' : 'publish'),
+            actionLabel: '进入节点',
+            onAction: enter,
+            showDeliveryChip,
           };
         }
       }
@@ -508,8 +562,9 @@ export function WorkBlueprintPage({
           title,
           statusLabel,
           keyLine: outcomeLine(node),
-          actionLabel: '回看成果',
-          onAction: () => onOpenNode(node.id),
+          actionLabel: '进入节点',
+          onAction: enter,
+          showDeliveryChip,
         };
       }
       if (status === 'todo') {
@@ -517,37 +572,35 @@ export function WorkBlueprintPage({
           title,
           statusLabel,
           keyLine: prerequisiteLine(node, live),
-          actionLabel: '查看任务说明',
-          onAction: () => onOpenNode(node.id),
+          actionLabel: '进入节点',
+          onAction: enter,
+          showDeliveryChip,
         };
       }
       return {
         title,
         statusLabel,
         keyLine: node.summary,
-        actionLabel: '进入个人工作',
-        onAction: () => onOpenNode(node.id),
+        actionLabel: '进入节点',
+        onAction: enter,
+        showDeliveryChip,
       };
     },
     [
       delivery,
+      enterNode,
       live,
       needsRevision,
-      onNavigate,
-      onOpenNode,
       projectId,
+      handoffLine,
       received,
       role,
       waiting,
       waitingUpstream,
-    ], // waiting kept for backend published branch
+    ],
   );
 
   const brief = shown ? buildBrief(shown) : null;
-  const nodeMaterials = useMemo(
-    () => (shown ? listMaterialsForNode(projectId, shown.id) : []),
-    [projectId, shown],
-  );
 
   const bumpZoom = (delta: number) => {
     setZoomPercent((current) =>
@@ -556,7 +609,6 @@ export function WorkBlueprintPage({
   };
 
   const scale = zoomPercent / 100;
-  const fromPlace = parseHash(window.location.hash).query.get('from');
 
   return (
     <StudentShell
@@ -565,22 +617,15 @@ export function WorkBlueprintPage({
       onNavigate={onNavigate}
     >
       <div className="wbp">
-        <p className="wbp-kicker">{projectName}</p>
-        {fromPlace === 'materials' || fromPlace === 'work' ? (
-          <p style={{ margin: '0 0 8px' }}>
-            <button
-              type="button"
-              className="wbp-zoom-btn"
-              onClick={() =>
-                onNavigate(fromPlace === 'materials' ? 'materials' : 'work')
-              }
-            >
-              ← 返回{fromPlace === 'materials' ? '材料库' : '工作'}
-            </button>
-          </p>
-        ) : null}
-        <div className="wbp-head">
-          <h1>工作蓝图</h1>
+        <div className="wbp-title">
+          <div className="wbp-head">
+            <div>
+              <StudentTrail
+                segments={[{ label: projectName }, { label: '蓝图' }]}
+              />
+              <h1>蓝图</h1>
+            </div>
+          </div>
         </div>
 
         <div className="wbp-canvas-frame">
@@ -609,13 +654,16 @@ export function WorkBlueprintPage({
               transform: `scale(${scale})`,
               transformOrigin: 'top left',
             }}
-            aria-label="任务蓝图画布"
+            aria-label="蓝图画布"
             onPointerDown={(event) => {
               const target = event.target as HTMLElement;
-              if (target.closest('.wbp-node')) {
+              if (
+                target.closest('.wbp-node') ||
+                target.closest('.wbp-delivery-badge')
+              ) {
                 return;
               }
-              onSelect(null);
+              closeDetail(false);
             }}
           >
             <div className="wbp-stages">
@@ -668,23 +716,39 @@ export function WorkBlueprintPage({
             </svg>
 
             {projectId === HANDOFF_PROJECT_ID && deliveryEdge ? (
-              <div
-                className="wbp-delivery-badge"
+              <button
+                type="button"
+                className={`wbp-delivery-badge${
+                  received ? ' is-linked' : ' is-open-link'
+                }${deliveryLinkIn ? ' is-link-in' : ''}`}
                 style={{
                   left: (deliveryEdge.x1 + deliveryEdge.x2) / 2,
                   top: (deliveryEdge.y1 + deliveryEdge.y2) / 2 - 18,
                 }}
-                aria-label={`${delivery.title} ${delivery.version} 交付标识`}
+                aria-label={
+                  received
+                    ? `${delivery.title} ${delivery.version}，Priya 已确认，打开交付详情`
+                    : `${delivery.title} ${delivery.version}，还没有交给 Priya，打开交付详情`
+                }
+                onClick={(event) => {
+                  event.stopPropagation();
+                  openDeliveryDock();
+                }}
               >
-                {delivery.title} {delivery.version}
-                <em>
-                  · {delivery.status === 'draft'
-                    ? 'Alex → Priya'
-                    : delivery.status === 'published'
-                      ? '已发布 · 待 Priya'
-                      : 'Alex → Priya 已接手'}
-                </em>
-              </div>
+                <span className="wbp-delivery-link" aria-hidden="true">
+                  {received ? (
+                    <Link2 size={14} strokeWidth={2.25} />
+                  ) : (
+                    <Unlink size={14} strokeWidth={2.25} />
+                  )}
+                </span>
+                <span className="wbp-delivery-label">
+                  {delivery.title} {delivery.version}
+                </span>
+                <span className="wbp-delivery-tip" role="tooltip">
+                  {received ? 'Priya 已确认这版' : '还没有交给 Priya'}
+                </span>
+              </button>
             ) : null}
 
             {placed.map((node) => {
@@ -694,6 +758,7 @@ export function WorkBlueprintPage({
                 node.id === HANDOFF_NODE_INTEGRATION && received
                   ? '进行中'
                   : BLUEPRINT_STATUS_LABELS[node.status];
+              const face = ownerFace(node.ownerId);
               return (
                 <button
                   key={node.id}
@@ -719,8 +784,16 @@ export function WorkBlueprintPage({
                       {tone === 'done' ? <Check size={12} strokeWidth={2.5} /> : null}
                     </span>
                   </div>
-                  <span className={`wbp-node-status is-${tone}`}>{statusLabel}</span>
-                  {action ? <em className="wbp-node-action">{action}</em> : null}
+                  <div className="wbp-node-meta">
+                    <span
+                      className="wbp-node-face"
+                      title={face.name}
+                      aria-label={`负责人 ${face.name}`}
+                    >
+                      {face.initial}
+                    </span>
+                    <span className={`wbp-node-status is-${tone}`}>{statusLabel}</span>
+                  </div>
                 </button>
               );
             })}
@@ -756,11 +829,58 @@ export function WorkBlueprintPage({
           </div>
         </div>
 
-        <div className={`wbp-dock${panelOpen ? ' is-open' : ''}`}>
-          <p className="wbp-overview">
-            点击节点查看目标、进展或成果。交付和进入工作都在节点详情里。
-          </p>
-          {shown && brief ? (
+        <div
+          className={`wbp-dock${
+            panelOpen && (deliveryDockOpen || (shown && brief)) ? ' is-open' : ''
+          }`}
+        >
+          {deliveryDockOpen || (shown && brief) ? null : (
+            <p className="wbp-overview">{handoffLine}</p>
+          )}
+          {deliveryDockOpen ? (
+            <aside
+              ref={detailRef}
+              className="wbp-detail"
+              aria-label="交付详情"
+              aria-hidden={!panelOpen}
+            >
+              <div
+                className={`wbp-detail-body${contentSwap ? ' is-swap' : ''}`}
+                key="delivery-dock"
+              >
+                <div className="wbp-detail-copy">
+                  <p className="wbp-detail-kicker">交付</p>
+                  <h2>
+                    {delivery.title} {delivery.version}
+                  </h2>
+                  <p className="wbp-detail-summary">{handoffLine}</p>
+                  {delivery.usageNote ? (
+                    <p className="wbp-detail-summary is-muted">
+                      {delivery.usageNote}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="wbp-detail-actions">
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => closeDetail(false)}
+                  >
+                    关闭
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeliveryDockOpen(false);
+                      openDeliveryPage();
+                    }}
+                  >
+                    {role === 'priya' && waiting ? '确认这版' : '查看交付'}
+                  </button>
+                </div>
+              </div>
+            </aside>
+          ) : shown && brief ? (
             <aside
               ref={detailRef}
               className="wbp-detail"
@@ -772,43 +892,26 @@ export function WorkBlueprintPage({
                 key={shown.id}
               >
                 <div className="wbp-detail-copy">
-                  <p className="wbp-detail-kicker">{brief.statusLabel}</p>
                   <h2>{brief.title}</h2>
-                  <p className="wbp-detail-summary">{brief.keyLine}</p>
+                  {brief.keyLine ? (
+                    <p className="wbp-detail-summary">{brief.keyLine}</p>
+                  ) : brief.statusLabel ? (
+                    <p className="wbp-detail-summary">{brief.statusLabel}</p>
+                  ) : null}
+                  {brief.showDeliveryChip ? (
+                    <button
+                      type="button"
+                      className="wbp-delivery-chip"
+                      onClick={openDeliveryDock}
+                    >
+                      {delivery.title} {delivery.version}
+                    </button>
+                  ) : null}
                 </div>
                 <div className="wbp-detail-actions">
                   <button type="button" onClick={brief.onAction}>
                     {brief.actionLabel}
                   </button>
-                  {onOpenHash &&
-                    nodeMaterials.slice(0, 2).map((file) => {
-                      const version = getMaterialVersion(
-                        file,
-                        file.currentVersionId,
-                      );
-                      if (!version) return null;
-                      return (
-                        <button
-                          key={file.id}
-                          type="button"
-                          className="secondary"
-                          data-material-ref={file.id}
-                          onClick={() =>
-                            onOpenHash(
-                              hashMaterials(projectId, {
-                                folder: file.folderId,
-                                file: file.id,
-                                version: version.id,
-                                from: 'blueprint',
-                                retNode: shown.id,
-                              }),
-                            )
-                          }
-                        >
-                          材料 · {file.displayName}
-                        </button>
-                      );
-                    })}
                 </div>
               </div>
             </aside>

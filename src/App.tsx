@@ -64,8 +64,10 @@ import { WorkInboxPage } from './next/student/WorkInboxPage';
 import { TeamMaterialsPage } from './next/student/TeamMaterialsPage';
 import type { StudentPlace } from './next/student/StudentShell';
 import {
+  hashBlueprint,
   hashForStudentPlace,
   hashMaterials,
+  hashWork,
   parseHash,
   parseMaterialsQuery,
   type MaterialsQuery,
@@ -103,6 +105,7 @@ function viewFromHash(hash: string): AppView | null {
   const { path } = parseHash(hash);
   if (path === '/next/projects') return 'project-list';
   if (path === '/next/blueprint') return 'next-blueprint';
+  if (path === '/next/node') return 'blueprint-node-detail';
   if (path === '/next/work') return 'next-work';
   if (path === '/next/materials') return 'next-materials';
   if (path === '/next/publish') return 'next-publish';
@@ -160,10 +163,10 @@ function shellHome(role: ReturnType<typeof getDemoRole>): {
   view: AppView;
 } {
   if (role === 'teacher') return { hash: '#/next/guide', view: 'next-guide' };
-  // Demo 启动 / 空 hash → 校园项目完整蓝图；项目列表走独立地址 #/next/projects
+  // Demo 启动 / 空 hash → 项目根「所有项目」，与侧栏心智一致
   return {
-    hash: hashForStudentPlace('blueprint', HANDOFF_PROJECT_ID),
-    view: 'next-blueprint',
+    hash: '#/next/projects',
+    view: 'project-list',
   };
 }
 
@@ -218,6 +221,10 @@ export default function App() {
   const [blueprintFocusNodeId, setBlueprintFocusNodeId] = useState<
     string | null
   >(null);
+  /** 节点详情 / 工作区返回目标：work | materials | blueprint | null */
+  const [workspaceNavFrom, setWorkspaceNavFrom] = useState<string | null>(
+    null,
+  );
   const [materialsQuery, setMaterialsQuery] = useState<MaterialsQuery>({});
   const [registerOpen, setRegisterOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
@@ -347,6 +354,33 @@ export default function App() {
 
     if (next === 'next-blueprint') {
       setBlueprintFocusNodeId(query.get('node'));
+      setWorkspaceEntry(null);
+      setCodingSession(null);
+      setWorkspaceNavFrom(null);
+    }
+    if (next === 'blueprint-node-detail') {
+      const nodeId = query.get('node');
+      if (nodeId) {
+        setBlueprintFocusNodeId(nodeId);
+        setWorkspaceEntry({
+          type: 'blueprint-detail',
+          projectId: nextProjectId,
+          nodeId,
+        });
+        setWorkspaceNavFrom(query.get('from'));
+        setCodingSession(null);
+      }
+    } else if (
+      next === 'next-work' ||
+      next === 'next-materials' ||
+      next === 'next-publish' ||
+      next === 'next-receive' ||
+      next === 'next-log' ||
+      next === 'project-list'
+    ) {
+      setWorkspaceEntry(null);
+      setCodingSession(null);
+      setWorkspaceNavFrom(null);
     }
     if (next === 'next-materials') {
       setMaterialsQuery(parseMaterialsQuery(query));
@@ -359,6 +393,7 @@ export default function App() {
       isCampusProjectId(nextProjectId) ||
       (!query.get('project') &&
         (next === 'next-blueprint' ||
+          next === 'blueprint-node-detail' ||
           next === 'next-work' ||
           next === 'next-materials' ||
           next === 'next-publish' ||
@@ -367,6 +402,7 @@ export default function App() {
     if (
       campusShell &&
       (next === 'next-blueprint' ||
+        next === 'blueprint-node-detail' ||
         next === 'next-work' ||
         next === 'next-materials' ||
         next === 'next-publish' ||
@@ -619,16 +655,37 @@ export default function App() {
 
   const handleBackToBlueprint = useCallback(() => {
     const focusId = workspaceEntry?.nodeId ?? null;
+    const from = workspaceNavFrom;
     if (focusId) setBlueprintFocusNodeId(focusId);
     setWorkspaceEntry(null);
     setCodingSession(null);
+    setWorkspaceNavFrom(null);
     const backId = project?.id ?? shellProjectId ?? HANDOFF_PROJECT_ID;
     if (backId === HANDOFF_PROJECT_ID) {
       setBlueprintNodes((current) => applyDeliveryToBlueprint(current));
     }
     setShellProjectId(backId);
-    goHash(hashForStudentPlace('blueprint', backId));
-  }, [workspaceEntry?.nodeId, project?.id, shellProjectId, goHash]);
+    if (from === 'work') {
+      goHash(hashWork(backId));
+      return;
+    }
+    if (from === 'materials') {
+      goHash(hashMaterials(backId));
+      return;
+    }
+    goHash(
+      hashBlueprint(backId, {
+        node: focusId,
+        from: from === 'blueprint' ? null : from,
+      }),
+    );
+  }, [
+    workspaceEntry?.nodeId,
+    workspaceNavFrom,
+    project?.id,
+    shellProjectId,
+    goHash,
+  ]);
 
   const handleOpenTaskSubmit = useCallback(
     (session: CodingWorkspaceSession) => {
@@ -720,6 +777,12 @@ export default function App() {
         view === 'task-submit') &&
       (!activeNode || !project)
     ) {
+      // 冷启动 / ensureCampus 尚未写入 project·nodes 时，hash 仍指向节点详情：
+      // 不要误踢回项目列表，等 bootstrap 完成后再渲染。
+      if (view === 'blueprint-node-detail') {
+        const { path, query } = parseHash(window.location.hash);
+        if (path === '/next/node' && query.get('node')) return;
+      }
       setWorkspaceEntry(null);
       setView(project ? 'blueprint' : 'project-list');
     }
@@ -736,10 +799,10 @@ export default function App() {
         shellIsSeatflow ? (
           <ProjectSpaceUnavailable
             projectName={seatflowName}
-            reason="SeatFlow 为已完成项目，仅开放项目记忆；本阶段不提供可编辑工作蓝图。"
+            reason="SeatFlow 已完成，只能看记录。"
             onNavigate={goStudent}
             place="blueprint"
-            title="工作蓝图"
+            title="蓝图"
           />
         ) : activeCampusProject ||
           (project && project.id === shellProjectId) ? (
@@ -750,10 +813,10 @@ export default function App() {
             selectedId={blueprintFocusNodeId}
             onSelect={setBlueprintFocusNodeId}
             onNavigate={goStudent}
-            onOpenHash={goHash}
             onOpenNode={(nodeId) => {
               const target = blueprintNodes.find((node) => node.id === nodeId);
               setBlueprintFocusNodeId(nodeId);
+              setWorkspaceNavFrom('blueprint');
               if (
                 target &&
                 target.status !== 'todo' &&
@@ -780,7 +843,7 @@ export default function App() {
         ) : (
           <ProjectSpaceUnavailable
             projectName={HANDOFF_PROJECT_NAME}
-            reason="暂无工作蓝图"
+            reason="暂无蓝图"
             onNavigate={goStudent}
           />
         )
@@ -830,7 +893,7 @@ export default function App() {
         shellIsSeatflow ? (
           <ProjectSpaceUnavailable
             projectName={seatflowName}
-            reason="SeatFlow 无交付发布入口；请从项目记忆回看已确认经验。"
+            reason="SeatFlow 不能发布。请从记录回看已确认的经验。"
             onNavigate={goStudent}
             place="publish"
             title="发布交付"
@@ -842,7 +905,7 @@ export default function App() {
         shellIsSeatflow ? (
           <ProjectSpaceUnavailable
             projectName={seatflowName}
-            reason="SeatFlow 无交付接收入口；请从项目记忆回看已确认经验。"
+            reason="SeatFlow 不能接收。请从记录回看已确认的经验。"
             onNavigate={goStudent}
             place="receive"
             title="接收交付"
@@ -928,9 +991,8 @@ export default function App() {
           project={project}
           node={activeNode}
           nodes={blueprintNodes}
-          onBack={handleBackToBlueprint}
+          navFrom={workspaceNavFrom}
           onNavigate={goStudent}
-          onOpenHash={goHash}
           onContinueWork={handleContinueWorkFromDetail}
         />
       ) : view === 'blueprint' && project ? (
@@ -961,7 +1023,6 @@ export default function App() {
         <ProjectList
           project={project}
           onNavigate={goStudent}
-          onOpenRegister={() => setRegisterOpen(true)}
           onOpenProject={handleOpenBlueprint}
           onOpenProjectLog={openProjectLog}
           onStartHandoffDemo={handleStartHandoffDemo}

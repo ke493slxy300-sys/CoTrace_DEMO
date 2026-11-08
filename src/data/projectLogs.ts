@@ -58,7 +58,8 @@ export type SeatflowProjectCard = {
     growthCount: number;
     experienceCount: number;
   };
-  primaryAction: {
+  /** 历史字段；项目列表整卡可点，不再消费此 CTA */
+  primaryAction?: {
     label: string;
     target: string;
     projectId: string;
@@ -140,7 +141,7 @@ const HUMAN_REVIEW_BY_DECISION: Record<string, string> = {
 
 export const SEATFLOW_PROJECT_ID = "project-seatflow-demo";
 
-export const DEMO_EVIDENCE_TOAST = "Demo 历史证据，仅用于展示项目记忆结构。";
+export const DEMO_EVIDENCE_TOAST = "这是示例记录。";
 
 export function getSeatflowProjectCard(): SeatflowProjectCard {
   return seatflowCardJson as SeatflowProjectCard;

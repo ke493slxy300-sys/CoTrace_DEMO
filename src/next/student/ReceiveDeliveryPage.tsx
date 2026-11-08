@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from 'react';
 import { Check } from 'lucide-react';
 import {
   fetchDemoMaterials,
@@ -26,12 +32,18 @@ import {
   HANDOFF_INTEGRATION_GOAL,
   HANDOFF_PROJECT_NAME,
 } from '../../data/handoffDemoSeed';
-import { getVersionSnapshot } from '../../data/deliveryChain';
-import { enrichAiProse } from '../AiStruct';
+import {
+  getVersionSnapshot,
+  handoffStatusLine,
+} from '../../data/deliveryChain';
 import { formatAiFailureHint, formatAiSourceLabel } from '../aiMeta';
-import { EvidenceChip, evidenceLabel, useEvidenceFocus } from '../EvidenceNav';
+import { CollabLogBuckets } from '../CollabLogBuckets';
+import { evidenceLabel, useEvidenceFocus } from '../EvidenceNav';
+import { FindingList, type FindingItem } from '../FindingList';
+import { VerdictBanner } from '../VerdictBanner';
 import { parseHash } from './studentRoutes';
 import { StudentShell, type StudentPlace } from './StudentShell';
+import { StudentTrail } from './StudentTrail';
 import '../readingLayout.css';
 import './receive.css';
 
@@ -48,6 +60,34 @@ function verdictLabel(verdict: string | undefined): string {
   return '未分析';
 }
 
+function receiveVerdict(
+  canAct: boolean,
+  status: string,
+  hasFocus: boolean,
+): { title: string; detail: string; tone: 'warn' | 'ok' | 'neutral' } {
+  if (status === 'received') {
+    return {
+      title: '已确认接收',
+      detail: '可继续联调或查看历史版本。',
+      tone: 'ok',
+    };
+  }
+  if (canAct) {
+    return {
+      title: '待你确认',
+      detail: hasFocus
+        ? '先扫关键发现，再确认接收或提出修改。'
+        : '核对这版材料后确认接收，或提出修改。',
+      tone: 'neutral',
+    };
+  }
+  return {
+    title: '仅可查看',
+    detail: '当前身份不能确认本版交付。',
+    tone: 'neutral',
+  };
+}
+
 export function ReceiveDeliveryPage({
   onNavigate,
   onReceived,
@@ -61,9 +101,8 @@ export function ReceiveDeliveryPage({
   const canAct =
     delivery.status === 'published' && isReceiver;
   const [confirming, setConfirming] = useState(false);
-  const [revisionNote, setRevisionNote] = useState('');
-  const [evidenceLocator, setEvidenceLocator] = useState('');
   const [hint, setHint] = useState('');
+  const revisionEditorRef = useRef<HTMLDivElement | null>(null);
   const [helpText, setHelpText] = useState('');
   const [clarify, setClarify] = useState<string[]>([]);
   const [adopted, setAdopted] = useState<string[]>([]);
@@ -73,7 +112,6 @@ export function ReceiveDeliveryPage({
   const aiModeRef = useRef(aiMode);
   aiModeRef.current = aiMode;
   const focusRequestGenRef = useRef(0);
-  const [hasLiveKey, setHasLiveKey] = useState(true);
   const [catalog, setCatalog] = useState<DemoMaterialCatalogItem[]>([]);
   const [previews, setPreviews] = useState<Record<string, MaterialPreview>>({});
   const [openPreviewId, setOpenPreviewId] = useState<string | null>(null);
@@ -119,7 +157,6 @@ export function ReceiveDeliveryPage({
       if (cancelled) return;
       if (health.ok) {
         setAiMode(health.data.aiMode);
-        setHasLiveKey(Boolean(health.data.hasLiveKey));
       }
       if (all.ok) {
         setCatalog(all.data.materials);
@@ -196,7 +233,7 @@ export function ReceiveDeliveryPage({
           formatAiFailureHint(
             aiModeRef.current,
             result.message,
-            '仍可阅读已发布协作日志，并手工求助或确认接收。',
+            '仍可阅读已发布的这版说明，并手工求助或确认接收。',
           ),
         );
         return;
@@ -227,8 +264,19 @@ export function ReceiveDeliveryPage({
     if (fromCatalog) return `${fromCatalog.title}（${fromCatalog.versionLabel}）`;
     const preview = previews[id];
     if (preview) return `${preview.title}（${preview.versionLabel}）`;
-    return id;
+    return '未命名材料';
   };
+
+  const audience =
+    actorId === delivery.receiverId ? 'receiver' : 'publisher';
+  const statusLine = handoffStatusLine(delivery.status, audience);
+
+  const focusItems = delivery.focusAnnotation?.items;
+  const confirmVerdict = receiveVerdict(
+    canAct,
+    delivery.status,
+    Boolean(focusItems?.length),
+  );
 
   const confirm = () => {
     if (!canAct || confirming) return;
@@ -254,12 +302,32 @@ export function ReceiveDeliveryPage({
     }, 180);
   };
 
+  const readRevisionDraft = () => {
+    const root = revisionEditorRef.current;
+    if (!root) return { note: '', locator: '' };
+    const cites = Array.from(root.querySelectorAll('.rcv-cite'))
+      .map((node) => node.textContent?.trim() || '')
+      .filter(Boolean);
+    const note = (root.innerText || '').replace(/\u00a0/g, ' ').trim();
+    return {
+      note,
+      locator: cites.join('；'),
+    };
+  };
+
+  const clearRevisionEditor = () => {
+    const root = revisionEditorRef.current;
+    if (root) root.innerHTML = '';
+  };
+
   const sendRevision = () => {
     if (!canAct) return;
+    const { note, locator } = readRevisionDraft();
+    if (!note) return;
     const result = requestDeliveryRevision(
       actorId,
-      revisionNote,
-      evidenceLocator || undefined,
+      note,
+      locator || undefined,
       delivery.currentVersionId ?? undefined,
     );
     if (!result.ok) {
@@ -273,7 +341,134 @@ export function ReceiveDeliveryPage({
       return;
     }
     setHint('已提交修改意见，等待 Alex 发布新版本');
-    setRevisionNote('');
+    clearRevisionEditor();
+  };
+
+  const insertCite = (params: {
+    evidenceId: string;
+    label: string;
+  }) => {
+    if (!canAct) return;
+    const root = revisionEditorRef.current;
+    if (!root) return;
+    root.focus();
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'rcv-cite';
+    chip.dataset.evidenceId = params.evidenceId;
+    chip.textContent = params.label;
+    chip.addEventListener('click', (event) => {
+      event.preventDefault();
+      focusEvidence(params.evidenceId);
+    });
+    const selection = window.getSelection();
+    if (
+      selection &&
+      selection.rangeCount > 0 &&
+      root.contains(selection.anchorNode)
+    ) {
+      const range = selection.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(chip);
+      range.setStartAfter(chip);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    } else {
+      root.appendChild(document.createTextNode(' '));
+      root.appendChild(chip);
+      root.appendChild(document.createTextNode(' '));
+    }
+  };
+
+  const citeFindingToRevision = (params: {
+    index: number;
+    title: string;
+  }) => {
+    if (!canAct) return;
+    const root = revisionEditorRef.current;
+    if (!root) return;
+    const label = evidenceLabel(params.index);
+    const evidenceId = `evidence-${label}`;
+    if (root.childNodes.length > 0) {
+      root.appendChild(document.createElement('br'));
+    }
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'rcv-cite';
+    chip.dataset.evidenceId = evidenceId;
+    chip.textContent = `[${label}]`;
+    chip.addEventListener('click', (event) => {
+      event.preventDefault();
+      focusEvidence(evidenceId);
+    });
+    root.appendChild(chip);
+    root.appendChild(document.createTextNode(` ${params.title}`));
+    root.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    root.focus();
+    setHint('已写入修改意见，可继续补充后提交');
+  };
+
+  const focusFindings = useMemo<FindingItem[]>(() => {
+    const items = focusItems ?? [];
+    if (!items.length) return [];
+    return items.map((item, index) => {
+      const evidenceIndex = Math.min(index + 1, 3);
+      const evidenceBits = [
+        item.checkAction ? `先查：${item.checkAction}` : '',
+        item.impact ? `预期：${item.impact}` : '',
+        item.citations?.[0]?.excerpt
+          ? `依据：${item.citations[0].excerpt}`
+          : item.risk
+            ? `依据：${item.risk}`
+            : '',
+      ].filter(Boolean);
+      return {
+        id: item.title,
+        title: item.title,
+        body: evidenceBits.join(' · '),
+        refs: [evidenceIndex],
+        severity: (item.risk ? 'warn' : 'neutral') as FindingItem['severity'],
+        actions: canAct ? (
+          <button
+            type="button"
+            className="rd-finding-cite"
+            onClick={() =>
+              citeFindingToRevision({
+                index: evidenceIndex,
+                title: item.title,
+              })
+            }
+          >
+            引用
+          </button>
+        ) : null,
+      };
+    });
+  }, [focusItems, canAct]);
+
+  const onEvidenceContextMenu = (
+    event: ReactMouseEvent<HTMLElement>,
+  ) => {
+    if (!canAct) return;
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
+    if (target.closest('button, a, textarea, input, summary')) return;
+    const block = target.closest<HTMLElement>('.rd-block[id^="evidence-"]');
+    if (!block?.id) return;
+    event.preventDefault();
+    const num = block.querySelector('.rd-num')?.textContent?.trim();
+    const title =
+      block.querySelector('.rd-block-meta strong')?.textContent?.trim() ||
+      '证据';
+    const selected = window.getSelection()?.toString().trim();
+    const label = selected
+      ? `${num ? `[${num}] ` : ''}${selected.slice(0, 28)}${
+          selected.length > 28 ? '…' : ''
+        }`
+      : `${num ? `[${num}] ` : ''}${title}`;
+    insertCite({ evidenceId: block.id, label });
+    setHint('已引用到修改意见');
   };
 
   const loadClarify = async () => {
@@ -282,8 +477,9 @@ export function ReceiveDeliveryPage({
       log,
       log?.summary || delivery.brief || '',
     );
+    const { locator } = readRevisionDraft();
     const selectedEvidence = [
-      ...(evidenceLocator.trim() ? [evidenceLocator.trim()] : []),
+      ...(locator ? [locator] : []),
       ...(log?.openItems.slice(0, 2) ?? []),
       ...(codeId ? [`材料 ${codeId}`] : []),
       ...(chatId ? [`材料 ${chatId}`] : []),
@@ -305,7 +501,7 @@ export function ReceiveDeliveryPage({
       return;
     }
     setClarify(result.data.help.clarifyPrompts ?? []);
-    setHint('已生成可编辑澄清建议，勾选后再正式提交');
+    setHint('已生成可编辑澄清建议，勾选后再发给老师');
   };
 
   const submitHelp = () => {
@@ -435,9 +631,6 @@ export function ReceiveDeliveryPage({
       onNavigate={onNavigate}
     >
       <div className="rcv">
-        <p className="rcv-kicker">
-          {HANDOFF_PROJECT_NAME} / 交易流程联调 / {delivery.title}
-        </p>
         {fromPlace === 'work' ? (
           <p className="rd-aux" style={{ marginBottom: 8 }}>
             <button
@@ -449,64 +642,45 @@ export function ReceiveDeliveryPage({
             </button>
           </p>
         ) : null}
+        <StudentTrail
+          segments={[
+            { label: HANDOFF_PROJECT_NAME },
+            { label: '工作', onClick: () => onNavigate('work') },
+            { label: '接收交付' },
+          ]}
+        />
         <div className="rcv-head">
           <h1 className="rd-page-title">接收交付</h1>
           <span className="rcv-pill">{delivery.version}</span>
         </div>
         <p className="rd-aux" role="status" style={{ marginBottom: 16 }}>
-          {delivery.status === 'published'
-            ? '等待确认接收'
-            : delivery.status === 'received'
-              ? `已确认接收 ${delivery.version}`
-              : delivery.status === 'needs-revision'
-                ? '已提出修改意见，等待 Alex 发布新版本'
-                : '等待发布'}
-          {delivery.currentVersionId
-            ? ` · ${delivery.currentVersionId}`
-            : ''}
-          {aiMode === 'live'
-            ? ' · 真实模型'
-            : hasLiveKey
-              ? ' · 模拟结果'
-              : ' · 模拟结果 · 未检测到 DEEPSEEK_API_KEY'}
+          {statusLine}
         </p>
 
         <div className="rcv-grid rd-split is-stack-ai-first">
-          <article className="rd-evidence" aria-label="本版交付证据">
-            <h2 className="rd-section-title">本版交付证据</h2>
+          <article
+            className="rd-evidence"
+            aria-label="这版材料"
+            onContextMenu={onEvidenceContextMenu}
+          >
+            <h2 className="rd-section-title">这版材料</h2>
             <article
               id={`evidence-${evidenceLabel(1)}`}
-              className={`rd-block${activeId === `evidence-${evidenceLabel(1)}` ? ' is-flash' : ''}`}
+              className={`rd-block is-citable${activeId === `evidence-${evidenceLabel(1)}` ? ' is-flash' : ''}`}
             >
               <div className="rd-block-head">
                 <span className="rd-num">{evidenceLabel(1)}</span>
                 <div className="rd-block-meta">
-                  <strong>Alex 最终确认协作日志</strong>
-                  <span className="rd-aux">
-                    {delivery.currentVersionId ?? '尚无版本'}
-                  </span>
+                  <strong>这版说明</strong>
                 </div>
               </div>
-              {hasBrief ? (
-                <p className="rd-excerpt rd-body">
-                  {log?.summary || delivery.brief}
-                </p>
-              ) : (
-                <p className="rd-missing">发布人尚未确认协作日志。</p>
-              )}
               {log ? (
-                <ul className="rcv-log-list" style={{ marginTop: 10 }}>
-                  {log.humanActions.map((item) => (
-                    <li key={`h-${item}`}>人工：{item}</li>
-                  ))}
-                  {log.aiActions.map((item) => (
-                    <li key={`a-${item}`}>AI：{item}</li>
-                  ))}
-                  {log.openItems.map((item) => (
-                    <li key={`o-${item}`}>待确认：{item}</li>
-                  ))}
-                </ul>
-              ) : null}
+                <CollabLogBuckets value={log} readOnly title="" />
+              ) : hasBrief ? (
+                <p className="rd-excerpt rd-body">{delivery.brief}</p>
+              ) : (
+                <p className="rd-missing">发布人尚未确认这版说明。</p>
+              )}
               {riskAck ? (
                 <p className="rd-aux" style={{ marginTop: 8 }}>
                   已确认风险：{riskNotes || '见分析结论'}
@@ -516,7 +690,7 @@ export function ReceiveDeliveryPage({
 
             <article
               id={`evidence-${evidenceLabel(2)}`}
-              className={`rd-block${activeId === `evidence-${evidenceLabel(2)}` ? ' is-flash' : ''}`}
+              className={`rd-block is-citable${activeId === `evidence-${evidenceLabel(2)}` ? ' is-flash' : ''}`}
             >
               <div className="rd-block-head">
                 <span className="rd-num">{evidenceLabel(2)}</span>
@@ -546,7 +720,7 @@ export function ReceiveDeliveryPage({
 
             <article
               id={`evidence-${evidenceLabel(3)}`}
-              className={`rd-block${activeId === `evidence-${evidenceLabel(3)}` ? ' is-flash' : ''}`}
+              className={`rd-block is-citable${activeId === `evidence-${evidenceLabel(3)}` ? ' is-flash' : ''}`}
             >
               <div className="rd-block-head">
                 <span className="rd-num">{evidenceLabel(3)}</span>
@@ -578,15 +752,15 @@ export function ReceiveDeliveryPage({
 
             {(delivery.status === 'published' ||
               delivery.status === 'received') && (
-              <div className="rd-block">
-                <h3 className="rd-section-title">向教师求助</h3>
+              <details className="rcv-progress-qa">
+                <summary>向教师求助</summary>
                 <textarea
                   style={{ width: '100%', minHeight: 72 }}
                   value={helpText}
                   placeholder="学生原文：描述联调卡点"
                   onChange={(event) => setHelpText(event.target.value)}
                 />
-                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                <div className="rcv-progress-actions">
                   <button
                     type="button"
                     className="rcv-btn"
@@ -596,10 +770,10 @@ export function ReceiveDeliveryPage({
                   </button>
                   <button
                     type="button"
-                    className="rcv-btn is-primary"
+                    className="rcv-btn"
                     onClick={submitHelp}
                   >
-                    正式提交求助
+                    发给老师
                   </button>
                 </div>
                 {clarify.length > 0 ? (
@@ -627,12 +801,11 @@ export function ReceiveDeliveryPage({
                     })}
                   </ul>
                 ) : null}
-              </div>
+              </details>
             )}
 
             <details className="rcv-progress-qa">
-              <summary>进度问答（可选 · 真流式旁路）</summary>
-              <p className="rd-aux">非主路径必经。失败可跳过。</p>
+              <summary>进度问答</summary>
               <textarea
                 className="rcv-brief"
                 style={{ width: '100%', minHeight: 64 }}
@@ -685,174 +858,154 @@ export function ReceiveDeliveryPage({
             </details>
           </article>
 
-          <aside className="rd-ai" aria-label="联调关注与操作">
-            <h2 className="rd-section-title">联调关注点</h2>
-            <div className="rd-status">
-              <h3>
-                {delivery.status === 'published'
-                  ? '等待确认接收'
-                  : delivery.status === 'received'
-                    ? '已确认接收'
-                    : delivery.status === 'needs-revision'
-                      ? '等待新版本'
-                      : '等待发布'}
-              </h3>
-              <p>
-                仅「确认接收」当前有效版本会推进联调。打开本页或生成 AI
-                提示不会改变联调状态。
-              </p>
-              {focusError ? (
-                <p className="ctn-brief-error" role="alert">
-                  {focusError}{' '}
+          <aside className="rd-ai" aria-label="确认这版">
+            <div className="rd-ai-stack">
+              <div className="rcv-aside-primary">
+                <h2 className="rd-section-title">确认这版</h2>
+                {canAct ? (
                   <button
                     type="button"
-                    className="rcv-btn"
-                    onClick={() => {
-                      setFocusError('');
-                      setFocusRetryNonce((value) => value + 1);
-                    }}
+                    className="rcv-btn is-primary"
+                    disabled={confirming}
+                    onClick={confirm}
                   >
-                    重试
+                    {confirming ? (
+                      '确认中…'
+                    ) : (
+                      <>
+                        <Check
+                          size={16}
+                          strokeWidth={2.25}
+                          aria-hidden="true"
+                        />
+                        确认接收
+                      </>
+                    )}
                   </button>
-                </p>
-              ) : null}
-            </div>
-
-            {delivery.focusAnnotation?.items?.length ? (
-              <ul className="rd-findings">
-                {delivery.focusAnnotation.items.slice(0, 3).map((item, index) => (
-                  <li key={item.title} className="rd-finding">
-                    <div className="rd-finding-title">
-                      {item.title}
-                      <EvidenceChip
-                        index={Math.min(index + 1, 3)}
-                        onFocus={focusEvidence}
-                      />
-                    </div>
-                    <p className="rd-finding-body">
-                      <strong>先查：</strong>
-                      {enrichAiProse(item.checkAction)}
-                    </p>
-                    <p className="rd-finding-body">
-                      <strong>预期：</strong>
-                      {enrichAiProse(item.impact)}
-                    </p>
-                    {item.citations?.[0] ? (
-                      <p className="rd-finding-body">
-                        <strong>依据：</strong>
-                        {enrichAiProse(item.citations[0].excerpt)}
-                      </p>
-                    ) : item.risk ? (
-                      <p className="rd-finding-body">
-                        <strong>依据：</strong>
-                        {enrichAiProse(item.risk)}
-                      </p>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="rd-aux">
-                打开本页后自动整理关注项；失败时仍可阅读发布原文并手工求助或接收。
-              </p>
-            )}
-            {delivery.focusAnnotation?.items?.length ? (
-              <p className="rd-aux" style={{ marginTop: 12 }}>
-                {formatAiSourceLabel(
-                  delivery.focusAnnotation.provider,
-                  delivery.focusAnnotation.modelLabel,
-                )}
-                {delivery.focusAnnotation.cacheKey.includes(':hit')
-                  ? ' · 缓存命中'
-                  : ''}
-                · 绑定 {delivery.focusAnnotation.versionId}
-              </p>
-            ) : null}
-
-            {hint ? <p className="rcv-note">{hint}</p> : null}
-
-            {canAct ? (
-              <div className="rd-block" style={{ marginTop: 20 }}>
-                <h3 className="rd-section-title">提出修改意见</h3>
-                <textarea
-                  className="rcv-brief"
-                  style={{ width: '100%', minHeight: 72 }}
-                  value={revisionNote}
-                  placeholder="说明需要修改的点"
-                  onChange={(event) => setRevisionNote(event.target.value)}
-                />
-                <input
-                  style={{ width: '100%', marginTop: 8 }}
-                  value={evidenceLocator}
-                  placeholder="可选：证据定位"
-                  onChange={(event) => setEvidenceLocator(event.target.value)}
-                />
-                <button
-                  type="button"
-                  className="rcv-btn"
-                  style={{ marginTop: 8 }}
-                  onClick={sendRevision}
-                >
-                  提交修改意见
-                </button>
+                ) : null}
               </div>
-            ) : null}
 
-            <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <VerdictBanner
+                title={confirmVerdict.title}
+                detail={confirmVerdict.detail}
+                tone={confirmVerdict.tone}
+              >
+                {hint ? <p className="rcv-note">{hint}</p> : null}
+                {focusError ? (
+                  <p className="ctn-brief-error" role="alert">
+                    {focusError}{' '}
+                    <button
+                      type="button"
+                      className="rcv-btn"
+                      onClick={() => {
+                        setFocusError('');
+                        setFocusRetryNonce((value) => value + 1);
+                      }}
+                    >
+                      重试
+                    </button>
+                  </p>
+                ) : null}
+              </VerdictBanner>
+
+              {focusFindings.length > 0 ? (
+                <>
+                  <h3 className="rd-section-title">关键发现</h3>
+                  <FindingList
+                    items={focusFindings}
+                    maxVisible={3}
+                    onFocusEvidence={focusEvidence}
+                  />
+                </>
+              ) : null}
+
+              {log ? (
+                <CollabLogBuckets value={log} readOnly title="协作说明" />
+              ) : null}
+
               {canAct ? (
-                <button
-                  type="button"
-                  className="rcv-btn is-primary"
-                  disabled={confirming}
-                  onClick={confirm}
-                >
-                  {confirming ? (
-                    '确认中…'
-                  ) : (
-                    <>
-                      <Check size={16} strokeWidth={2.25} aria-hidden="true" />
-                      确认接收
-                    </>
-                  )}
-                </button>
+                <div className="rd-block">
+                  <h3 className="rd-section-title">提出修改意见</h3>
+                  <div
+                    ref={revisionEditorRef}
+                    className="rcv-brief is-editor"
+                    contentEditable
+                    role="textbox"
+                    aria-multiline="true"
+                    aria-label="修改意见"
+                    data-placeholder="说明需要修改的点 · 点「引用」或右键左侧证据插入引用"
+                    suppressContentEditableWarning
+                    onClick={(event) => {
+                      const cite = (event.target as HTMLElement).closest(
+                        '.rcv-cite',
+                      ) as HTMLElement | null;
+                      const evidenceId = cite?.dataset.evidenceId;
+                      if (evidenceId) {
+                        event.preventDefault();
+                        focusEvidence(evidenceId);
+                      }
+                    }}
+                  />
+                  <div className="rcv-revision-actions">
+                    <button
+                      type="button"
+                      className="rcv-btn"
+                      onClick={sendRevision}
+                    >
+                      发送修改意见
+                    </button>
+                  </div>
+                </div>
               ) : null}
-              {isPublisher && delivery.status === 'published' ? (
+
+              {delivery.publishedVersions.length > 1 ? (
+                <div className="rd-block">
+                  <h3 className="rd-section-title">历史版本</h3>
+                  <ul className="rd-aux">
+                    {delivery.publishedVersions.map((version) => (
+                      <li key={version.versionId}>
+                        {version.version}
+                        {version.versionId === delivery.currentVersionId
+                          ? '（当前）'
+                          : '（旧，不可确认）'}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
+              <details className="ctn-tech-details">
+                <summary>技术详情</summary>
                 <p className="rd-aux">
-                  发送方视角：已发布，等待 {receiver?.name ?? 'Priya'} 确认接收
+                  发布者 {publisher?.name ?? delivery.publisherId} · 接收者{' '}
+                  {receiver?.name ?? delivery.receiverId}
                 </p>
-              ) : null}
+                {delivery.currentVersionId ? (
+                  <p className="rd-aux">版本 ID：{delivery.currentVersionId}</p>
+                ) : null}
+                <p className="rd-aux">联调目标：{HANDOFF_INTEGRATION_GOAL}</p>
+                {analysis ? (
+                  <p className="rd-aux">
+                    分析判定：{verdictLabel(analysis.verdict)}
+                  </p>
+                ) : null}
+                {usageSummary?.trim() ? (
+                  <p className="rd-aux">使用说明：{usageSummary}</p>
+                ) : null}
+                {delivery.focusAnnotation ? (
+                  <p className="rd-aux">
+                    {formatAiSourceLabel(
+                      delivery.focusAnnotation.provider,
+                      delivery.focusAnnotation.modelLabel,
+                    )}
+                    {delivery.focusAnnotation.cacheKey.includes(':hit')
+                      ? ' · 缓存命中'
+                      : ''}
+                    · 绑定 {delivery.focusAnnotation.versionId}
+                  </p>
+                ) : null}
+              </details>
             </div>
-
-            {delivery.publishedVersions.length > 1 ? (
-              <div className="rd-block" style={{ marginTop: 20 }}>
-                <h3 className="rd-section-title">历史版本</h3>
-                <ul className="rd-aux">
-                  {delivery.publishedVersions.map((version) => (
-                    <li key={version.versionId}>
-                      {version.version}
-                      {version.versionId === delivery.currentVersionId
-                        ? '（当前）'
-                        : '（旧，不可确认）'}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-
-            <details className="ctn-tech-details" style={{ marginTop: 12 }}>
-              <summary>技术详情</summary>
-              <p className="rd-aux">
-                发布者 {publisher?.name ?? delivery.publisherId} · 接收者{' '}
-                {receiver?.name ?? delivery.receiverId}
-              </p>
-              <p className="rd-aux">联调目标：{HANDOFF_INTEGRATION_GOAL}</p>
-              {analysis ? (
-                <p className="rd-aux">分析判定：{verdictLabel(analysis.verdict)}</p>
-              ) : null}
-              {usageSummary?.trim() ? (
-                <p className="rd-aux">使用说明：{usageSummary}</p>
-              ) : null}
-            </details>
           </aside>
         </div>
       </div>

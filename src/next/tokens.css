@@ -75,6 +75,9 @@
   --ct-radius-card: 12px;
   --ct-radius-zone: 14px;
   --ct-btn-height: 52px;
+  /* 次级 / 卡片内动作：内容宽，勿把短标签拉成满宽主条 */
+  --ct-btn-height-sm: 40px;
+  --ct-fs-action-sm: 15px;
   --ct-node-height: 78px;
   --ct-edge-width: 1.4px;
 

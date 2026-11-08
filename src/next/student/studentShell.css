@@ -6,13 +6,29 @@
 }
 
 .stu-shell {
-  height: 100vh;
+  position: relative;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   background: var(--ct-subtle);
   color: var(--ct-text);
   font-family: var(--ct-font);
+}
+
+.stu-demo-foot {
+  flex: 0 0 auto;
+  position: static;
+  margin: 0;
+  padding: 6px 18px 8px;
+  max-width: none;
+  color: #b8c0cc;
+  font-size: 11px;
+  line-height: 1.35;
+  pointer-events: none;
+  border-top: 1px solid var(--ct-divider);
+  background: var(--ct-surface);
 }
 
 .stu-shell button {
@@ -145,4 +161,40 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+/* 内容区上下文路径：项目 · 栏目 · 实体；置于页面 H1 之上 */
+.stu-trail {
+  margin: 0 0 6px;
+  color: var(--ct-brand);
+  font-size: var(--ct-fs-meta);
+  font-weight: 500;
+  line-height: var(--ct-lh);
+}
+
+.stu-trail-sep {
+  color: var(--ct-brand);
+  font-weight: 500;
+}
+
+.stu-trail-link {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ct-brand);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.stu-trail-link:hover {
+  color: var(--ct-brand-deep);
+  text-decoration: underline;
+}
+
+.stu-trail-current {
+  color: var(--ct-brand);
+  font-weight: 500;
 }

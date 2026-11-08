@@ -44,6 +44,8 @@ export type MaterialFile = {
   id: string;
   projectId: string;
   folderId: MaterialFolderId;
+  /** 代码仓相对路径，供材料库左侧结构树定位 */
+  repoPath: string;
   /** 列表展示名 */
   displayName: string;
   nodeIds: string[];
@@ -91,6 +93,7 @@ const CAMPUS_FILES: MaterialFile[] = [
     id: 'matfile-req-scope',
     projectId: HANDOFF_PROJECT_ID,
     folderId: 'folder-req',
+    repoPath: 'docs/requirements/项目需求与范围说明.pdf',
     displayName: '项目需求与范围说明.pdf',
     nodeIds: ['node-requirements'],
     currentVersionId: 'matver-req-scope-v1',
@@ -109,6 +112,7 @@ const CAMPUS_FILES: MaterialFile[] = [
     id: 'matfile-biz-flow',
     projectId: HANDOFF_PROJECT_ID,
     folderId: 'folder-req',
+    repoPath: 'docs/flows/二手交易核心业务流程.pdf',
     displayName: '二手交易核心业务流程.pdf',
     nodeIds: ['node-integration'],
     currentVersionId: 'matver-biz-flow-v1',
@@ -127,6 +131,7 @@ const CAMPUS_FILES: MaterialFile[] = [
     id: 'matfile-order-api',
     projectId: HANDOFF_PROJECT_ID,
     folderId: 'folder-api',
+    repoPath: 'docs/api/订单API接口规范.pdf',
     displayName: '订单API接口规范.pdf',
     nodeIds: ['node-backend'],
     currentVersionId: 'matver-order-api-v1',
@@ -156,6 +161,7 @@ const CAMPUS_FILES: MaterialFile[] = [
     id: 'matfile-order-service',
     projectId: HANDOFF_PROJECT_ID,
     folderId: 'folder-api',
+    repoPath: 'backend/src/services/orderService.js',
     displayName: 'orderService.js',
     nodeIds: ['node-backend'],
     currentVersionId: 'matver-order-svc-v04',
@@ -190,6 +196,7 @@ const CAMPUS_FILES: MaterialFile[] = [
     id: 'matfile-db-schema',
     projectId: HANDOFF_PROJECT_ID,
     folderId: 'folder-api',
+    repoPath: 'docs/database/数据库结构设计.pdf',
     displayName: '数据库结构设计.pdf',
     nodeIds: ['node-database'],
     currentVersionId: 'matver-db-schema-v1',
@@ -208,6 +215,7 @@ const CAMPUS_FILES: MaterialFile[] = [
     id: 'matfile-integration-guide',
     projectId: HANDOFF_PROJECT_ID,
     folderId: 'folder-integration',
+    repoPath: 'docs/integration/前后端联调说明.pdf',
     displayName: '前后端联调说明.pdf',
     nodeIds: ['node-frontend', 'node-integration'],
     currentVersionId: 'matver-integration-v1',
@@ -226,6 +234,7 @@ const CAMPUS_FILES: MaterialFile[] = [
     id: 'matfile-test-run',
     projectId: HANDOFF_PROJECT_ID,
     folderId: 'folder-integration',
+    repoPath: 'tests/订单服务测试结果.txt',
     displayName: '订单服务测试结果.txt',
     nodeIds: ['node-backend', 'node-integration'],
     currentVersionId: 'matver-test-run-v04',
@@ -247,6 +256,7 @@ const CAMPUS_FILES: MaterialFile[] = [
     id: 'matfile-test-checklist',
     projectId: HANDOFF_PROJECT_ID,
     folderId: 'folder-integration',
+    repoPath: 'docs/testing/测试与验收清单.pdf',
     displayName: '测试与验收清单.pdf',
     nodeIds: ['node-testing'],
     currentVersionId: 'matver-test-checklist-v1',
@@ -265,6 +275,7 @@ const CAMPUS_FILES: MaterialFile[] = [
     id: 'matfile-demo-script',
     projectId: HANDOFF_PROJECT_ID,
     folderId: 'folder-demo',
+    repoPath: 'docs/demo/角色走查说明.pdf',
     displayName: '角色走查说明.pdf',
     nodeIds: ['node-acceptance'],
     currentVersionId: 'matver-demo-script-v1',
@@ -283,6 +294,7 @@ const CAMPUS_FILES: MaterialFile[] = [
     id: 'matfile-course-req',
     projectId: HANDOFF_PROJECT_ID,
     folderId: 'folder-demo',
+    repoPath: 'docs/course/课程需求说明.pdf',
     displayName: '课程需求说明.pdf',
     nodeIds: ['node-acceptance'],
     currentVersionId: 'matver-course-req-v1',
@@ -304,6 +316,7 @@ const SEATFLOW_FILES: MaterialFile[] = [
     id: 'matfile-seat-consensus',
     projectId: SEATFLOW_PROJECT_ID,
     folderId: 'folder-req',
+    repoPath: 'docs/protocol/AI 共识协议.pdf',
     displayName: 'AI 共识协议.pdf',
     nodeIds: [],
     currentVersionId: 'matver-seat-consensus-v1',
@@ -322,6 +335,7 @@ const SEATFLOW_FILES: MaterialFile[] = [
     id: 'matfile-seat-course',
     projectId: SEATFLOW_PROJECT_ID,
     folderId: 'folder-demo',
+    repoPath: 'docs/course/课程需求说明.pdf',
     displayName: '课程需求说明.pdf',
     nodeIds: [],
     currentVersionId: 'matver-seat-course-v1',
@@ -472,5 +486,85 @@ export async function downloadHrefAsNamedFile(
   const blob = await response.blob();
   const url = URL.createObjectURL(blob);
   triggerHrefDownload(url, fileName);
+  window.setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+export async function readVersionBlob(
+  version: MaterialVersion,
+  fetchPreview: (
+    materialId: string,
+  ) => Promise<
+    | { ok: true; data?: { preview?: string } | null }
+    | { ok: false; message?: string }
+  >,
+): Promise<Blob> {
+  if (version.source.kind === 'href') {
+    const response = await fetch(version.source.href);
+    if (!response.ok) {
+      throw new Error(`下载失败（HTTP ${response.status}）`);
+    }
+    return response.blob();
+  }
+  if (version.source.kind === 'inline') {
+    return new Blob([version.source.body], {
+      type: version.source.mime || 'text/plain;charset=utf-8',
+    });
+  }
+  const preview = await fetchPreview(version.source.materialId);
+  if (!preview.ok || !preview.data?.preview) {
+    throw new Error(
+      preview.ok ? '材料正文为空' : preview.message || '下载失败',
+    );
+  }
+  return new Blob([preview.data.preview], {
+    type: 'text/plain;charset=utf-8',
+  });
+}
+
+function zipEntryPath(file: MaterialFile, version: MaterialVersion): string {
+  const raw = (file.repoPath || version.fileName || file.displayName).replace(
+    /^\/+/,
+    '',
+  );
+  return raw || version.fileName || file.displayName;
+}
+
+/** 将当前可见材料打成一个 zip 并触发下载 */
+export async function downloadMaterialFilesAsZip(params: {
+  files: MaterialFile[];
+  zipName: string;
+  fetchPreview: (
+    materialId: string,
+  ) => Promise<
+    | { ok: true; data?: { preview?: string } | null }
+    | { ok: false; message?: string }
+  >;
+}): Promise<void> {
+  const { default: JSZip } = await import('jszip');
+  const zip = new JSZip();
+  const used = new Set<string>();
+
+  for (const file of params.files) {
+    const version = getMaterialVersion(file, file.currentVersionId);
+    if (!version) continue;
+    let path = zipEntryPath(file, version);
+    if (used.has(path)) {
+      const stem = path.replace(/(\.[^./]+)?$/, '');
+      const ext = path.slice(stem.length);
+      let i = 2;
+      while (used.has(`${stem}-${i}${ext}`)) i += 1;
+      path = `${stem}-${i}${ext}`;
+    }
+    used.add(path);
+    zip.file(path, await readVersionBlob(version, params.fetchPreview));
+  }
+
+  if (used.size === 0) {
+    throw new Error('没有可下载的文件');
+  }
+
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(blob);
+  triggerHrefDownload(url, params.zipName);
   window.setTimeout(() => URL.revokeObjectURL(url), 2000);
 }

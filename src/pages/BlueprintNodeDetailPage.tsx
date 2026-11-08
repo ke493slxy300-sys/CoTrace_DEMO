@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Download, FileCode2, FileText } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown, Download, FileCode2, FileText } from "lucide-react";
 import {
   AnnotationComposeModal,
   type AnnotationComposeDraft,
@@ -22,11 +22,7 @@ import {
   StudentShell,
   type StudentPlace,
 } from "../next/student/StudentShell";
-import {
-  getMaterialVersion,
-  listMaterialsForNode,
-} from "../data/teamMaterials";
-import { hashMaterials } from "../next/student/studentRoutes";
+import { StudentTrail } from "../next/student/StudentTrail";
 import "../next/student/nodeWork.css";
 import { getSubmission } from "../data/demoSubmission";
 import { getBlueprintNodeDetailData } from "../data/nodeCollaboration";
@@ -60,11 +56,11 @@ type BlueprintNodeDetailPageProps = {
   project: CourseProject;
   node: BlueprintNode;
   nodes: BlueprintNode[];
-  onBack: () => void;
+  /** 进入来源：work | materials | blueprint | null — 影响路径栏目 */
+  navFrom?: string | null;
   onNavigate: (place: StudentPlace) => void;
   /** 负责人进入个人工作区 */
   onContinueWork?: () => void;
-  onOpenHash?: (hash: string) => void;
 };
 
 export function BlueprintNodeDetailPage({
@@ -72,8 +68,7 @@ export function BlueprintNodeDetailPage({
   node,
   onNavigate,
   onContinueWork: _onContinueWork,
-  onOpenHash,
-  onBack,
+  navFrom = null,
 }: BlueprintNodeDetailPageProps) {
   const me = getCurrentMember();
   const activeMemberId = useActiveMemberId();
@@ -93,9 +88,13 @@ export function BlueprintNodeDetailPage({
   const [activeFileId, setActiveFileId] = useState<string | null>(() =>
     resolveDefaultFileId(node.id, baseData),
   );
-  const [activeDocId, setActiveDocId] = useState<string | null>(
-    () => baseData.documents[0]?.id ?? null,
-  );
+  const [activeDocId, setActiveDocId] = useState<string | null>(() => {
+    const markdownDoc = baseData.documents.find(
+      (doc) =>
+        doc.mimeType === "text/markdown" || Boolean(doc.markdownKey),
+    );
+    return markdownDoc?.id ?? baseData.documents[0]?.id ?? null;
+  });
   const [selection, setSelection] = useState<LineSelection | null>(null);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
   const [openDiscussionId, setOpenDiscussionId] = useState<string | null>(null);
@@ -106,24 +105,122 @@ export function BlueprintNodeDetailPage({
   );
   const [linkedDocHint, setLinkedDocHint] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const libraryMaterials = useMemo(
-    () => listMaterialsForNode(project.id, node.id),
-    [project.id, node.id],
-  );
+  const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
+  const downloadMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setActiveFileId(resolveDefaultFileId(node.id, baseData));
-    setActiveDocId(baseData.documents[0]?.id ?? null);
+    setActiveDocId(
+      baseData.documents.find(
+        (doc) =>
+          doc.mimeType === "text/markdown" || Boolean(doc.markdownKey),
+      )?.id ??
+        baseData.documents[0]?.id ??
+        null,
+    );
     setActiveCardId(null);
     setSelection(null);
     setOpenDiscussionId(null);
     setOpenAnnotationId(null);
     setCodeDiscussType(null);
     setLinkedDocHint(null);
+    setDownloadMenuOpen(false);
   }, [baseData, node.id]);
 
   const activeFile =
     baseData.viewFiles.find((file) => file.id === activeFileId) ?? null;
+  const canDownload =
+    (hasPublicCode && Boolean(activeFile)) ||
+    (hasPublicDocs && baseData.documents.length > 0);
+  const canDownloadZip =
+    (hasPublicCode && baseData.viewFiles.length > 0) ||
+    (hasPublicDocs && baseData.documents.length > 0);
+
+  useEffect(() => {
+    if (!downloadMenuOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const root = downloadMenuRef.current;
+      if (root && !root.contains(event.target as Node)) {
+        setDownloadMenuOpen(false);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setDownloadMenuOpen(false);
+    };
+    window.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [downloadMenuOpen]);
+
+  const downloadCurrentFile = () => {
+    if (hasPublicCode && activeFile) {
+      const blob = new Blob([activeFile.content], {
+        type: "text/plain;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = activeFile.name.split("/").pop() || activeFile.name;
+      link.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
+    if (hasPublicDocs) {
+      const doc =
+        baseData.documents.find((item) => item.id === activeDocId) ??
+        baseData.documents[0];
+      if (!doc) return;
+      const body =
+        doc.id.includes("research") ||
+        doc.mimeType === "text/markdown" ||
+        Boolean(doc.markdownKey)
+          ? getTeammateResearchMarkdown()
+          : `${doc.label}\n`;
+      const blob = new Blob([body], {
+        type: "text/plain;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${doc.label}.md`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const downloadZipArchive = async () => {
+    if (!canDownloadZip) return;
+    const { default: JSZip } = await import("jszip");
+    const zip = new JSZip();
+    if (hasPublicCode) {
+      for (const file of baseData.viewFiles) {
+        const name = file.name.replace(/^\/+/, "") || file.id;
+        zip.file(name, file.content);
+      }
+    } else if (hasPublicDocs) {
+      for (const doc of baseData.documents) {
+        const body =
+          doc.id.includes("research") ||
+          doc.mimeType === "text/markdown" ||
+          Boolean(doc.markdownKey)
+            ? getTeammateResearchMarkdown()
+            : `${doc.label}\n`;
+        zip.file(`${doc.label}.md`, body);
+      }
+    }
+    const blob = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${baseData.title || "node"}-files.zip`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 2000);
+    setDownloadMenuOpen(false);
+  };
+
   const annotateTheme =
     baseData.teammateTraceCards.find((card) => card.id === annotateCardId)
       ?.displayTitle ??
@@ -243,105 +340,80 @@ export function BlueprintNodeDetailPage({
   }
 
   const isDocumentPrimary = baseData.primaryKind === "document";
+  const fromWork = navFrom === "work";
+  const shellPlace: StudentPlace = fromWork
+    ? "work"
+    : navFrom === "materials"
+      ? "materials"
+      : "blueprint";
+  const trailSection: StudentPlace = fromWork ? "work" : "blueprint";
+  const trailSectionLabel = fromWork ? "工作" : "蓝图";
 
   return (
     <StudentShell
-      place="work"
+      place={shellPlace}
       projectName={project.name}
       onNavigate={onNavigate}
     >
     <div className="nw">
       <header className="nw-head">
         <div>
-          <p className="nw-kicker">{project.name}</p>
-          <button type="button" className="nw-ghost" onClick={onBack}>
-            ← 返回蓝图
-          </button>
+          <StudentTrail
+            segments={[
+              { label: project.name },
+              {
+                label: trailSectionLabel,
+                onClick: () => onNavigate(trailSection),
+              },
+              { label: baseData.title },
+            ]}
+          />
           <h1>{baseData.title}</h1>
         </div>
         <div className="nw-actions">
-          {onOpenHash &&
-            libraryMaterials.map((file) => {
-              const version = getMaterialVersion(file, file.currentVersionId);
-              if (!version) return null;
-              return (
+          <div className="nw-download" ref={downloadMenuRef}>
+            <button
+              type="button"
+              className="nw-ghost nw-download-main"
+              disabled={!canDownload}
+              title={
+                hasPublicCode && activeFile
+                  ? `下载 ${activeFile.name}`
+                  : hasPublicDocs
+                    ? "下载当前文档"
+                    : "暂无可下载内容"
+              }
+              onClick={downloadCurrentFile}
+            >
+              <Download size={16} strokeWidth={1.5} aria-hidden="true" />
+              下载文件
+            </button>
+            <button
+              type="button"
+              className="nw-ghost nw-download-caret"
+              disabled={!canDownloadZip}
+              aria-label="更多下载选项"
+              aria-haspopup="menu"
+              aria-expanded={downloadMenuOpen}
+              title="更多下载选项"
+              onClick={() => setDownloadMenuOpen((open) => !open)}
+            >
+              <ChevronDown size={16} strokeWidth={2} aria-hidden="true" />
+            </button>
+            {downloadMenuOpen ? (
+              <div className="nw-download-menu" role="menu">
                 <button
-                  key={file.id}
                   type="button"
-                  className="nw-ghost"
-                  data-material-ref={file.id}
-                  onClick={() =>
-                    onOpenHash(
-                      hashMaterials(project.id, {
-                        folder: file.folderId,
-                        file: file.id,
-                        version: version.id,
-                        from: "blueprint",
-                        retNode: node.id,
-                      }),
-                    )
-                  }
+                  role="menuitem"
+                  className="nw-download-item"
+                  onClick={() => void downloadZipArchive()}
                 >
-                  材料库 · {file.displayName}
+                  <Download size={16} strokeWidth={1.5} aria-hidden="true" />
+                  下载压缩包
                 </button>
-              );
-            })}
-          <button
-            type="button"
-            className="nw-ghost"
-            disabled={
-              !(
-                (hasPublicCode && activeFile) ||
-                (hasPublicDocs && baseData.documents.length > 0)
-              )
-            }
-            title={
-              hasPublicCode && activeFile
-                ? `下载 ${activeFile.name}`
-                : hasPublicDocs
-                  ? "下载当前文档"
-                  : "暂无可下载内容"
-            }
-            onClick={() => {
-              if (hasPublicCode && activeFile) {
-                const blob = new Blob([activeFile.content], {
-                  type: "text/plain;charset=utf-8",
-                });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement("a");
-                link.href = url;
-                link.download =
-                  activeFile.name.split("/").pop() || activeFile.name;
-                link.click();
-                URL.revokeObjectURL(url);
-                return;
-              }
-              if (hasPublicDocs) {
-                const doc =
-                  baseData.documents.find((item) => item.id === activeDocId) ??
-                  baseData.documents[0];
-                if (!doc) return;
-                const body =
-                  doc.id.includes("research") ||
-                  doc.mimeType === "text/markdown" ||
-                  Boolean(doc.markdownKey)
-                    ? getTeammateResearchMarkdown()
-                    : `${doc.label}\n`;
-                const blob = new Blob([body], {
-                  type: "text/plain;charset=utf-8",
-                });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement("a");
-                link.href = url;
-                link.download = `${doc.label}.md`;
-                link.click();
-                URL.revokeObjectURL(url);
-              }
-            }}
-          >
-            <Download size={16} strokeWidth={1.5} aria-hidden="true" />
-            下载文件
-          </button>
+              </div>
+            ) : null}
+          </div>
         </div>
       </header>
 

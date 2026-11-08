@@ -122,7 +122,7 @@ export function createSeedProcessEvents(): ProcessEvent[] {
       statusTone: 'warning',
       kind: 'stage',
       summary: '库存不足场景，应该补充哪些测试？',
-      authorLabel: 'Jordan 提出求助 · 14:18',
+      authorLabel: 'Jordan 提出求助',
       evidence: [
         {
           id: 'ev-ai-inventory',

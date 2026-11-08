@@ -1,0 +1,25 @@
+/**
+ * 演示画幅：逻辑尺寸固定 1440×960，等比缩放适配窗口，禁止拉伸变形。
+ */
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #0f1413;
+}
+
+#root {
+  width: 1440px;
+  height: 960px;
+  margin: 0;
+  overflow: hidden;
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(var(--demo-stage-scale, 1));
+  transform-origin: center center;
+  background: var(--ct-subtle, #f5f7f8);
+}

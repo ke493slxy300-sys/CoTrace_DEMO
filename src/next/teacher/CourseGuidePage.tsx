@@ -21,7 +21,7 @@ import {
   stashTeacherFocusEvent,
   stashTeacherFocusSubmission,
 } from '../../pages/teacher/teacherFocus';
-import { Calendar, ChevronDown } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { TeacherShell, type TeacherPlace } from './TeacherShell';
 import './guide.css';
 
@@ -59,14 +59,16 @@ export function CourseGuidePage({
       : (stageEvent?.authorLabel ?? '阶段记录');
   const stageGuided = useFeedbacksForEvent(focusEventId).length > 0;
   const stageStatus = stageGuided ? '已反馈' : '待指导';
+  const pendingTodoCount =
+    (stageGuided ? 0 : 1) + (acceptance.status === 'accepted' ? 0 : 1);
 
   const groupSummary =
     delivery.status === 'received'
-      ? '订单已接收，交易流程联调进行中'
+      ? '已确认'
       : delivery.status === 'published'
-        ? '订单创建已发布，等待确认接收'
+        ? '已交给 Priya，等她确认'
         : delivery.status === 'needs-revision'
-          ? '交付待修改，等待 Alex 重发'
+          ? 'Priya 要改这一版'
           : '订单创建已更新，可上传材料发布';
 
   const openStage = (groupId: string) => {
@@ -81,17 +83,22 @@ export function CourseGuidePage({
     onOpenAcceptance();
   };
 
+  const sortedGroups = [...TEACHER_GROUPS].sort((a, b) => {
+    const rank = (group: (typeof TEACHER_GROUPS)[number]) => {
+      if (group.id === TEACHER_LIVE_GROUP_ID || group.live) return 0;
+      if (group.tone === 'warn') return 1;
+      return 2;
+    };
+    return rank(a) - rank(b);
+  });
+
   return (
     <TeacherShell place="guide" onNavigate={onNavigate} contentClassName="is-board">
           <div className="ctg-head">
             <div>
               <p className="ctg-kicker">课程指导台 · 第二阶段</p>
               <h1>软件工程</h1>
-              <p className="ctg-subhead">阶段汇报与小组项目入口</p>
             </div>
-            <p className="ctg-next">
-              下次汇报 <strong>11月15日</strong>
-            </p>
           </div>
 
           <section className="ctg-board" aria-label="小组项目">
@@ -100,21 +107,22 @@ export function CourseGuidePage({
                   小组项目
                   <span className="ctg-count">全部小组 {TEACHER_GROUPS.length}</span>
                 </h2>
-                <span className="ctg-filter">
+                <span className="ctg-filter" aria-hidden="true">
                   全部阶段
-                  <ChevronDown size={14} strokeWidth={1.75} aria-hidden="true" />
                 </span>
               </div>
               <div className="ctg-grid">
-                {TEACHER_GROUPS.map((group) => {
+                {sortedGroups.map((group) => {
                   const isLive = group.id === TEACHER_LIVE_GROUP_ID;
                   const summary = isLive ? groupSummary : group.summary;
                   const status = isLive ? stageStatus : group.status;
                   const guided = isLive ? stageGuided : group.tone === 'ok';
+                  const needsAttention =
+                    isLive || group.live || group.tone === 'warn';
                   return (
                     <article
                       key={group.id}
-                      className="ctg-card"
+                      className={`ctg-card${needsAttention ? ' is-attention' : ''}`}
                       data-group-id={group.id}
                     >
                       <button
@@ -153,13 +161,6 @@ export function CourseGuidePage({
                           <i />
                           {status}
                         </span>
-                        <button
-                          type="button"
-                          className="ctg-link"
-                          onClick={() => openStage(group.id)}
-                        >
-                          查看汇报 →
-                        </button>
                       </div>
                     </article>
                   );
@@ -171,7 +172,7 @@ export function CourseGuidePage({
               <div className="ctg-rail-head">
                 <h2>
                   待处理
-                  <span className="ctg-dot">2</span>
+                  <span className="ctg-dot">{pendingTodoCount}</span>
                 </h2>
               </div>
               <button
@@ -189,7 +190,6 @@ export function CourseGuidePage({
                   <i />
                   {stageStatus}
                 </span>
-                <span className="ctg-enter">进入指导 →</span>
               </button>
 
               <button
@@ -211,7 +211,6 @@ export function CourseGuidePage({
                   <i />
                   {acceptance.status === 'accepted' ? '已核收' : '待核收'}
                 </span>
-                <span className="ctg-enter is-ghost">进入核收 →</span>
               </button>
 
               <div className="ctg-cal">

@@ -7,13 +7,20 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  padding: var(--ct-content-pad) var(--ct-content-pad) 16px;
+  padding: 20px var(--ct-content-pad) 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  background: var(--ct-subtle);
+  gap: 32px;
+  background:
+    radial-gradient(ellipse 80% 50% at 10% 0%, #e8f5f1 0%, transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 10%, #eef2f6 0%, transparent 50%),
+    var(--ct-subtle);
   color: var(--ct-text);
   font-family: var(--ct-font);
+}
+
+.wbp-title {
+  flex: 0 0 auto;
 }
 
 .wbp-kicker {
@@ -66,8 +73,12 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
+  overscroll-behavior: contain;
   /* 底部工具条占位，避免遮挡最下方节点；详情浮层不占布局 */
   padding-bottom: 52px;
+  /* 减轻固定大画布被硬裁切的压迫感 */
+  background:
+    linear-gradient(180deg, transparent 0%, rgba(245, 247, 248, 0.55) 100%);
 }
 
 .wbp-canvas-slot {
@@ -160,20 +171,146 @@
   height: 28px;
   padding: 0 10px;
   border-radius: 999px;
-  border: 1px solid var(--ct-brand);
-  background: #e8f8f3;
-  color: var(--ct-brand);
+  border: 1px solid transparent;
   font-size: 12px;
   font-weight: 700;
+  font-family: inherit;
   white-space: nowrap;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
+  transform: translate(-50%, -50%) scale(1);
+  transform-origin: center center;
+  pointer-events: auto;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    color 180ms ease;
 }
 
-.wbp-delivery-badge em {
-  font-style: normal;
-  font-weight: 500;
-  color: var(--ct-text-secondary);
+.wbp-delivery-badge.is-open-link {
+  border-color: #e8a054;
+  background: #fff6eb;
+  color: #ad5d00;
+  box-shadow: 0 1px 0 rgba(173, 93, 0, 0.12);
+  animation: wbp-delivery-pulse 1.8s ease-in-out infinite;
+}
+
+.wbp-delivery-badge.is-linked {
+  border-color: var(--ct-brand);
+  background: #e8f8f3;
+  color: var(--ct-brand);
+  box-shadow: 0 1px 0 rgba(0, 133, 110, 0.12);
+}
+
+.wbp-delivery-badge.is-link-in {
+  animation: wbp-delivery-link-in 620ms ease both;
+}
+
+.wbp-delivery-link {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+}
+
+.wbp-delivery-label {
+  line-height: 1;
+}
+
+.wbp-delivery-tip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%) translateY(4px) scale(0.96);
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: #101514;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 6px 16px rgba(16, 21, 20, 0.18);
+  transition:
+    opacity 160ms ease,
+    transform 180ms ease;
+}
+
+.wbp-delivery-tip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border: 5px solid transparent;
+  border-top-color: #101514;
+}
+
+.wbp-delivery-badge:hover,
+.wbp-delivery-badge:focus-visible {
+  outline: none;
+  transform: translate(-50%, -50%) scale(1.08);
+  z-index: 5;
+}
+
+.wbp-delivery-badge.is-open-link:hover,
+.wbp-delivery-badge.is-open-link:focus-visible {
+  animation: none;
+  background: #ffefd6;
+  box-shadow: 0 0 0 2px rgba(173, 93, 0, 0.2);
+}
+
+.wbp-delivery-badge.is-linked:hover,
+.wbp-delivery-badge.is-linked:focus-visible {
+  background: #d9f4ee;
+  box-shadow: 0 0 0 2px rgba(0, 133, 110, 0.22);
+}
+
+.wbp-delivery-badge:hover .wbp-delivery-tip,
+.wbp-delivery-badge:focus-visible .wbp-delivery-tip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0) scale(1);
+}
+
+@keyframes wbp-delivery-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(232, 160, 84, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(232, 160, 84, 0);
+  }
+}
+
+@keyframes wbp-delivery-link-in {
+  0% {
+    transform: translate(-50%, -50%) scale(0.86);
+    filter: saturate(0.7);
+  }
+  55% {
+    transform: translate(-50%, -50%) scale(1.12);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wbp-delivery-badge.is-open-link,
+  .wbp-delivery-badge.is-link-in {
+    animation: none;
+  }
+
+  .wbp-delivery-badge,
+  .wbp-delivery-tip {
+    transition: none;
+  }
 }
 
 .wbp-empty {
@@ -285,12 +422,25 @@
   border-color: var(--ct-success);
 }
 
+.wbp-node-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
 .wbp-node-status {
   font-size: var(--ct-fs-aux);
   line-height: var(--ct-lh);
   font-weight: 700;
   color: var(--ct-warning-text);
   white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-left: auto;
+  text-align: right;
 }
 
 .wbp-node-status.is-done,
@@ -298,16 +448,18 @@
   color: var(--ct-success-alt);
 }
 
-.wbp-node-action {
-  margin-top: 2px;
-  font-size: var(--ct-fs-aux);
-  line-height: var(--ct-lh);
+.wbp-node-face {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #101514;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
   font-weight: 700;
-  font-style: normal;
-  color: var(--ct-brand);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1;
 }
 
 /* 底部非模态浮层：关闭不占布局；打开覆盖画布底部，不挤压重排 */
@@ -322,8 +474,8 @@
 }
 
 .wbp-dock.is-open {
-  /* 固定外框高度：切节点只换内容，不改面板尺寸；首屏精简卡 */
-  height: 132px;
+  /* 固定外框高度：切节点/交付只换内容；交付态略增高以容纳 kicker */
+  height: 168px;
   pointer-events: none;
 }
 
@@ -349,9 +501,9 @@
 
 .wbp-detail {
   position: relative;
-  min-height: 132px;
+  min-height: 168px;
   height: auto;
-  max-height: 200px;
+  max-height: 240px;
   box-sizing: border-box;
   overflow: hidden;
   background: var(--ct-surface);
@@ -462,6 +614,33 @@
   overflow: hidden;
 }
 
+.wbp-detail-summary.is-muted {
+  color: var(--ct-text-tertiary);
+  font-weight: 400;
+  -webkit-line-clamp: 2;
+}
+
+.wbp-delivery-chip {
+  align-self: flex-start;
+  margin-top: 8px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--ct-brand);
+  background: #e8f8f3;
+  color: var(--ct-brand);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.wbp-delivery-chip:hover,
+.wbp-delivery-chip:focus-visible {
+  background: #d9f4ee;
+  outline: none;
+}
+
 .wbp-detail-actions {
   display: flex;
   flex-wrap: wrap;
@@ -471,22 +650,42 @@
 }
 
 .wbp .wbp-detail button {
-  height: 48px;
-  min-width: 120px;
+  height: var(--ct-btn-height);
+  min-width: 0;
+  width: auto;
   border: 0;
   border-radius: var(--ct-radius-ctrl);
   background: var(--ct-brand);
   color: #fff;
-  padding: 0 24px;
+  padding: 0 22px;
   font-weight: 700;
   font-size: var(--ct-fs-action);
   line-height: var(--ct-lh);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .wbp-detail button.secondary {
+  height: var(--ct-btn-height-sm);
   background: var(--ct-surface);
   color: var(--ct-text-secondary);
   border: 1px solid var(--ct-border);
+  font-size: var(--ct-fs-action-sm);
+  padding: 0 14px;
+}
+
+.wbp .wbp-detail .wbp-delivery-chip {
+  height: 28px;
+  min-width: 0;
+  width: auto;
+  padding: 0 10px;
+  border: 1px solid var(--ct-brand);
+  border-radius: 999px;
+  background: #e8f8f3;
+  color: var(--ct-brand);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .wbp-flag {

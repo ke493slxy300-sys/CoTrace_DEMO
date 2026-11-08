@@ -15,7 +15,6 @@ import './projectList.css';
 type ProjectListProps = {
   project: CourseProject | null;
   onNavigate: (place: StudentPlace) => void;
-  onOpenRegister: () => void;
   onOpenProject: () => void;
   onOpenProjectLog: (projectId: string) => void;
   onStartHandoffDemo: () => void;
@@ -49,7 +48,6 @@ function projectProgressLabel(
 
 export function ProjectList({
   onNavigate,
-  onOpenRegister,
   onOpenProjectLog,
   onStartHandoffDemo,
   extraProject = null,
@@ -84,10 +82,6 @@ export function ProjectList({
         <p className="pl-kicker">{COURSE_NAME}</p>
         <div className="pl-head">
           <h1>所有项目</h1>
-          <button type="button" className="pl-primary" onClick={onOpenRegister}>
-            <Plus size={18} strokeWidth={1.75} aria-hidden="true" />
-            新建项目
-          </button>
         </div>
 
         <div className="pl-grid">
@@ -103,7 +97,6 @@ export function ProjectList({
               <b />
             </div>
             <h2 className="pl-name">{campusName}</h2>
-            <p className="pl-sub" aria-hidden="true" />
             <p
               className={`pl-status${
                 campusStatus === '已完成'
@@ -150,7 +143,6 @@ export function ProjectList({
               <b />
             </div>
             <h2 className="pl-name">{seatflow.name}</h2>
-            <p className="pl-sub">{seatflow.subtitle}</p>
             <p className="pl-status is-done">
               <i />
               {seatflow.statusLabel}
@@ -184,13 +176,12 @@ export function ProjectList({
               onClick={onOpenExtraProject}
               aria-label={`打开项目 ${extraProject.name}`}
             >
-              <div className="pl-shot pl-shot-seat" aria-hidden="true">
+              <div className="pl-shot pl-shot-extra" aria-hidden="true">
                 <span />
                 <i />
                 <b />
               </div>
               <h2 className="pl-name">{extraProject.name}</h2>
-              <p className="pl-sub">课程流程生成的初始项目</p>
               <p className="pl-status">
                 <i />
                 {projectProgressLabel(extraProject.statuses)}
@@ -202,6 +193,19 @@ export function ProjectList({
               </div>
             </button>
           ) : null}
+
+          <button
+            type="button"
+            className="pl-card pl-card-new"
+            disabled
+            title="演示未开放"
+            aria-label="新建项目（演示未开放）"
+          >
+            <span className="pl-card-new-inner" aria-hidden="true">
+              <Plus size={22} strokeWidth={1.75} />
+              <span>新建项目</span>
+            </span>
+          </button>
         </div>
 
         <div className="pl-user" aria-label="当前用户">

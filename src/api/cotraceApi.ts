@@ -11,6 +11,11 @@ import type {
   CollaborationLog,
   SharedLogPayload,
 } from '../types/handoff';
+import {
+  getStaticMaterialPreview,
+  listStaticDemoMaterials,
+} from '../data/staticDemoMaterials';
+import { staticMockHandoffAnalysis } from '../data/staticMockHandoffAnalysis';
 
 export type DemoMaterialCatalogItem = {
   id: string;
@@ -96,15 +101,44 @@ export function toSharedLogPayload(
   };
 }
 
-export async function fetchDemoMaterials(kind?: 'code' | 'ai-chat') {
+export async function fetchDemoMaterials(kind?: 'code' | 'ai-chat'): Promise<
+  | { ok: true; data: { materials: DemoMaterialCatalogItem[]; aiMode: string } }
+  | { ok: false; message: string; status: number }
+> {
   const query = kind ? `?kind=${kind}` : '';
-  return api<{ materials: DemoMaterialCatalogItem[]; aiMode: string }>(
-    `/api/demo-materials${query}`,
-  );
+  const result = await api<{
+    materials: DemoMaterialCatalogItem[];
+    aiMode: string;
+  }>(`/api/demo-materials${query}`);
+  if (result.ok && Array.isArray(result.data.materials)) {
+    return result;
+  }
+  return {
+    ok: true,
+    data: {
+      materials: listStaticDemoMaterials(kind),
+      aiMode: 'mock',
+    },
+  };
 }
 
-export async function fetchMaterialPreview(id: string) {
-  return api<MaterialPreview>(`/api/demo-materials/${id}/preview`);
+export async function fetchMaterialPreview(
+  id: string,
+): Promise<
+  | { ok: true; data: MaterialPreview }
+  | { ok: false; message: string; status: number }
+> {
+  const result = await api<MaterialPreview & { preview?: string }>(
+    `/api/demo-materials/${id}/preview`,
+  );
+  if (result.ok && typeof result.data.preview === 'string') {
+    return result;
+  }
+  const preview = getStaticMaterialPreview(id);
+  if (!preview) {
+    return { ok: false, message: '材料不存在', status: 404 };
+  }
+  return { ok: true, data: preview };
 }
 
 export async function requestHandoffAnalysis(input: {
@@ -127,34 +161,48 @@ export async function requestHandoffAnalysis(input: {
     method: 'POST',
     body: JSON.stringify(input),
   });
-  if (!result.ok) return result;
-  const raw = result.data.analysis;
-  if (!raw) return { ok: false, message: result.data.message || '分析失败' };
-  const analysis: DeliveryAnalysis = {
-    analysisId: `analysis-${input.requestToken}-${Date.now()}`,
-    requestToken: input.requestToken,
-    verdict: raw.verdict,
-    differences: raw.differences ?? [],
-    citations: raw.citations ?? [],
-    collaborationLog: {
-      summary: raw.collaborationLog?.summary ?? '',
-      humanActions: raw.collaborationLog?.humanActions ?? [],
-      aiActions: raw.collaborationLog?.aiActions ?? [],
-      openItems: raw.collaborationLog?.openItems ?? [],
-      citations: raw.collaborationLog?.citations ?? [],
-      manuallyEdited: false,
-    },
-    pendingConfirmations: raw.pendingConfirmations ?? [],
-    risks: raw.risks ?? [],
+  if (result.ok) {
+    const raw = result.data.analysis;
+    if (raw && typeof raw.verdict === 'string') {
+      const analysis: DeliveryAnalysis = {
+        analysisId: `analysis-${input.requestToken}-${Date.now()}`,
+        requestToken: input.requestToken,
+        verdict: raw.verdict,
+        differences: raw.differences ?? [],
+        citations: raw.citations ?? [],
+        collaborationLog: {
+          summary: raw.collaborationLog?.summary ?? '',
+          humanActions: raw.collaborationLog?.humanActions ?? [],
+          aiActions: raw.collaborationLog?.aiActions ?? [],
+          openItems: raw.collaborationLog?.openItems ?? [],
+          citations: raw.collaborationLog?.citations ?? [],
+          manuallyEdited: false,
+        },
+        pendingConfirmations: raw.pendingConfirmations ?? [],
+        risks: raw.risks ?? [],
+        codeMaterialId: input.codeMaterialId,
+        chatMaterialId: input.chatMaterialId,
+        provider: raw.provider,
+        modelLabel: raw.modelLabel,
+        createdAt: new Date().toISOString(),
+      };
+      return {
+        ok: true,
+        analysis,
+        requestToken: input.requestToken,
+      };
+    }
+  }
+
+  const fallback = staticMockHandoffAnalysis({
     codeMaterialId: input.codeMaterialId,
     chatMaterialId: input.chatMaterialId,
-    provider: raw.provider,
-    modelLabel: raw.modelLabel,
-    createdAt: new Date().toISOString(),
-  };
+    requestToken: input.requestToken,
+  });
+  if (!fallback.ok) return fallback;
   return {
     ok: true,
-    analysis,
+    analysis: fallback.analysis,
     requestToken: input.requestToken,
   };
 }
@@ -252,10 +300,27 @@ export async function requestHelpContext(input: {
   });
 }
 
-export async function fetchHealth() {
-  return api<{ ok: boolean; aiMode: string; hasLiveKey: boolean }>(
+export async function fetchHealth(): Promise<
+  | {
+      ok: true;
+      data: { ok: boolean; aiMode: string; hasLiveKey: boolean };
+    }
+  | { ok: false; message: string; status: number }
+> {
+  const result = await api<{ ok: boolean; aiMode: string; hasLiveKey: boolean }>(
     '/api/health',
   );
+  if (
+    result.ok &&
+    typeof result.data.aiMode === 'string' &&
+    typeof result.data.hasLiveKey === 'boolean'
+  ) {
+    return result;
+  }
+  return {
+    ok: true,
+    data: { ok: true, aiMode: 'mock', hasLiveKey: false },
+  };
 }
 
 function withActorHeaders(actorId?: string): HeadersInit {

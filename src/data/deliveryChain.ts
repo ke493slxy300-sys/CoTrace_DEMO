@@ -486,9 +486,24 @@ export function getVersionSnapshot(
   );
 }
 
+export type HandoffAudience = 'publisher' | 'receiver';
+
+/** 主路径上的交接状态：按正在看的人说一句。 */
+export function handoffStatusLine(
+  status: DeliveryStatus,
+  audience: HandoffAudience,
+): string {
+  if (status === 'published') {
+    return audience === 'receiver' ? '等你确认' : '已交给 Priya，等她确认';
+  }
+  if (status === 'received') return '已确认';
+  if (status === 'needs-revision') {
+    return audience === 'receiver' ? '已让 Alex 修改' : 'Priya 要改这一版';
+  }
+  return '这一版还没交给 Priya';
+}
+
 export function statusLabel(status: DeliveryStatus): string {
   if (status === 'draft') return '草稿';
-  if (status === 'published') return '等待确认接收';
-  if (status === 'needs-revision') return '待修改';
-  return '已接收';
+  return handoffStatusLine(status, 'publisher');
 }

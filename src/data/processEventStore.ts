@@ -164,12 +164,12 @@ export function sendTeacherFeedback(
     statusTone: 'warning',
     kind: 'teacher-feedback',
     summary: trimmed,
-    authorLabel: '周老师 · 正式反馈',
+    authorLabel: '周老师 · 回复',
     evidence: [
       {
         id: `ev-feedback-body-${eventId}`,
         kind: 'verification',
-        label: '教师正式反馈',
+        label: '教师回复',
         summary: trimmed,
         at: nowIso(),
         linkLabel: '查看反馈',
@@ -195,7 +195,7 @@ export function sendTeacherFeedback(
     id: feedback.id,
     text: trimmed,
     authorId,
-    authorLabel: '周老师 · 正式反馈',
+    authorLabel: '周老师 · 回复',
     at: feedback.createdAt,
   });
 

@@ -44,7 +44,7 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
-  padding: 16px 24px 12px;
+  padding: 16px 24px 24px;
 }
 
 .nw-kicker {
@@ -57,7 +57,7 @@
 
 .nw-head h1 {
   margin: 0;
-  font-size: var(--ct-fs-card);
+  font-size: 32px;
   line-height: var(--ct-lh);
   font-weight: 700;
   color: var(--ct-text);
@@ -70,20 +70,110 @@
   gap: 10px;
 }
 
+/* Split button：外壳统一描边，内部分区无独立边框 */
+.nw-download {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+  height: var(--ct-btn-height-sm);
+  border: 1px solid var(--ct-border);
+  border-radius: var(--ct-radius-ctrl);
+  background: var(--ct-surface);
+  overflow: visible;
+}
+
+.nw-download .nw-download-main,
+.nw-download .nw-download-caret {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.nw-download .nw-download-main {
+  padding: 0 14px;
+}
+
+.nw-download .nw-download-caret {
+  width: 36px;
+  min-width: 36px;
+  padding: 0;
+  border-left: 1px solid var(--ct-border);
+}
+
+.nw-download:hover {
+  border-color: #9ed9cb;
+}
+
+.nw-download .nw-download-main:hover,
+.nw-download .nw-download-caret:hover,
+.nw-download .nw-download-main:focus-visible,
+.nw-download .nw-download-caret:focus-visible {
+  background: var(--ct-subtle);
+  outline: none;
+}
+
+.nw-download .nw-download-main:disabled,
+.nw-download .nw-download-caret:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: transparent;
+}
+
+.nw-download-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  min-width: 100%;
+  padding: 6px;
+  border: 1px solid var(--ct-divider);
+  border-radius: 10px;
+  background: var(--ct-surface);
+  box-shadow: 0 8px 24px rgba(16, 21, 20, 0.1);
+}
+
+.nw-download-item {
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  padding: 10px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  color: var(--ct-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nw-download-item:hover,
+.nw-download-item:focus-visible {
+  background: var(--ct-subtle);
+  outline: none;
+}
+
 .nw .nw-ghost,
 .nw .btn-ghost {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  height: var(--ct-btn-height);
-  padding: 0 24px;
+  height: var(--ct-btn-height-sm);
+  width: auto;
+  min-width: 0;
+  padding: 0 14px;
   border-radius: var(--ct-radius-ctrl);
   border: 1px solid var(--ct-border);
   background: var(--ct-surface);
   color: var(--ct-text-secondary);
   font-family: var(--ct-font);
-  font-size: var(--ct-fs-action);
+  font-size: var(--ct-fs-action-sm);
   line-height: 1;
   font-weight: 700;
 }
@@ -103,7 +193,9 @@
   justify-content: center;
   gap: 8px;
   height: var(--ct-btn-height);
-  padding: 0 24px;
+  width: auto;
+  min-width: 0;
+  padding: 0 22px;
   border: 0;
   border-radius: var(--ct-radius-ctrl);
   background: var(--ct-brand);
@@ -138,12 +230,17 @@
   background: var(--ct-subtle);
 }
 
+.nw .workbench-columns,
+.nw .node-collab-layout {
+  margin-top: 4px;
+}
+
 /* 个人工作区：材料 / 版本 / 批注阅读（宽度由 CollapsibleResizableColumns 控制） */
 .nw-work.workbench-columns {
   flex: 1;
   min-height: 0;
   gap: 0;
-  padding: 0 24px 12px;
+  padding: 4px 24px 12px;
   border-bottom: 0;
 }
 
@@ -165,25 +262,27 @@
 }
 
 .nw-work .workbench-rail-btn {
-  background: transparent;
+  background: color-mix(in srgb, var(--ct-text-tertiary) 8%, transparent);
   color: transparent;
   border-color: transparent;
 }
 
 .nw-work .workbench-rail-btn:hover,
 .nw-work .workbench-rail-btn:focus-visible {
-  background: color-mix(in srgb, var(--ct-text-tertiary) 10%, transparent);
+  background: color-mix(in srgb, var(--ct-text-tertiary) 14%, transparent);
 }
 
 .nw-work .workbench-rail-arrow {
-  background: color-mix(in srgb, var(--ct-text-tertiary) 28%, transparent);
+  background: color-mix(in srgb, var(--ct-text-tertiary) 30%, transparent);
   color: var(--ct-text-tertiary);
+  opacity: 0.65;
 }
 
 .nw-work .workbench-rail-btn:hover .workbench-rail-arrow,
 .nw-work .workbench-rail-btn:focus-visible .workbench-rail-arrow {
-  background: color-mix(in srgb, var(--ct-text-tertiary) 40%, var(--ct-surface));
+  background: color-mix(in srgb, var(--ct-text-tertiary) 42%, var(--ct-surface));
   color: var(--ct-text-secondary);
+  opacity: 1;
 }
 
 .nw-pane {

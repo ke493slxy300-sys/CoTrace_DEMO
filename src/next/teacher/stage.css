@@ -111,16 +111,6 @@
   border: 1px solid #e0ebe8;
 }
 
-@media (max-width: 1100px) {
-  .cts-work {
-    grid-template-columns: 1fr;
-  }
-
-  .cts-feed {
-    order: -1;
-  }
-}
-
 .cts-time h2,
 .cts-feed h2 {
   margin: 0 0 12px;
@@ -385,4 +375,24 @@
     animation: none;
     transform: none;
   }
+}
+
+/* 事件展开：结论卡 / 发现 / 协作桶密度 */
+.cts-evidence .rd-verdict {
+  margin-bottom: 0;
+}
+
+.cts-evidence .rd-finding-list,
+.cts-evidence .rd-collab {
+  margin-bottom: 0;
+}
+
+.cts-evidence .rd-finding-title {
+  font-size: 13px;
+}
+
+.cts-evidence .rd-finding-body,
+.cts-evidence .rd-collab-summary,
+.cts-evidence .rd-collab-items li {
+  font-size: 13px;
 }

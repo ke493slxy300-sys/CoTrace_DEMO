@@ -7,7 +7,6 @@ import {
 } from 'react';
 import { Check } from 'lucide-react';
 import {
-  fetchHealth,
   requestHelpContext,
   requestStageBriefAi,
   toSharedLogPayload,
@@ -40,6 +39,9 @@ import {
   enrichAiProse,
 } from '../AiStruct';
 import { formatAiSourceLabel } from '../aiMeta';
+import { CollabLogBuckets } from '../CollabLogBuckets';
+import { FindingList } from '../FindingList';
+import { VerdictBanner } from '../VerdictBanner';
 import { TeacherShell, type TeacherPlace } from './TeacherShell';
 import '../readingLayout.css';
 import './stage.css';
@@ -76,18 +78,23 @@ export function StageReportPage({
     getAllFeedbacks,
     getAllFeedbacks,
   );
-  const actionableEvents = useMemo(
-    () =>
-      isLiveGroup
-        ? events.filter(
-            (event) =>
-              event.kind === 'stage' ||
-              event.kind === 'student-help' ||
-              event.kind === 'delivery-published',
-          )
-        : [],
-    [events, isLiveGroup],
-  );
+  const actionableEvents = useMemo(() => {
+    if (!isLiveGroup) return [];
+    const filtered = events.filter(
+      (event) =>
+        event.kind === 'stage' ||
+        event.kind === 'student-help' ||
+        event.kind === 'delivery-published',
+    );
+    const seenPublish = new Set<string>();
+    return filtered.filter((event) => {
+      if (event.kind !== 'delivery-published') return true;
+      const key = `${event.title}\n${event.summary}`;
+      if (seenPublish.has(key)) return false;
+      seenPublish.add(key);
+      return true;
+    });
+  }, [events, isLiveGroup]);
   const [selectedId, setSelectedId] = useState(
     () =>
       takeTeacherFocusEvent(HANDOFF_EVENT_EXCEPTION) ??
@@ -117,20 +124,6 @@ export function StageReportPage({
   } | null>(null);
   const [stageAiError, setStageAiError] = useState('');
   const [stageAiLoading, setStageAiLoading] = useState(false);
-  const [aiMode, setAiMode] = useState('mock');
-  const [hasLiveKey, setHasLiveKey] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    void fetchHealth().then((health) => {
-      if (cancelled || !health.ok) return;
-      setAiMode(health.data.aiMode);
-      setHasLiveKey(Boolean(health.data.hasLiveKey));
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const selected =
     actionableEvents.find((event) => event.id === selectedId) ??
@@ -165,7 +158,7 @@ export function StageReportPage({
       // 仅使用该版本已确认协作日志，不传未共享草稿
       if (delivery.status === 'draft' || !versionLog) {
         setAiBrief(null);
-        setAiError('尚无已确认共享的协作日志，仍可阅读学生原文并手写反馈。');
+        setAiError('尚无已确认的这版说明，仍可阅读学生原文并手写回复。');
         return;
       }
       setAiLoading(true);
@@ -199,7 +192,7 @@ export function StageReportPage({
           ? '情境整理失败'
           : result.message;
         setAiError(
-          `AI 情境整理失败（${msg}）。学生原文与共享日志仍可读；可手写正式反馈，不依赖模型。`,
+          `AI 情境整理失败（${msg}）。学生原文与这版说明仍可读；可手写回复，不依赖模型。`,
         );
         setAiBrief(null);
         return;
@@ -227,15 +220,13 @@ export function StageReportPage({
   const send = () => {
     if (!selected || role !== 'teacher' || feedback) return;
     if (selected.kind !== 'student-help') {
-      setNotice('请选择学生求助事件后再发送正式反馈');
+      setNotice('请选择学生求助事件后再回复');
       return;
     }
     const result = sendTeacherFeedback(selected.id, draft);
     if (result.ok) {
       markDeliveryHelpGuided(selected.id);
-      setNotice(
-        '正式反馈已写入共享事件。请切换 Alex / Priya，在「项目记录」查看同一原文。',
-      );
+      setNotice('回复已发送，学生可在「记录」中查看。');
     } else {
       setNotice('这条事件已经有反馈');
     }
@@ -268,25 +259,12 @@ export function StageReportPage({
               <span className="cts-group">{group.label}</span>
               <h1>{group.name}</h1>
             </div>
-            <p className="cts-quiet" role="status">
-              {aiMode === 'live'
-                ? 'AI 模式：真实模型 (live)'
-                : hasLiveKey
-                  ? 'AI 模式：模拟结果 (mock)'
-                  : 'AI 模式：模拟结果 (mock) · 未检测到 DEEPSEEK_API_KEY'}
-            </p>
           </div>
         </div>
 
         <div className="cts-tabs" role="tablist" aria-label="小组视图">
           <button type="button" className="is-on" aria-current="page">
             阶段汇报 / 求助
-          </button>
-          <button type="button" disabled>
-            任务蓝图
-          </button>
-          <button type="button" disabled>
-            过程日志
           </button>
         </div>
 
@@ -295,16 +273,12 @@ export function StageReportPage({
             <h2>待办与关键变化 · {actionableEvents.length} 条</h2>
             {!isLiveGroup ? (
               <p className="cts-quiet" role="status">
-                当前打开的是 {group.label}「{group.name}」。该组为示意入口，无联调交付事件；
-                返回指导台可再打开第03组查看真实求助与反馈。
+                这一组是示例，不能在这里回复。
               </p>
             ) : null}
             {isLiveGroup ? (
               <details className="cts-quiet" style={{ marginBottom: 10 }}>
-                <summary>可选 · AI 阶段汇报整理（非主路径）</summary>
-                <p>
-                  演示主路径请打开下方求助事件：核对学生原文与共享日志后发送正式反馈。
-                </p>
+                <summary>让 AI 先整理这一阶段</summary>
                 <button
                   type="button"
                   className="cts-send"
@@ -361,9 +335,12 @@ export function StageReportPage({
                   </AiStructCard>
                 ) : null}
                 {stageAi ? (
-                  <p className="ai-struct__meta">
-                    {formatAiSourceLabel(stageAi.provider, stageAi.modelLabel)}
-                  </p>
+                  <details className="cts-quiet">
+                    <summary>技术来源</summary>
+                    <p>
+                      {formatAiSourceLabel(stageAi.provider, stageAi.modelLabel)}
+                    </p>
+                  </details>
                 ) : null}
               </details>
             ) : null}
@@ -396,93 +373,92 @@ export function StageReportPage({
                         </span>
                         {active ? (
                           <span className="cts-open">
-                            <span className="cts-question">{event.summary}</span>
+                            {event.kind === 'student-help' ? null : (
+                              <span className="cts-question">{event.summary}</span>
+                            )}
                             <span className="cts-author">{event.authorLabel}</span>
 
                             {event.kind === 'delivery-published' ? (
                               <span className="cts-evidence">
-                                <span className="cts-ev is-verification">
-                                  <span className="cts-ev-top">
-                                    <strong>关联交付背景</strong>
-                                    <span>Alex 发布记录</span>
-                                  </span>
-                                  <span className="cts-ev-body">
-                                    {event.summary}
-                                  </span>
-                                  <span className="cts-quiet">
-                                    普通发布事件不作为学生原始问题；请从求助待办打开对应求助。
-                                  </span>
-                                </span>
+                                <VerdictBanner
+                                  title="关联交付背景"
+                                  detail="普通发布事件不是求助原文；请从求助待办打开对应求助。"
+                                  tone="neutral"
+                                />
+                                <FindingList
+                                  items={[
+                                    {
+                                      id: event.id,
+                                      title: 'Alex 发布记录',
+                                      body: event.summary,
+                                      severity: 'neutral',
+                                    },
+                                  ]}
+                                  maxVisible={1}
+                                  clampLines={2}
+                                />
                               </span>
                             ) : null}
 
                             {event.kind === 'student-help' ? (
                               <>
                                 <span className="cts-evidence">
-                                  <span className="cts-ev is-student-edit">
-                                    <span className="cts-ev-top">
-                                      <strong>学生原始问题</strong>
-                                      {event.versionId ? (
-                                        <span>版本 {event.versionId}</span>
-                                      ) : null}
-                                    </span>
-                                    <span className="cts-ev-body">
-                                      {studentOriginal?.summary || event.summary}
-                                    </span>
-                                  </span>
+                                  <AiStructCard
+                                    claim={enrichAiProse(
+                                      studentOriginal?.summary || event.summary,
+                                    )}
+                                  >
+                                    <AiStructField role="note" label="原话">
+                                      Priya 求助原文
+                                    </AiStructField>
+                                  </AiStructCard>
                                 </span>
+
+                                {versionLog ? (
+                                  <span className="cts-evidence">
+                                    <CollabLogBuckets
+                                      value={versionLog}
+                                      readOnly
+                                      title="这版说明"
+                                    />
+                                  </span>
+                                ) : (
+                                  <span className="cts-quiet">
+                                    （尚无这版说明）
+                                  </span>
+                                )}
 
                                 {aiAdopted && aiAdopted.length > 0 ? (
                                   <span className="cts-evidence">
-                                    {aiAdopted.map((item) => (
-                                      <span
-                                        key={item.id}
-                                        className="cts-ev is-ai-suggestion"
-                                      >
-                                        <span className="cts-ev-top">
-                                          <strong>学生采纳的 AI 补充</strong>
-                                          <span>证据侧 · 非教师反馈</span>
-                                        </span>
-                                        <span className="cts-ev-body">
-                                          {item.summary}
-                                        </span>
-                                      </span>
-                                    ))}
+                                    <FindingList
+                                      items={aiAdopted.map((item) => ({
+                                        id: item.id,
+                                        title: '她采纳的补充',
+                                        body: item.summary,
+                                        severity: 'ok' as const,
+                                      }))}
+                                      maxVisible={3}
+                                      clampLines={2}
+                                    />
                                   </span>
                                 ) : null}
-
-                                <span className="cts-evidence">
-                                  <span className="cts-ev is-verification">
-                                    <span className="cts-ev-top">
-                                      <strong>
-                                        已确认协作日志（本版关联）
-                                      </strong>
-                                    </span>
-                                    <span className="cts-ev-body">
-                                      {versionLog?.summary ||
-                                        '（无已发布协作日志）'}
-                                    </span>
-                                    {versionLog?.openItems?.length ? (
-                                      <span className="cts-quiet">
-                                        待确认：
-                                        {versionLog.openItems.join('；')}
-                                      </span>
-                                    ) : null}
-                                  </span>
-                                </span>
                               </>
                             ) : null}
 
                             {event.kind === 'stage' ? (
                               <span className="cts-evidence">
-                                <span className="cts-ev is-verification">
-                                  <span className="cts-ev-top">
-                                    <strong>阶段事件</strong>
-                                  </span>
-                                  <span className="cts-ev-body">
-                                    {event.summary}
-                                  </span>
-                                </span>
+                                <FindingList
+                                  items={[
+                                    {
+                                      id: event.id,
+                                      title: '阶段事件',
+                                      body: event.summary,
+                                      severity: 'neutral',
+                                    },
+                                  ]}
+                                  maxVisible={1}
+                                  clampLines={2}
+                                />
                               </span>
                             ) : null}
                           </span>
@@ -495,7 +471,7 @@ export function StageReportPage({
             </ol>
           </section>
 
-          <section className="cts-feed" aria-label="AI 梳理与教师正式反馈">
+          <section className="cts-feed" aria-label="回复">
             <div className="cts-feed-top" key={selected?.id ?? 'none'}>
               <p>
                 {feedback ? '正在查看' : '正在回应'}：
@@ -507,7 +483,6 @@ export function StageReportPage({
             {selected?.kind === 'student-help' ? (
               <div className="cts-ai-panel">
                 <h2 className="rd-section-title">AI 梳理</h2>
-                <p className="cts-quiet">仅整理情境与建议，不等于教师正式反馈。</p>
                 {aiLoading ? (
                   <p className="cts-quiet">AI 正在整理情境…</p>
                 ) : null}
@@ -552,34 +527,28 @@ export function StageReportPage({
               </div>
             ) : null}
 
-            <h2 className="rd-section-title">教师正式反馈</h2>
-            <p className="cts-quiet">
-              周老师署名；发送后学生项目记录回显同一原文与关联任务。
-            </p>
+            <h2 className="rd-section-title">回复</h2>
             {!isLiveGroup ? (
               <p className="cts-quiet" role="status">
-                示意组不写入正式反馈，避免污染第03组共享事件。
+                这一组是示例，不能在这里回复。
               </p>
             ) : feedback ? (
               <div className="cts-sent" data-feedback-event={feedback.eventId}>
                 <strong>
                   <Check size={16} strokeWidth={2} aria-hidden="true" />
-                  周老师 · 已反馈
+                  周老师 · 已回复
                 </strong>
                 <p>{feedback.content}</p>
               </div>
-            ) : selected?.kind === 'delivery-published' ? (
+            ) : selected?.kind === 'delivery-published' ||
+              selected?.kind === 'stage' ? (
               <p className="cts-quiet" role="status">
-                当前为 Alex 发布背景，不在此发送教师反馈。请选中学生求助事件。
-              </p>
-            ) : selected?.kind === 'stage' ? (
-              <p className="cts-quiet" role="status">
-                阶段事件作交付背景参考；正式反馈请绑定学生求助。
+                当前为发布/阶段背景，不在此回复。请选中学生求助事件。
               </p>
             ) : (
               <>
                 <textarea
-                  aria-label="教师反馈意见"
+                  aria-label="回复"
                   value={draft}
                   disabled={!canSendFormalFeedback}
                   onChange={(event) => {
@@ -588,13 +557,13 @@ export function StageReportPage({
                   }}
                 />
                 <div className="cts-feed-foot">
-                  <span>草稿不会显示为学生可见的教师反馈</span>
+                  <span>草稿对学生不可见</span>
                   <button
                     type="button"
                     disabled={!canSendFormalFeedback || !draft.trim()}
                     onClick={send}
                   >
-                    发送正式反馈
+                    回复
                   </button>
                 </div>
               </>

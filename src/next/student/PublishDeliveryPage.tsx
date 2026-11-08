@@ -29,17 +29,17 @@ import type {
   MatchVerdict,
 } from '../../types/handoff';
 import { formatAiSourceLabel } from '../aiMeta';
-import { EvidenceChip, evidenceLabel, useEvidenceFocus } from '../EvidenceNav';
+import { CollabLogBuckets } from '../CollabLogBuckets';
+import { evidenceLabel, useEvidenceFocus } from '../EvidenceNav';
+import { FindingList, type FindingItem } from '../FindingList';
+import { VerdictBanner } from '../VerdictBanner';
 import { parseHash } from './studentRoutes';
 import { StudentShell, type StudentPlace } from './StudentShell';
+import { StudentTrail } from './StudentTrail';
 import '../readingLayout.css';
 import './publish.css';
 
-type AnalysisFinding = {
-  title: string;
-  body: string;
-  refs: number[];
-};
+type AnalysisFinding = FindingItem;
 
 function buildPublishFindings(
   analysis: DeliveryAnalysis | null | undefined,
@@ -49,20 +49,23 @@ function buildPublishFindings(
   if (analysis.verdict === 'irrelevant') {
     findings.push({
       title: '对话主题不匹配',
-      body: '所选对话与当前交付任务目标不一致，请更换对话记录后再分析。',
+      body: '所选对话与任务目标不一致，请更换后再分析。',
       refs: [2],
+      severity: 'warn',
     });
     findings.push({
-      title: '代码材料仍属本任务',
-      body: '代码摘录与订单创建相关，但不足以在对话选错时发布。',
+      title: '代码仍属本任务',
+      body: '代码与订单创建相关，但对话选错时不能发布。',
       refs: [1],
+      severity: 'neutral',
     });
   }
   if (analysis.verdict === 'insufficient-evidence') {
     findings.push({
-      title: '缺少测试运行证据',
-      body: '当前材料未见可观察的测试运行结果，联调前需补齐或标明风险。',
+      title: '缺少测试证据',
+      body: '未见可观察的测试运行结果，联调前需补齐或标明风险。',
       refs: [3],
+      severity: 'warn',
     });
   }
   if (analysis.verdict === 'suspect-wrong-version') {
@@ -72,6 +75,7 @@ function buildPublishFindings(
         analysis.differences[0] ||
         '代码或对话仍体现旧版语义，与当前任务目标矛盾。',
       refs: [1, 2],
+      severity: 'warn',
     });
   }
   for (const diff of analysis.differences.slice(
@@ -83,7 +87,12 @@ function buildPublishFindings(
     if (lower.includes('对话') || lower.includes('chat')) refs.push(2);
     if (lower.includes('测试') || lower.includes('test')) refs.push(3);
     if (refs.length === 0) refs.push(1);
-    findings.push({ title: '材料核对发现', body: diff, refs });
+    findings.push({
+      title: '材料核对',
+      body: diff,
+      refs,
+      severity: findingSeverity(analysis, '材料核对'),
+    });
   }
   if (
     analysis.verdict === 'match' &&
@@ -91,14 +100,20 @@ function buildPublishFindings(
     analysis.pendingConfirmations.length === 0
   ) {
     findings.push({
-      title: '材料与任务目标相符',
-      body: '代码与对话可用于本版交付；发布前请确认协作日志摘要。',
+      title: '材料相符',
+      body: '代码与对话可用于本版；发布前确认协作说明。',
       refs: [1, 2],
+      severity: 'ok',
     });
   }
   for (const item of analysis.pendingConfirmations.slice(0, 3)) {
     const refs: number[] = item.includes('测试') ? [3] : [1, 2];
-    findings.push({ title: '待确认项', body: item, refs });
+    findings.push({
+      title: '待确认',
+      body: item,
+      refs,
+      severity: 'neutral',
+    });
   }
   return findings.slice(0, 6);
 }
@@ -108,37 +123,49 @@ function statusHeadline(
 ): { title: string; detail: string; tone: 'warn' | 'ok' | 'neutral' } {
   if (!analysis) {
     return {
-      title: '尚未分析材料',
-      detail: '请先选择代码与对话材料，再点「分析材料」核对是否可发布。',
+      title: '尚未分析',
+      detail: '选好代码与对话后点「分析材料」。',
       tone: 'neutral',
     };
   }
   if (analysis.verdict === 'irrelevant') {
     return {
       title: '暂不能发布',
-      detail: '所选对话与订单创建服务无关。代码属于本任务，但对话主题不匹配。',
+      detail: '对话主题与任务不符，请先更换对话。',
       tone: 'warn',
     };
   }
   if (analysis.verdict === 'insufficient-evidence') {
     return {
-      title: '证据不足，谨慎发布',
-      detail: '缺少可观察的测试运行结果；可补材料后重新分析，或确认风险后带风险发布。',
+      title: '证据不足',
+      detail: '缺少测试运行结果；可补材料或确认风险后发布。',
       tone: 'warn',
     };
   }
   if (analysis.verdict === 'suspect-wrong-version') {
     return {
-      title: '疑似错版，建议更换材料',
-      detail: '材料仍体现旧版语义，与当前任务目标矛盾。可更换材料或确认风险后发布。',
+      title: '疑似错版',
+      detail: '材料仍含旧版语义；更换材料或确认风险后发布。',
       tone: 'warn',
     };
   }
   return {
-    title: '可以确认并发布',
-    detail: '材料与任务目标相符。请核对右侧发现与协作日志后发布。',
+    title: '可以发布',
+    detail: '材料与任务相符，核对发现与说明后发布。',
     tone: 'ok',
   };
+}
+
+function findingSeverity(
+  analysis: DeliveryAnalysis | null | undefined,
+  title: string,
+): FindingItem['severity'] {
+  if (!analysis) return 'neutral';
+  if (analysis.verdict === 'irrelevant') return 'warn';
+  if (analysis.verdict === 'suspect-wrong-version') return 'warn';
+  if (analysis.verdict === 'insufficient-evidence') return 'warn';
+  if (title.includes('相符')) return 'ok';
+  return 'neutral';
 }
 
 function blockPublishReason(
@@ -168,7 +195,7 @@ function materialLabel(
 ): string {
   if (!id) return '未选择';
   const hit = items.find((item) => item.id === id);
-  return hit ? `${hit.title}（${hit.versionLabel}）` : id;
+  return hit ? `${hit.title}（${hit.versionLabel}）` : '未命名材料';
 }
 
 function MaterialFolderPicker({
@@ -364,7 +391,6 @@ export function PublishDeliveryPage({
     [],
   );
   const [aiMode, setAiMode] = useState('mock');
-  const [hasLiveKey, setHasLiveKey] = useState(true);
   const [hint, setHint] = useState('');
   const [analyzeError, setAnalyzeError] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
@@ -406,7 +432,6 @@ export function PublishDeliveryPage({
       if (cancelled) return;
       if (health.ok) {
         setAiMode(health.data.aiMode);
-        setHasLiveKey(Boolean(health.data.hasLiveKey));
       }
       if (code.ok) {
         setCodeMaterials(code.data.materials);
@@ -558,9 +583,13 @@ export function PublishDeliveryPage({
     >
       <div className="ctn-publish">
         <main className="ctn-main">
-          <p className="ctn-crumb">
-            {HANDOFF_PROJECT_NAME} / 后端接口 / {delivery.title}
-          </p>
+          <StudentTrail
+            segments={[
+              { label: HANDOFF_PROJECT_NAME },
+              { label: '工作', onClick: () => onNavigate('work') },
+              { label: delivery.title },
+            ]}
+          />
           {fromPlace === 'work' ? (
             <p style={{ margin: '0 0 12px' }}>
               <button
@@ -572,13 +601,6 @@ export function PublishDeliveryPage({
               </button>
             </p>
           ) : null}
-          <p className="ctn-mode-note" role="status">
-            {aiMode === 'live'
-              ? 'AI 模式：真实模型 (live)'
-              : hasLiveKey
-                ? 'AI 模式：模拟结果 (mock)'
-                : 'AI 模式：模拟结果 (mock) · 未检测到 DEEPSEEK_API_KEY'}
-          </p>
           {isPublishedView ? (
             <>
               <div className="ctn-title-row">
@@ -594,14 +616,10 @@ export function PublishDeliveryPage({
               <div className="ctn-receipt is-enter">
                 <article className="ctn-doc" aria-label="发布回执">
                   <div className="ctn-kicker-row">
-                    <strong>人机协作日志（已确认）</strong>
-                    <span className="ctn-badge">
-                      {delivery.status === 'received'
-                        ? '已接收'
-                        : delivery.riskAcknowledged
-                          ? '已确认风险'
-                          : '已发布'}
-                    </span>
+                    <strong>这版说明</strong>
+                    {delivery.riskAcknowledged && delivery.status !== 'received' ? (
+                      <span className="ctn-badge">已确认风险</span>
+                    ) : null}
                   </div>
                   <p className="ctn-lead">
                     {delivery.collaborationLog?.summary || delivery.brief}
@@ -624,15 +642,11 @@ export function PublishDeliveryPage({
                   <ul className="ctn-fold-body">
                     <li>
                       代码：
-                      {codeMaterials.find(
-                        (item) => item.id === delivery.selectedCodeMaterialId,
-                      )?.title ?? delivery.selectedCodeMaterialId}
+                      {materialLabel(codeMaterials, delivery.selectedCodeMaterialId)}
                     </li>
                     <li>
                       对话：
-                      {chatMaterials.find(
-                        (item) => item.id === delivery.selectedChatMaterialId,
-                      )?.title ?? delivery.selectedChatMaterialId}
+                      {materialLabel(chatMaterials, delivery.selectedChatMaterialId)}
                     </li>
                   </ul>
                   <details className="ctn-tech-details">
@@ -653,10 +667,14 @@ export function PublishDeliveryPage({
                     <Check size={18} strokeWidth={2.25} aria-hidden="true" />
                     <span>
                       {delivery.status === 'received'
-                        ? `已接收 ${delivery.version}`
-                        : isPublisher
-                          ? '已发布 · 等待确认接收'
-                          : '已发布 · 请到接收页确认'}
+                        ? '已确认'
+                        : delivery.status === 'needs-revision'
+                          ? isPublisher
+                            ? 'Priya 要改这一版'
+                            : '已让 Alex 修改'
+                          : isPublisher
+                            ? '已交给 Priya，等她确认'
+                            : '等你确认'}
                     </span>
                   </div>
                   {!isPublisher &&
@@ -668,7 +686,7 @@ export function PublishDeliveryPage({
                       style={{ marginTop: 12 }}
                       onClick={() => onNavigate('receive')}
                     >
-                      打开接收页并确认
+                      确认这版
                     </button>
                   ) : null}
                 </article>
@@ -678,9 +696,7 @@ export function PublishDeliveryPage({
                     <div key={version.versionId} className="ctn-bubble">
                       <span className="ctn-who">{publisherName.slice(0, 1)}</span>
                       <div>
-                        <strong>
-                          {version.version} · {version.versionId}
-                        </strong>
+                        <strong>{version.version}</strong>
                         <p>{version.brief || version.summary}</p>
                       </div>
                     </div>
@@ -700,11 +716,6 @@ export function PublishDeliveryPage({
               </div>
               <p className="ctn-mode-note" role="status">
                 接收人 {receiverName}
-                {aiMode === 'live'
-                  ? ' · AI：真实模型 (live)'
-                  : hasLiveKey
-                    ? ' · AI：模拟结果 (mock)'
-                    : ' · AI：模拟结果 · 未检测到 DEEPSEEK_API_KEY'}
               </p>
 
               <div className="ctn-scroll rd-scroll">
@@ -722,10 +733,10 @@ export function PublishDeliveryPage({
                 ) : null}
 
                 <div className="rd-split is-stack-ai-first">
-                  <section className="rd-evidence" aria-label="交付证据">
+                  <section className="rd-evidence" aria-label="这版材料">
                     <div className="ctn-brief-head" style={{ marginBottom: 16 }}>
                       <h2 className="rd-section-title" style={{ margin: 0 }}>
-                        交付证据
+                        这版材料
                       </h2>
                       <button
                         type="button"
@@ -790,20 +801,6 @@ export function PublishDeliveryPage({
                       )}
                     </article>
 
-                    <article
-                      id={`evidence-${evidenceLabel(3)}`}
-                      className={`rd-block${activeId === `evidence-${evidenceLabel(3)}` ? ' is-flash' : ''}`}
-                    >
-                      <div className="rd-block-head">
-                        <span className="rd-num">{evidenceLabel(3)}</span>
-                        <div className="rd-block-meta">
-                          <strong>测试记录</strong>
-                          <span className="rd-aux">运行结果</span>
-                        </div>
-                      </div>
-                      <p className="rd-missing">未提供测试运行结果</p>
-                    </article>
-
                     <div className="rd-block">
                       <h3 className="rd-section-title">使用说明</h3>
                       <textarea
@@ -856,192 +853,135 @@ export function PublishDeliveryPage({
                       </button>
                     </div>
 
-                    <div className="rd-status">
-                      <h3>{statusCard.title}</h3>
-                      <p>{statusCard.detail}</p>
-                      {irrelevant ? (
-                        <button
-                          type="button"
-                          className="ctn-btn ctn-btn-primary"
-                          disabled={!canEdit}
-                          onClick={openChatPicker}
-                        >
-                          更换对话记录
-                        </button>
+                    <div className="rd-ai-stack">
+                      <VerdictBanner
+                        title={statusCard.title}
+                        detail={statusCard.detail}
+                        tone={statusCard.tone}
+                      >
+                        {irrelevant ? (
+                          <button
+                            type="button"
+                            className="ctn-btn ctn-btn-primary"
+                            disabled={!canEdit}
+                            onClick={openChatPicker}
+                          >
+                            更换对话记录
+                          </button>
+                        ) : null}
+                        {analyzeError ? (
+                          <p className="ctn-brief-error" role="alert">
+                            {analyzeError} 可以改说明后直接发布。
+                          </p>
+                        ) : null}
+                      </VerdictBanner>
+
+                      {findings.length > 0 ? (
+                        <>
+                          <h3 className="rd-section-title">关键发现</h3>
+                          <FindingList
+                            items={findings}
+                            maxVisible={3}
+                            onFocusEvidence={focusEvidence}
+                          />
+                        </>
                       ) : null}
-                      {analyzeError ? (
-                        <p className="ctn-brief-error" role="alert">
-                          {analyzeError} 手工路径仍可用：编辑日志后按规则发布。
-                        </p>
+
+                      {logDraft ? (
+                        <CollabLogBuckets
+                          value={logDraft}
+                          disabled={!canEdit}
+                          onChange={(next) =>
+                            setLogDraft({
+                              ...logDraft,
+                              ...next,
+                              citations: logDraft.citations,
+                              manuallyEdited: true,
+                            })
+                          }
+                        />
+                      ) : null}
+
+                      {(needsRisk || irrelevant) && delivery.analysis ? (
+                        <div className="rd-block">
+                          <label className="rd-risk-row">
+                            <input
+                              type="checkbox"
+                              checked={riskAck}
+                              disabled={!canEdit || irrelevant}
+                              onChange={(event) =>
+                                setRiskAck(event.target.checked)
+                              }
+                            />
+                            <span>
+                              {irrelevant
+                                ? '对话选错，请先更换'
+                                : '我知道风险，仍要发布'}
+                            </span>
+                          </label>
+                          {!irrelevant ? (
+                            <textarea
+                              className="rd-risk-note"
+                              aria-label="风险说明"
+                              placeholder="风险说明（随快照保存）"
+                              value={riskNotes}
+                              disabled={!canEdit}
+                              onChange={(event) =>
+                                setRiskNotes(event.target.value)
+                              }
+                            />
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      {delivery.analysis ? (
+                        <details className="ctn-tech-details">
+                          <summary>查看模型详情</summary>
+                          <p className="rd-aux">
+                            判定 {verdictLabel(delivery.analysis.verdict)} ·{' '}
+                            {formatAiSourceLabel(
+                              delivery.analysis.provider,
+                              delivery.analysis.modelLabel,
+                            )}
+                          </p>
+                          <button
+                            type="button"
+                            className="ctn-fold"
+                            aria-expanded={openDiff}
+                            onClick={() => setOpenDiff((open) => !open)}
+                          >
+                            <ChevronDown
+                              size={16}
+                              strokeWidth={1.75}
+                              aria-hidden="true"
+                              style={{
+                                transform: openDiff ? 'none' : 'rotate(-90deg)',
+                              }}
+                            />
+                            原始差异与引用（
+                            {delivery.analysis.differences.length}）
+                          </button>
+                          {openDiff ? (
+                            <ul className="ctn-fold-body">
+                              {delivery.analysis.differences.map((item) => (
+                                <li key={item}>{item}</li>
+                              ))}
+                              {delivery.analysis.citations.map(
+                                (item, index) => (
+                                  <li key={`${item.materialId}-${index}`}>
+                                    引用 {item.excerpt} — {item.note}
+                                    <details>
+                                      <summary>材料 ID</summary>
+                                      {item.materialId}
+                                    </details>
+                                  </li>
+                                ),
+                              )}
+                            </ul>
+                          ) : null}
+                        </details>
                       ) : null}
                     </div>
-
-                    {findings.length > 0 ? (
-                      <>
-                        <h3 className="rd-section-title">关键发现</h3>
-                        <ul className="rd-findings">
-                          {findings.map((item) => (
-                            <li key={`${item.title}-${item.body}`} className="rd-finding">
-                              <div className="rd-finding-title">
-                                {item.title}
-                                {item.refs.map((ref) => (
-                                  <EvidenceChip
-                                    key={`${item.title}-${ref}`}
-                                    index={ref}
-                                    onFocus={focusEvidence}
-                                  />
-                                ))}
-                              </div>
-                              <p className="rd-finding-body">{item.body}</p>
-                            </li>
-                          ))}
-                        </ul>
-                      </>
-                    ) : null}
-
-                    {delivery.analysis ? (
-                      <details className="ctn-tech-details" style={{ marginTop: 16 }}>
-                        <summary>查看模型详情</summary>
-                        <p className="rd-aux">
-                          判定 {verdictLabel(delivery.analysis.verdict)} ·{' '}
-                          {formatAiSourceLabel(
-                            delivery.analysis.provider,
-                            delivery.analysis.modelLabel,
-                          )}
-                        </p>
-                        <button
-                          type="button"
-                          className="ctn-fold"
-                          aria-expanded={openDiff}
-                          onClick={() => setOpenDiff((open) => !open)}
-                        >
-                          <ChevronDown
-                            size={16}
-                            strokeWidth={1.75}
-                            aria-hidden="true"
-                            style={{
-                              transform: openDiff ? 'none' : 'rotate(-90deg)',
-                            }}
-                          />
-                          原始差异与引用（{delivery.analysis.differences.length}）
-                        </button>
-                        {openDiff ? (
-                          <ul className="ctn-fold-body">
-                            {delivery.analysis.differences.map((item) => (
-                              <li key={item}>{item}</li>
-                            ))}
-                            {delivery.analysis.citations.map((item, index) => (
-                              <li key={`${item.materialId}-${index}`}>
-                                引用 {item.excerpt} — {item.note}
-                                <details>
-                                  <summary>材料 ID</summary>
-                                  {item.materialId}
-                                </details>
-                              </li>
-                            ))}
-                          </ul>
-                        ) : null}
-                      </details>
-                    ) : null}
-
-                    {logDraft ? (
-                      <div className="rd-block" style={{ marginTop: 20 }}>
-                        <h3 className="rd-section-title">
-                          可编辑协作日志
-                          {logDraft.manuallyEdited ? '（已人工修订）' : ''}
-                        </h3>
-                        <label className="ctn-brief-label" htmlFor="ctn-log-summary">
-                          摘要
-                        </label>
-                        <textarea
-                          id="ctn-log-summary"
-                          className="ctn-note"
-                          value={logDraft.summary}
-                          disabled={!canEdit}
-                          onChange={(event) =>
-                            setLogDraft({
-                              ...logDraft,
-                              summary: event.target.value,
-                              manuallyEdited: true,
-                            })
-                          }
-                        />
-                        <label className="ctn-brief-label">人工动作（每行一条）</label>
-                        <textarea
-                          className="ctn-note"
-                          value={logDraft.humanActions.join('\n')}
-                          disabled={!canEdit}
-                          onChange={(event) =>
-                            setLogDraft({
-                              ...logDraft,
-                              humanActions: event.target.value
-                                .split('\n')
-                                .map((line) => line.trim())
-                                .filter(Boolean),
-                              manuallyEdited: true,
-                            })
-                          }
-                        />
-                        <label className="ctn-brief-label">AI 动作（每行一条）</label>
-                        <textarea
-                          className="ctn-note"
-                          value={logDraft.aiActions.join('\n')}
-                          disabled={!canEdit}
-                          onChange={(event) =>
-                            setLogDraft({
-                              ...logDraft,
-                              aiActions: event.target.value
-                                .split('\n')
-                                .map((line) => line.trim())
-                                .filter(Boolean),
-                              manuallyEdited: true,
-                            })
-                          }
-                        />
-                        <label className="ctn-brief-label">待确认</label>
-                        <textarea
-                          className="ctn-note"
-                          value={logDraft.openItems.join('\n')}
-                          disabled={!canEdit}
-                          onChange={(event) =>
-                            setLogDraft({
-                              ...logDraft,
-                              openItems: event.target.value
-                                .split('\n')
-                                .map((line) => line.trim())
-                                .filter(Boolean),
-                              manuallyEdited: true,
-                            })
-                          }
-                        />
-                      </div>
-                    ) : null}
-
-                    {(needsRisk || irrelevant) && delivery.analysis ? (
-                      <div className="rd-block" style={{ marginTop: 12 }}>
-                        <label className="ctn-brief-label">
-                          <input
-                            type="checkbox"
-                            checked={riskAck}
-                            disabled={!canEdit || irrelevant}
-                            onChange={(event) => setRiskAck(event.target.checked)}
-                          />{' '}
-                          {irrelevant
-                            ? '对话选错不可带风险发布，请先更换对话'
-                            : '确认已知风险并带风险发布'}
-                        </label>
-                        {!irrelevant ? (
-                          <textarea
-                            className="ctn-note"
-                            aria-label="风险说明"
-                            placeholder="风险说明（随快照保存）"
-                            value={riskNotes}
-                            disabled={!canEdit}
-                            onChange={(event) => setRiskNotes(event.target.value)}
-                          />
-                        ) : null}
-                      </div>
-                    ) : null}
                   </aside>
                 </div>
               </div>
@@ -1053,9 +993,6 @@ export function PublishDeliveryPage({
                   </span>
                 ) : null}
                 {hint ? <span className="ctn-hint">{hint}</span> : null}
-                {!isPublisher ? (
-                  <span className="ctn-hint">请切换到 Alex 后再上传发布</span>
-                ) : null}
                 <button
                   type="button"
                   className="ctn-btn ctn-btn-ghost"
@@ -1071,7 +1008,7 @@ export function PublishDeliveryPage({
                     disabled={!canEdit || publishing || !riskAck}
                     onClick={handlePublish}
                   >
-                    {publishing ? '发布中…' : '带风险发布'}
+                    {publishing ? '发布中…' : '仍要发布'}
                   </button>
                 ) : (
                   <button

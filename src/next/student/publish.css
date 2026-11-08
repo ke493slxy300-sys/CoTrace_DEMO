@@ -338,17 +338,19 @@
   padding: 0;
 }
 
-@media (max-width: 1100px) {
+@container rd-pane (max-width: 720px) {
   .ctn-brief-cols {
     grid-template-columns: 1fr;
   }
 }
 
+/* 鍙戝竷椤佃矾寰勫凡鏀圭敤鍏变韩 .stu-trail锛涗繚鐣欏埆鍚嶄互鍏嶆棫寮曠敤鏂 */
 .ctn-crumb {
-  margin: 0;
-  color: #00856e;
-  font-size: 14px;
+  margin: 0 0 6px;
+  color: var(--ct-brand);
+  font-size: var(--ct-fs-meta);
   font-weight: 500;
+  line-height: var(--ct-lh);
 }
 
 .ctn-mode-note {
@@ -710,11 +712,12 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  height: 48px;
-  min-width: 112px;
-  padding: 0 24px;
+  height: var(--ct-btn-height-sm);
+  min-width: 0;
+  width: auto;
+  padding: 0 14px;
   border-radius: 8px;
-  font-size: var(--ct-fs-action);
+  font-size: var(--ct-fs-action-sm);
   line-height: var(--ct-lh);
   font-weight: 700;
 }
@@ -726,6 +729,9 @@
 }
 
 .ctn-publish .ctn-btn-primary {
+  height: var(--ct-btn-height);
+  padding: 0 22px;
+  font-size: var(--ct-fs-action);
   background: #00856e;
   border: 1px solid #00856e;
   color: #fff;
@@ -966,4 +972,19 @@
   padding: 10px 14px;
   text-align: center;
   line-height: var(--ct-lh);
+}
+
+/* 窄栏结论台密度：判定短、发现截断、协作桶只读 */
+.ctn-publish .rd-ai {
+  font-size: 14px;
+}
+
+.ctn-publish .rd-ai .rd-section-title {
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+
+.ctn-publish .rd-ai .ctn-tech-details {
+  margin-top: 8px;
+  font-size: 12px;
 }

@@ -6,13 +6,20 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: var(--ct-content-pad);
-  background: var(--ct-subtle);
+  padding: 20px var(--ct-content-pad) 28px;
+  background:
+    radial-gradient(ellipse 80% 50% at 10% 0%, #e8f5f1 0%, transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 10%, #eef2f6 0%, transparent 50%),
+    var(--ct-subtle);
   color: var(--ct-text);
   font-family: var(--ct-font);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 32px;
+}
+
+.pm-title {
+  flex: 0 0 auto;
 }
 
 .pm-kicker {
@@ -35,7 +42,7 @@
   font-size: var(--ct-fs-page);
   font-weight: 700;
   color: var(--ct-ink);
-  line-height: 1.2;
+  line-height: var(--ct-lh);
 }
 
 .pm-head p {

@@ -51,6 +51,9 @@ export function StudentShell({
           <DemoRoleMenu />
         </header>
         <div className="stu-home-body">{children}</div>
+        <p className="stu-demo-foot" role="note">
+          demo阶段，仅展示核心功能。线下demo内容为真实模型输出
+        </p>
       </div>
     );
   }
@@ -122,6 +125,9 @@ export function StudentShell({
         </nav>
         <div className="stu-content">{children}</div>
       </div>
+      <p className="stu-demo-foot" role="note">
+        demo阶段，仅展示核心功能。线下demo内容为真实模型输出
+      </p>
     </div>
   );
 }

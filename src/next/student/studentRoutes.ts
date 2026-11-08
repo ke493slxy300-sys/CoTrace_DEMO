@@ -4,6 +4,7 @@
  * 形状示例：
  *   #/next/projects
  *   #/next/blueprint?project=<id>[&node=<nodeId>][&from=work|materials|history]
+ *   #/next/node?project=<id>&node=<nodeId>[&from=work|materials|blueprint]
  *   #/next/work?project=<id>
  *   #/next/log?project=<id>
  *   #/next/materials?project=<id>[&folder=][&file=][&version=][&from=][&retNode=]
@@ -71,6 +72,17 @@ export function hashBlueprint(
   return withProject('/next/blueprint', projectId, {
     node: opts?.node,
     from: opts?.from,
+  });
+}
+
+/** 直接打开节点详情（BlueprintNodeDetailPage），非仅蓝图选中 */
+export function hashNodeDetail(
+  projectId: string,
+  opts: { node: string; from?: string | null },
+): string {
+  return withProject('/next/node', projectId, {
+    node: opts.node,
+    from: opts.from,
   });
 }
 
@@ -149,6 +161,7 @@ export function hashFromNavHint(
   if (from === 'history') return hashHistory(projectId);
   if (from === 'publish') return hashPublish(projectId);
   if (from === 'receive') return hashReceive(projectId);
+  if (from === 'work') return hashWork(projectId);
   if (from === 'projects') return '#/next/projects';
   return hashWork(projectId);
 }

@@ -55,12 +55,11 @@
   scrollbar-gutter: stable;
 }
 
+/* 画幅尺寸由 styles/demo-stage.css 固定为 1440×960 */
 html,
-body,
-#root {
+body {
   width: 100%;
   height: 100%;
-  height: 100vh;
   margin: 0;
   overflow: hidden;
 }
@@ -2996,6 +2995,11 @@ button {
   display: grid;
   overflow: hidden;
   border-bottom: var(--border-width) solid var(--border-default);
+  transition: grid-template-columns 240ms ease;
+}
+
+.workbench-columns.is-dragging {
+  transition: none;
 }
 
 .workbench-col {
@@ -3014,6 +3018,19 @@ button {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.workbench-col:not(.is-collapsed) > .workbench-col-body {
+  animation: workbench-body-in 240ms ease;
+}
+
+@keyframes workbench-body-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .workbench-col-body > .panel,
@@ -3113,7 +3130,7 @@ button {
   padding: 0;
   border: 0;
   border-radius: 0;
-  background: transparent;
+  background: color-mix(in srgb, #98a2b3 6%, transparent);
   color: transparent;
   box-shadow: none;
   cursor: pointer;
@@ -3121,37 +3138,38 @@ button {
   align-items: center;
   justify-content: center;
   position: relative;
+  transition: background-color 200ms ease;
 }
 
 .workbench-rail-arrow {
-  width: 22px;
-  height: 40px;
-  padding: 10px 2px;
+  width: 18px;
+  height: 36px;
+  padding: 8px 1px;
   border-radius: 6px;
-  background: color-mix(in srgb, #98a2b3 22%, transparent);
+  background: color-mix(in srgb, #98a2b3 28%, transparent);
   color: #667085;
-  opacity: 0;
-  transform: scale(0.92);
+  opacity: 0.62;
+  transform: scale(1);
   pointer-events: none;
   transition:
-    opacity var(--duration-fast, 180ms) ease,
-    transform var(--duration-fast, 180ms) ease,
-    background-color var(--duration-fast, 180ms) ease,
-    color var(--duration-fast, 180ms) ease;
+    opacity 200ms ease,
+    transform 200ms ease,
+    background-color 200ms ease,
+    color 200ms ease;
 }
 
 .workbench-rail-btn:hover .workbench-rail-arrow,
 .workbench-rail-btn:focus-visible .workbench-rail-arrow {
   opacity: 1;
-  transform: scale(1);
-  background: color-mix(in srgb, #98a2b3 38%, #fff);
-  color: #475467;
+  transform: scale(1.04);
+  background: color-mix(in srgb, #98a2b3 42%, #fff);
+  color: #344054;
 }
 
 .workbench-rail-btn:hover,
 .workbench-rail-btn:focus-visible {
   outline: none;
-  background: color-mix(in srgb, #98a2b3 8%, transparent);
+  background: color-mix(in srgb, #98a2b3 12%, transparent);
 }
 
 .workbench-rail-btn.is-left {
@@ -3285,16 +3303,38 @@ button {
 }
 
 .ai-theme-card-index {
-  font-size: 12px;
-  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 700;
   line-height: 1.35;
+  color: var(--ct-text, var(--text-primary));
+}
+
+.ai-theme-card-kicker {
   color: var(--ct-brand-deep, var(--ct-brand, var(--accent-primary)));
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.ai-theme-card-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  color: var(--ct-text, var(--text-primary));
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 .ai-theme-card-time,
 .ai-theme-card-meta,
 .ai-theme-card-stage {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-muted);
 }
 
@@ -3303,7 +3343,7 @@ button {
 .ai-theme-card-decision,
 .ai-theme-card-section {
   margin: 0;
-  font-size: var(--font-size-caption);
+  font-size: 13px;
   line-height: 1.45;
   color: var(--text-secondary);
 }
@@ -3313,7 +3353,7 @@ button {
   grid-template-columns: auto minmax(0, 1fr);
   gap: 6px 8px;
   align-items: start;
-  padding: 8px 10px;
+  padding: 10px 12px;
   border-radius: var(--radius-button);
   background: color-mix(
     in srgb,
@@ -3330,9 +3370,13 @@ button {
 }
 
 .ai-theme-card-decision-text {
-  font-size: 13px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  font-size: 14px;
   font-weight: 600;
-  line-height: 1.5;
+  line-height: 1.45;
   color: var(--text-primary);
 }
 
@@ -3341,8 +3385,8 @@ button {
   min-width: 2.25em;
   margin-right: 0;
   color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   letter-spacing: 0.02em;
   line-height: 1.45;
 }
@@ -3350,28 +3394,47 @@ button {
 .ai-theme-card-decision .ai-theme-card-label {
   margin-top: 2px;
   color: var(--ct-brand-deep, var(--ct-brand, var(--accent-primary)));
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .ai-theme-card-sections {
   display: grid;
-  gap: 4px;
+  gap: 6px;
   padding-top: 2px;
 }
 
 .ai-theme-card-section {
   display: grid;
-  grid-template-columns: 2.25em minmax(0, 1fr);
+  grid-template-columns: 2.5em minmax(0, 1fr);
   gap: 2px 8px;
   align-items: start;
-  font-size: 12px;
-  line-height: 1.4;
+  font-size: 13px;
+  line-height: 1.45;
   color: var(--text-secondary);
+}
+
+.ai-theme-card-section.is-pending {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ct-warning-bg, #fff0c7) 88%, #fff);
+  border: 1px solid color-mix(in srgb, var(--ct-warning-text, #ad5d00) 18%, #fff);
+}
+
+.ai-theme-card-section.is-pending .ai-theme-card-label {
+  color: var(--ct-warning-text, #ad5d00);
 }
 
 .ai-theme-card-section .ai-theme-card-label {
   color: var(--text-muted);
-  font-weight: 500;
+  font-weight: 700;
+}
+
+.ai-theme-card-section-body {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .ai-theme-card-line strong {
@@ -3379,8 +3442,8 @@ button {
   min-width: 3em;
   margin-right: 6px;
   color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .ai-theme-card-detail {
@@ -3391,7 +3454,7 @@ button {
   gap: 6px;
 }
 
-.ai-theme-card:hover .ai-theme-card-detail,
+/* 选中后展开细节，避免悬停误触 */
 .ai-theme-card.is-active .ai-theme-card-detail,
 .ai-theme-card.is-expanded .ai-theme-card-detail {
   display: grid;
@@ -3403,15 +3466,29 @@ button {
 
 .ai-theme-card-expand-hint {
   margin: 0;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.3;
   color: var(--text-disabled, var(--text-muted));
 }
 
-.ai-theme-card:hover .ai-theme-card-expand-hint,
 .ai-theme-card.is-active .ai-theme-card-expand-hint,
 .ai-theme-card.is-expanded .ai-theme-card-expand-hint {
   display: none;
+}
+
+.member-trace-artifact-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.member-trace-artifact-row .coding-agent-file-ref {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
 }
 
 .ai-theme-card-dialogue {
@@ -4075,13 +4152,6 @@ button {
   line-height: 1.4;
 }
 
-.member-trace-artifact-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 0;
-}
-
 .document-artifact-body {
   display: flex;
   flex-direction: column;
@@ -4121,6 +4191,58 @@ button {
   border: var(--border-width) solid var(--border-default);
   border-radius: var(--radius-button);
   background: var(--bg-editor);
+}
+
+.document-artifact-pdf-bar {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 10px 12px;
+  border-radius: var(--radius-button);
+  border: var(--border-width) solid color-mix(in srgb, var(--ct-warning-text, #ad5d00) 28%, var(--border-default));
+  background: color-mix(in srgb, var(--ct-warning-bg, #fff0c7) 80%, #fff);
+}
+
+.document-artifact-pdf-bar p {
+  margin: 0;
+  flex: 1 1 200px;
+  color: var(--ct-text-secondary, var(--text-secondary));
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.document-artifact-pdf-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.document-artifact-pdf-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--ct-brand, var(--accent-primary));
+  background: var(--ct-brand, var(--accent-primary));
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.document-artifact-pdf-link.is-ghost {
+  background: #fff;
+  color: var(--ct-brand-deep, var(--ct-brand, var(--accent-primary)));
+  border-color: var(--ct-border, var(--border-default));
+}
+
+.document-artifact-pdf-link:hover {
+  filter: brightness(0.96);
 }
 
 .document-artifact-markdown {

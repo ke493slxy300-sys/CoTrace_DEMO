@@ -1,11 +1,8 @@
 import type { ReactNode } from 'react';
 import {
-  ChevronDown,
   ClipboardList,
-  Clock3,
   FolderOpen,
   LayoutGrid,
-  MoreHorizontal,
 } from 'lucide-react';
 import { getMemberById } from '../../data/members';
 import { DemoRoleMenu } from '../../components/demo/DemoRoleMenu';
@@ -39,15 +36,13 @@ export function TeacherShell({
         </div>
         <div className="ctg-top-tools">
           <DemoRoleMenu />
-          <span className="ctg-term">
+          <span className="ctg-term is-static" title="演示学期">
             本学期
-            <ChevronDown size={14} strokeWidth={1.75} aria-hidden="true" />
           </span>
           <span className="ctg-teacher">
             <span className="ctg-teacher-face">{face}</span>
             {teacher?.name ?? '周老师'}
           </span>
-          <MoreHorizontal size={18} strokeWidth={1.75} aria-hidden="true" />
         </div>
       </header>
       <div className="ctg-body">
@@ -70,10 +65,6 @@ export function TeacherShell({
             <ClipboardList size={18} strokeWidth={1.75} aria-hidden="true" />
             阶段汇报
           </button>
-          <button type="button" className="ctg-nav" disabled>
-            <Clock3 size={18} strokeWidth={1.75} aria-hidden="true" />
-            指导记录
-          </button>
           <button
             type="button"
             className={`ctg-nav${place === 'acceptance' ? ' is-on' : ''}`}
@@ -88,6 +79,9 @@ export function TeacherShell({
           {children}
         </div>
       </div>
+      <p className="ctg-demo-foot" role="note">
+        demo阶段，仅展示核心功能。线下demo内容为真实模型输出
+      </p>
     </div>
   );
 }

@@ -32,7 +32,7 @@ type CollapsibleResizableColumnsProps = {
   minCenterWidth?: number;
 };
 
-const COLLAPSED_RAIL = 14;
+const COLLAPSED_RAIL = 22;
 const HANDLE = 6;
 const DEFAULT_LEFT = 216;
 const DEFAULT_RIGHT = 412;
@@ -99,6 +99,7 @@ export function CollapsibleResizableColumns({
     startX: number;
     startWidth: number;
   } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     writePrefs(storageKey, prefs);
@@ -113,6 +114,7 @@ export function CollapsibleResizableColumns({
       event.preventDefault();
       const startWidth = side === "left" ? prefs.leftWidth : prefs.rightWidth;
       dragRef.current = { side, startX: event.clientX, startWidth };
+      setIsDragging(true);
       event.currentTarget.setPointerCapture(event.pointerId);
     },
     [prefs.leftWidth, prefs.rightWidth],
@@ -165,6 +167,7 @@ export function CollapsibleResizableColumns({
   const onPointerUp = useCallback(
     (event: ReactPointerEvent<HTMLButtonElement>) => {
       dragRef.current = null;
+      setIsDragging(false);
       if (event.currentTarget.hasPointerCapture(event.pointerId)) {
         event.currentTarget.releasePointerCapture(event.pointerId);
       }
@@ -186,7 +189,7 @@ export function CollapsibleResizableColumns({
   return (
     <main
       ref={rootRef}
-      className={`workbench-columns ${className}`.trim()}
+      className={`workbench-columns${isDragging ? " is-dragging" : ""} ${className}`.trim()}
       aria-label={ariaLabel}
       style={style}
     >

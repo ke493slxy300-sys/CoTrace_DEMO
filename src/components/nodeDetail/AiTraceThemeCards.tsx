@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Bot, MessageSquarePlus, PencilLine } from 'lucide-react';
 import type { AiTraceThemeCard } from '../../data/nodeCollaboration';
 import { formatRelativeTime } from '../../utils/discussionLabels';
@@ -11,14 +10,17 @@ type AiTraceThemeCardsProps = {
   onAnnotate: (cardId: string) => void;
 };
 
+function shortLabel(label: string): string {
+  const parts = label.split(/[/·]/).map((part) => part.trim()).filter(Boolean);
+  return parts[parts.length - 1] || label;
+}
+
 export function AiTraceThemeCards({
   cards,
   activeCardId,
   onSelectCard,
   onAnnotate,
 }: AiTraceThemeCardsProps) {
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
-
   if (cards.length === 0) {
     return (
       <EmptyState
@@ -32,19 +34,18 @@ export function AiTraceThemeCards({
   return (
     <ul className="ai-theme-card-list">
       {cards.map((card, index) => {
-        const expanded = hoveredId === card.id;
+        const expanded = activeCardId === card.id;
+        const hasDetail = card.dialogues.length > 0;
         return (
           <li key={card.id}>
             <article
-              className={`ai-theme-card${activeCardId === card.id ? ' is-active' : ''}${
-                expanded ? ' is-expanded' : ''
-              }`}
-              onMouseEnter={() => setHoveredId(card.id)}
-              onMouseLeave={() => setHoveredId(null)}
+              className={`ai-theme-card${expanded ? ' is-active is-expanded' : ''}`}
               onClick={() => onSelectCard(card.id)}
             >
               <header className="ai-theme-card-head">
-                <span className="ai-theme-card-index">{card.theme}</span>
+                <span className="ai-theme-card-index">
+                  <span className="ai-theme-card-title">{card.theme}</span>
+                </span>
                 <span className="ai-theme-card-time">
                   {formatRelativeTime(card.createdAt)} · {card.initiator}
                 </span>
@@ -63,35 +64,48 @@ export function AiTraceThemeCards({
 
               <div className="ai-theme-card-sections">
                 {card.problem ? (
-                  <p className="ai-theme-card-section">
+                  <p className="ai-theme-card-section is-pending">
                     <span className="ai-theme-card-label">问题</span>
-                    <span>{card.problem}</span>
+                    <span className="ai-theme-card-section-body">
+                      {card.problem}
+                    </span>
                   </p>
                 ) : null}
                 {card.agentAdvice ? (
                   <p className="ai-theme-card-section">
                     <span className="ai-theme-card-label">建议</span>
-                    <span>{card.agentAdvice}</span>
+                    <span className="ai-theme-card-section-body">
+                      {card.agentAdvice}
+                    </span>
                   </p>
                 ) : null}
                 {card.adoption ? (
                   <p className="ai-theme-card-section">
                     <span className="ai-theme-card-label">结果</span>
-                    <span>{card.adoption}</span>
+                    <span className="ai-theme-card-section-body">
+                      {card.adoption}
+                    </span>
                   </p>
                 ) : null}
                 {card.relatedFileLabel ? (
                   <p className="ai-theme-card-section">
                     <span className="ai-theme-card-label">产物</span>
-                    <span>
-                      {card.relatedFileLabel}
+                    <span
+                      className="ai-theme-card-section-body"
+                      title={
+                        card.changeRelation
+                          ? `${card.relatedFileLabel} · ${card.changeRelation}`
+                          : card.relatedFileLabel
+                      }
+                    >
+                      {shortLabel(card.relatedFileLabel)}
                       {card.changeRelation ? ` · ${card.changeRelation}` : ''}
                     </span>
                   </p>
                 ) : null}
               </div>
 
-              {card.dialogues.length > 0 ? (
+              {hasDetail ? (
                 <>
                   <div className="ai-theme-card-detail">
                     <div className="ai-theme-card-dialogue">
@@ -112,7 +126,7 @@ export function AiTraceThemeCards({
                     </div>
                   </div>
                   {!expanded ? (
-                    <p className="ai-theme-card-expand-hint">悬停查看对话</p>
+                    <p className="ai-theme-card-expand-hint">点击查看更多</p>
                   ) : null}
                 </>
               ) : null}

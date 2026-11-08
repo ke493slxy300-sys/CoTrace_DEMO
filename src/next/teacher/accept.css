@@ -141,10 +141,8 @@ button.cta-jump {
   font-size: 13px;
 }
 
-.cta-evidence button {
+.cta-evidence-row {
   width: 100%;
-  border: 0;
-  background: transparent;
   display: flex;
   align-items: flex-start;
   gap: 10px;
@@ -218,6 +216,57 @@ button.cta-jump {
   font-size: 12px;
   font-weight: 700;
   align-items: center;
+}
+
+.cta-ai-struct {
+  margin: 0 0 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cta-ai-badge {
+  display: inline-flex;
+  width: fit-content;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 8px;
+  background: #f0e7ff;
+  color: #554095;
+  font-size: 12px;
+  font-weight: 700;
+  align-items: center;
+}
+
+.cta-ai-raw {
+  margin: 0;
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.cta-ai-raw summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.cta-ai-raw p {
+  margin: 6px 0 0;
+  color: #344054;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.cta-side .rd-verdict-title {
+  font-size: 15px;
+}
+
+.cta-side .rd-finding-title {
+  font-size: 13px;
+}
+
+.cta-side .rd-finding-body {
+  font-size: 13px;
 }
 
 .cta-side textarea {

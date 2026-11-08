@@ -1,16 +1,28 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Box,
+  ChevronDown,
+  ChevronRight,
   Code2,
   Download,
   FileCode2,
   FileText,
+  Folder,
+  FolderOpen,
   Layers,
   Play,
   Search,
   X,
 } from 'lucide-react';
 import { fetchMaterialPreview } from '../../api/cotraceApi';
+import {
+  defaultExpandedPaths,
+  findRepoNodeByPath,
+  getProjectRepoTree,
+  materialMatchesRepoSelection,
+  resolveRepoFolderSelection,
+  type RepoTreeNode,
+} from '../../data/projectRepoTree';
 import {
   fileExtensionIcon,
   getMaterialFile,
@@ -21,20 +33,20 @@ import {
   submitterLabel,
   triggerBlobDownload,
   downloadHrefAsNamedFile,
+  downloadMaterialFilesAsZip,
   type MaterialFile,
   type MaterialFolderId,
-  type MaterialsTreeId,
   type MaterialVersion,
 } from '../../data/teamMaterials';
 import { HANDOFF_PROJECT_NAME } from '../../data/handoffDemoSeed';
 import { getSeatflowProjectCard, SEATFLOW_PROJECT_ID } from '../../data/projectLogs';
 import {
-  hashBlueprint,
-  hashFromNavHint,
+  hashNodeDetail,
   hashMaterials,
   type MaterialsQuery,
 } from './studentRoutes';
 import { StudentShell, type StudentPlace } from './StudentShell';
+import { StudentTrail } from './StudentTrail';
 import './materials.css';
 
 type TeamMaterialsPageProps = {
@@ -45,17 +57,17 @@ type TeamMaterialsPageProps = {
   onOpenHash: (hash: string) => void;
 };
 
+function FileGlyph({ name }: { name: string }) {
+  const kind = fileExtensionIcon(name);
+  if (kind === 'code') return <FileCode2 size={14} strokeWidth={1.75} />;
+  return <FileText size={14} strokeWidth={1.75} />;
+}
+
 function FolderIcon({ id }: { id: MaterialFolderId }) {
   if (id === 'folder-req') return <Layers size={18} strokeWidth={1.75} />;
   if (id === 'folder-api') return <Code2 size={18} strokeWidth={1.75} />;
   if (id === 'folder-integration') return <Box size={18} strokeWidth={1.75} />;
   return <Play size={18} strokeWidth={1.75} />;
-}
-
-function FileGlyph({ name }: { name: string }) {
-  const kind = fileExtensionIcon(name);
-  if (kind === 'code') return <FileCode2 size={16} strokeWidth={1.75} />;
-  return <FileText size={16} strokeWidth={1.75} />;
 }
 
 const NODE_LABELS: Record<string, string> = {
@@ -74,7 +86,6 @@ function nodeLabel(nodeId: string): string {
 
 async function downloadVersion(version: MaterialVersion): Promise<void> {
   if (version.source.kind === 'href') {
-    // 拉取后按展示文件名保存，避免 .mjs/.pdf 被浏览器当导航打开
     await downloadHrefAsNamedFile(version.source.href, version.fileName);
     return;
   }
@@ -93,6 +104,101 @@ async function downloadVersion(version: MaterialVersion): Promise<void> {
   triggerBlobDownload(preview.data.preview, version.fileName);
 }
 
+function RepoTreeBranch({
+  nodes,
+  depth,
+  selectedPath,
+  expanded,
+  previewFileId,
+  onToggle,
+  onSelectDir,
+  onSelectFile,
+}: {
+  nodes: RepoTreeNode[];
+  depth: number;
+  selectedPath: string;
+  expanded: Set<string>;
+  previewFileId: string | null;
+  onToggle: (path: string) => void;
+  onSelectDir: (path: string) => void;
+  onSelectFile: (node: RepoTreeNode) => void;
+}) {
+  return (
+    <ul className="tm-repo-list" style={{ paddingLeft: depth === 0 ? 0 : 12 }}>
+      {nodes.map((node) => {
+        const isOpen = node.kind === 'dir' && expanded.has(node.path);
+        const isSelected =
+          node.kind === 'dir'
+            ? selectedPath === node.path
+            : Boolean(node.materialFileId && node.materialFileId === previewFileId);
+        const hasMaterial = Boolean(node.materialFileId);
+
+        return (
+          <li key={node.id}>
+            {node.kind === 'dir' ? (
+              <div className={`tm-repo-row${isSelected ? ' is-on' : ''}`}>
+                <button
+                  type="button"
+                  className="tm-repo-twist"
+                  aria-label={isOpen ? '折叠' : '展开'}
+                  onClick={() => onToggle(node.path)}
+                >
+                  {isOpen ? (
+                    <ChevronDown size={14} strokeWidth={2} />
+                  ) : (
+                    <ChevronRight size={14} strokeWidth={2} />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className="tm-repo-label"
+                  onClick={() => onSelectDir(node.path)}
+                >
+                  {isOpen ? (
+                    <FolderOpen size={14} strokeWidth={1.75} />
+                  ) : (
+                    <Folder size={14} strokeWidth={1.75} />
+                  )}
+                  <span>{node.name}</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className={`tm-repo-file${isSelected ? ' is-on' : ''}${
+                  hasMaterial ? '' : ' is-muted'
+                }`}
+                disabled={!hasMaterial}
+                title={
+                  hasMaterial
+                    ? node.path
+                    : '这里还没有文件'
+                }
+                onClick={() => onSelectFile(node)}
+              >
+                <FileGlyph name={node.name} />
+                <span>{node.name}</span>
+              </button>
+            )}
+            {node.kind === 'dir' && isOpen && node.children?.length ? (
+              <RepoTreeBranch
+                nodes={node.children}
+                depth={depth + 1}
+                selectedPath={selectedPath}
+                expanded={expanded}
+                previewFileId={previewFileId}
+                onToggle={onToggle}
+                onSelectDir={onSelectDir}
+                onSelectFile={onSelectFile}
+              />
+            ) : null}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 export function TeamMaterialsPage({
   projectId,
   projectName,
@@ -105,27 +211,25 @@ export function TeamMaterialsPage({
     () => listProjectMaterialFiles(projectId),
     [projectId],
   );
+  const repoTree = useMemo(() => getProjectRepoTree(projectId), [projectId]);
 
-  const folderFromUrl = query.folder as MaterialsTreeId | null;
-  const fileFromUrl = query.file;
-  const versionFromUrl = query.version;
-
-  const [selectedFolder, setSelectedFolder] = useState<MaterialsTreeId>(
-    folderFromUrl && folderFromUrl !== MATERIALS_ALL_ID
-      ? (folderFromUrl as MaterialFolderId)
-      : folderFromUrl === MATERIALS_ALL_ID
-        ? MATERIALS_ALL_ID
-        : MATERIALS_ALL_ID,
+  const [selectedPath, setSelectedPath] = useState<string>(() => {
+    const resolved = resolveRepoFolderSelection(projectId, query.folder);
+    return resolved === MATERIALS_ALL_ID ? '' : String(resolved);
+  });
+  const [expanded, setExpanded] = useState<Set<string>>(
+    () => new Set(defaultExpandedPaths(repoTree)),
   );
   const [search, setSearch] = useState(query.q ?? '');
   const [previewFileId, setPreviewFileId] = useState<string | null>(
-    fileFromUrl ?? null,
+    query.file ?? null,
   );
   const [previewVersionId, setPreviewVersionId] = useState<string | null>(
-    versionFromUrl ?? null,
+    query.version ?? null,
   );
   const [previewBody, setPreviewBody] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState('');
+  const [downloadingAll, setDownloadingAll] = useState(false);
   const [missingTarget, setMissingTarget] = useState<string | null>(null);
 
   const displayName =
@@ -133,14 +237,24 @@ export function TeamMaterialsPage({
       ? getSeatflowProjectCard().name
       : projectName || HANDOFF_PROJECT_NAME;
 
-  // URL → 本地选中态
+  const selectionKey = selectedPath || MATERIALS_ALL_ID;
+
   useEffect(() => {
-    if (query.folder === MATERIALS_ALL_ID || !query.folder) {
-      setSelectedFolder(MATERIALS_ALL_ID);
-    } else if (folders.some((folder) => folder.id === query.folder)) {
-      setSelectedFolder(query.folder as MaterialFolderId);
-    } else if (query.folder) {
-      setMissingTarget(`目录不存在：${query.folder}`);
+    const resolved = resolveRepoFolderSelection(projectId, query.folder);
+    if (resolved === MATERIALS_ALL_ID) {
+      setSelectedPath('');
+    } else {
+      setSelectedPath(String(resolved));
+      setExpanded((prev) => {
+        const next = new Set(prev);
+        const parts = String(resolved).split('/');
+        let acc = '';
+        for (const part of parts) {
+          acc = acc ? `${acc}/${part}` : part;
+          next.add(acc);
+        }
+        return next;
+      });
     }
 
     if (query.q != null) setSearch(query.q);
@@ -153,6 +267,18 @@ export function TeamMaterialsPage({
         return;
       }
       setPreviewFileId(hit.id);
+      if (hit.repoPath) {
+        setExpanded((prev) => {
+          const next = new Set(prev);
+          const parts = hit.repoPath.split('/');
+          let acc = '';
+          for (const part of parts.slice(0, -1)) {
+            acc = acc ? `${acc}/${part}` : part;
+            next.add(acc);
+          }
+          return next;
+        });
+      }
       if (query.version) {
         const ver = getMaterialVersion(hit, query.version);
         if (!ver) {
@@ -170,15 +296,15 @@ export function TeamMaterialsPage({
       setPreviewFileId(null);
       setPreviewVersionId(null);
     }
-  }, [folders, projectId, query.file, query.folder, query.q, query.version]);
+  }, [projectId, query.file, query.folder, query.q, query.version]);
 
   const syncUrl = (next: {
-    folder?: MaterialsTreeId;
+    folder?: string;
     file?: string | null;
     version?: string | null;
     q?: string;
   }) => {
-    const folder = next.folder ?? selectedFolder;
+    const folder = next.folder ?? selectionKey;
     onOpenHash(
       hashMaterials(projectId, {
         folder: folder === MATERIALS_ALL_ID ? undefined : folder,
@@ -195,16 +321,12 @@ export function TeamMaterialsPage({
   const visibleFiles = useMemo(() => {
     const q = search.trim().toLowerCase();
     return files.filter((file) => {
-      if (
-        selectedFolder !== MATERIALS_ALL_ID &&
-        file.folderId !== selectedFolder
-      ) {
-        return false;
-      }
+      if (!materialMatchesRepoSelection(file, selectionKey)) return false;
       if (!q) return true;
       const version = getMaterialVersion(file, file.currentVersionId);
       const hay = [
         file.displayName,
+        file.repoPath,
         version?.fileName,
         version?.label,
         submitterLabel(version?.submitterId ?? ''),
@@ -213,7 +335,7 @@ export function TeamMaterialsPage({
         .toLowerCase();
       return hay.includes(q);
     });
-  }, [files, search, selectedFolder]);
+  }, [files, search, selectionKey]);
 
   const previewFile = previewFileId
     ? getMaterialFile(projectId, previewFileId)
@@ -222,28 +344,48 @@ export function TeamMaterialsPage({
     ? getMaterialVersion(previewFile, previewVersionId)
     : null;
 
+  const sectionTitle = useMemo(() => {
+    if (!selectedPath) return '全部文件';
+    const stage = folders.find((folder) => folder.id === selectedPath);
+    if (stage) return stage.name;
+    const node = findRepoNodeByPath(repoTree, selectedPath);
+    return node?.name || selectedPath;
+  }, [folders, repoTree, selectedPath]);
+
   useEffect(() => {
     let cancelled = false;
-    setPreviewBody(null);
-    if (!previewVersion) return;
-    if (previewVersion.source.kind === 'inline') {
-      setPreviewBody(previewVersion.source.body);
+    // 依赖版本 ID，不要依赖 getMaterialFile 每次深拷贝出的对象引用，
+    // 否则会反复 setPreviewBody(null) 造成预览窗剧烈抖动。
+    if (!previewFileId || !previewVersionId) {
+      setPreviewBody(null);
       return;
     }
-    if (previewVersion.source.kind === 'api-material') {
-      void fetchMaterialPreview(previewVersion.source.materialId).then(
-        (result) => {
-          if (cancelled) return;
-          if (result.ok) setPreviewBody(result.data.preview);
-        },
-      );
+    const file = getMaterialFile(projectId, previewFileId);
+    const version = file
+      ? getMaterialVersion(file, previewVersionId)
+      : null;
+    if (!version) {
+      setPreviewBody(null);
+      return;
+    }
+
+    setPreviewBody(null);
+    if (version.source.kind === 'inline') {
+      setPreviewBody(version.source.body);
+      return;
+    }
+    if (version.source.kind === 'api-material') {
+      void fetchMaterialPreview(version.source.materialId).then((result) => {
+        if (cancelled) return;
+        if (result.ok) setPreviewBody(result.data.preview);
+      });
       return () => {
         cancelled = true;
       };
     }
-    if (previewVersion.source.kind === 'href') {
-      const href = previewVersion.source.href;
-      const lower = previewVersion.fileName.toLowerCase();
+    if (version.source.kind === 'href') {
+      const href = version.source.href;
+      const lower = version.fileName.toLowerCase();
       const textLike =
         lower.endsWith('.md') ||
         lower.endsWith('.txt') ||
@@ -262,7 +404,7 @@ export function TeamMaterialsPage({
     return () => {
       cancelled = true;
     };
-  }, [previewVersion]);
+  }, [previewFileId, previewVersionId, projectId]);
 
   const openPreview = (file: MaterialFile, versionId?: string) => {
     const version = getMaterialVersion(file, versionId ?? file.currentVersionId);
@@ -270,7 +412,7 @@ export function TeamMaterialsPage({
     setPreviewVersionId(version?.id ?? null);
     setMissingTarget(null);
     syncUrl({
-      folder: selectedFolder,
+      folder: selectionKey,
       file: file.id,
       version: version?.id ?? null,
     });
@@ -282,8 +424,7 @@ export function TeamMaterialsPage({
     setPreviewBody(null);
     onOpenHash(
       hashMaterials(projectId, {
-        folder:
-          selectedFolder === MATERIALS_ALL_ID ? undefined : selectedFolder,
+        folder: selectedPath || undefined,
         q: search.trim() || undefined,
         from: query.from,
         retNode: query.retNode,
@@ -298,6 +439,70 @@ export function TeamMaterialsPage({
     } catch (error) {
       setDownloadError(error instanceof Error ? error.message : '下载失败');
     }
+  };
+
+  const onDownloadAll = async () => {
+    if (visibleFiles.length === 0 || downloadingAll) return;
+    setDownloadError('');
+    setDownloadingAll(true);
+    try {
+      const safeName = displayName.replace(/[\\/:*?"<>|]+/g, '-').trim();
+      const scope =
+        selectedPath && selectedPath !== MATERIALS_ALL_ID
+          ? selectedPath.replace(/[\\/:*?"<>|]+/g, '-')
+          : '全部';
+      await downloadMaterialFilesAsZip({
+        files: visibleFiles,
+        zipName: `${safeName || '材料'}-${scope}.zip`,
+        fetchPreview: async (materialId) => {
+          const preview = await fetchMaterialPreview(materialId);
+          if (!preview.ok) {
+            return { ok: false, message: preview.message };
+          }
+          return { ok: true, data: preview.data };
+        },
+      });
+    } catch (error) {
+      setDownloadError(
+        error instanceof Error ? error.message : '压缩包下载失败',
+      );
+    } finally {
+      setDownloadingAll(false);
+    }
+  };
+
+  const selectRoot = () => {
+    setSelectedPath('');
+    syncUrl({ folder: MATERIALS_ALL_ID, file: null, version: null });
+  };
+
+  const selectDir = (path: string) => {
+    setSelectedPath(path);
+    setExpanded((prev) => new Set(prev).add(path));
+    syncUrl({ folder: path, file: null, version: null });
+  };
+
+  const selectRepoFile = (node: RepoTreeNode) => {
+    if (!node.materialFileId) return;
+    const file = getMaterialFile(projectId, node.materialFileId);
+    if (!file) return;
+    const parent = node.path.includes('/')
+      ? node.path.slice(0, node.path.lastIndexOf('/'))
+      : '';
+    if (parent) {
+      setSelectedPath(parent);
+      setExpanded((prev) => {
+        const next = new Set(prev);
+        const parts = parent.split('/');
+        let acc = '';
+        for (const part of parts) {
+          acc = acc ? `${acc}/${part}` : part;
+          next.add(acc);
+        }
+        return next;
+      });
+    }
+    openPreview(file);
   };
 
   if (missingTarget && !previewFile) {
@@ -334,79 +539,43 @@ export function TeamMaterialsPage({
       onNavigate={onNavigate}
     >
       <div className="tm">
-        <aside className="tm-folders" aria-label="文件夹">
-          <h2>文件夹</h2>
-          <ul className="tm-tree">
-            <li>
-              <button
-                type="button"
-                className={selectedFolder === MATERIALS_ALL_ID ? 'is-on' : ''}
-                onClick={() => {
-                  setSelectedFolder(MATERIALS_ALL_ID);
-                  syncUrl({ folder: MATERIALS_ALL_ID, file: null, version: null });
-                }}
-              >
-                全部材料
-              </button>
-              <ul>
-                {folders.map((folder) => (
-                  <li key={folder.id}>
-                    <button
-                      type="button"
-                      className={selectedFolder === folder.id ? 'is-on' : ''}
-                      onClick={() => {
-                        setSelectedFolder(folder.id);
-                        syncUrl({
-                          folder: folder.id,
-                          file: null,
-                          version: null,
-                        });
-                      }}
-                    >
-                      {folder.name}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </li>
-          </ul>
+        <aside className="tm-folders" aria-label="项目代码仓">
+          <h2>代码仓</h2>
+          <button
+            type="button"
+            className={`tm-repo-root${selectedPath === '' ? ' is-on' : ''}`}
+            onClick={selectRoot}
+          >
+            <FolderOpen size={14} strokeWidth={1.75} />
+            <span>仓库根 / 全部</span>
+          </button>
+          <RepoTreeBranch
+            nodes={repoTree.children ?? []}
+            depth={0}
+            selectedPath={selectedPath}
+            expanded={expanded}
+            previewFileId={previewFileId}
+            onToggle={(path) => {
+              setExpanded((prev) => {
+                const next = new Set(prev);
+                if (next.has(path)) next.delete(path);
+                else next.add(path);
+                return next;
+              });
+            }}
+            onSelectDir={selectDir}
+            onSelectFile={selectRepoFile}
+          />
         </aside>
 
         <div className="tm-main">
-          <p className="tm-crumb">
-            {displayName} / 材料
-          </p>
-          {query.from === 'blueprint' || query.from === 'work' || query.from === 'history' ? (
-            <p style={{ margin: '0 0 10px' }}>
-              <button
-                type="button"
-                className="tm-dl"
-                onClick={() =>
-                  onOpenHash(
-                    hashFromNavHint(query.from, projectId, {
-                      retNode: query.retNode,
-                      folder:
-                        selectedFolder === MATERIALS_ALL_ID
-                          ? undefined
-                          : selectedFolder,
-                      q: search.trim() || undefined,
-                    }),
-                  )
-                }
-              >
-                ← 返回
-                {query.from === 'blueprint'
-                  ? query.retNode
-                    ? '蓝图节点'
-                    : '蓝图'
-                  : query.from === 'work'
-                    ? '工作'
-                    : '项目记录'}
-              </button>
-            </p>
-          ) : null}
           <div className="tm-head">
-            <h1>团队材料</h1>
+            <div>
+              <StudentTrail
+                segments={[{ label: displayName }, { label: '材料' }]}
+              />
+              <h1>材料</h1>
+            </div>
             <label className="tm-search">
               <Search size={16} strokeWidth={1.75} aria-hidden="true" />
               <input
@@ -429,18 +598,24 @@ export function TeamMaterialsPage({
           <p className="tm-section-label">
             项目文件夹 <em>({folders.length})</em>
           </p>
-          <div className="tm-cards">
+          <div className="tm-cards" role="toolbar" aria-label="项目文件夹">
             {folders.map((folder) => {
               const count = files.filter((f) => f.folderId === folder.id).length;
               return (
                 <button
                   key={folder.id}
                   type="button"
-                  className={`tm-card${selectedFolder === folder.id ? ' is-on' : ''}`}
+                  className={`tm-card${
+                    selectionKey === folder.id ? ' is-on' : ''
+                  }`}
                   style={{ background: folder.accent, color: folder.ink }}
                   onClick={() => {
-                    setSelectedFolder(folder.id);
-                    syncUrl({ folder: folder.id, file: null, version: null });
+                    setSelectedPath(folder.id);
+                    syncUrl({
+                      folder: folder.id,
+                      file: null,
+                      version: null,
+                    });
                   }}
                 >
                   <span className="tm-card-icon" style={{ color: folder.ink }}>
@@ -453,19 +628,27 @@ export function TeamMaterialsPage({
             })}
           </div>
 
-          <p className="tm-section-label">
-            {selectedFolder === MATERIALS_ALL_ID
-              ? '全部文件'
-              : folders.find((f) => f.id === selectedFolder)?.name || '文件'}{' '}
-            <em>({visibleFiles.length})</em>
-          </p>
+          <div className="tm-section-row">
+            <p className="tm-section-label">
+              {sectionTitle} <em>({visibleFiles.length})</em>
+            </p>
+            <button
+              type="button"
+              className="tm-dl"
+              disabled={visibleFiles.length === 0 || downloadingAll}
+              onClick={() => void onDownloadAll()}
+            >
+              <Download size={16} strokeWidth={2} aria-hidden="true" />
+              {downloadingAll ? '下载中…' : '下载所有文件'}
+            </button>
+          </div>
 
           <div className="tm-table-wrap">
             <table className="tm-table">
               <thead>
                 <tr>
                   <th>文件名</th>
-                  <th>版本</th>
+                  <th>仓路径</th>
                   <th>提交人</th>
                   <th>操作</th>
                 </tr>
@@ -473,7 +656,7 @@ export function TeamMaterialsPage({
               <tbody>
                 {visibleFiles.length === 0 ? (
                   <tr>
-                    <td colSpan={4}>本目录暂无文件</td>
+                    <td colSpan={4}>这里还没有文件</td>
                   </tr>
                 ) : (
                   visibleFiles.map((file) => {
@@ -494,11 +677,14 @@ export function TeamMaterialsPage({
                             onClick={() => openPreview(file)}
                           >
                             <FileGlyph name={file.displayName} />
-                            {file.displayName}
+                            <span className="tm-file-name">
+                              {file.displayName}
+                              <span className="tm-ver">{version.label}</span>
+                            </span>
                           </button>
                         </td>
                         <td>
-                          <span className="tm-ver">{version.label}</span>
+                          <code className="tm-path">{file.repoPath}</code>
                         </td>
                         <td>{submitterLabel(version.submitterId)}</td>
                         <td>
@@ -507,7 +693,7 @@ export function TeamMaterialsPage({
                             className="tm-dl"
                             onClick={() => void onDownload(version)}
                           >
-                            <Download size={14} strokeWidth={2} aria-hidden="true" />
+                            <Download size={16} strokeWidth={2} aria-hidden="true" />
                             下载
                           </button>
                         </td>
@@ -538,6 +724,7 @@ export function TeamMaterialsPage({
                     提交人 {submitterLabel(previewVersion.submitterId)}
                   </span>
                   <span>下载名 {previewVersion.fileName}</span>
+                  <span>{previewFile.repoPath}</span>
                 </div>
               </div>
               <button
@@ -566,14 +753,14 @@ export function TeamMaterialsPage({
                         type="button"
                         onClick={() =>
                           onOpenHash(
-                            hashBlueprint(projectId, {
+                            hashNodeDetail(projectId, {
                               node: nodeId,
                               from: 'materials',
                             }),
                           )
                         }
                       >
-                        打开蓝图节点 · {nodeLabel(nodeId)}
+                        打开节点详情 · {nodeLabel(nodeId)}
                       </button>
                     </li>
                   ))
@@ -607,13 +794,19 @@ export function TeamMaterialsPage({
               </ul>
             </div>
 
-            {previewBody ? (
-              <pre className="tm-body-preview">{previewBody.slice(0, 4000)}</pre>
-            ) : previewVersion.source.kind === 'href' ? (
-              <p className="tm-preview-meta">
-                二进制 / 文档文件请下载后查看原文。
-              </p>
-            ) : null}
+            <div className="tm-preview-slot">
+              {previewBody ? (
+                <pre className="tm-body-preview">
+                  {previewBody.slice(0, 4000)}
+                </pre>
+              ) : (
+                <p className="tm-preview-meta tm-preview-fallback">
+                  {previewVersion.source.kind === 'href'
+                    ? '二进制 / 文档文件请下载后查看原文。'
+                    : '加载预览…'}
+                </p>
+              )}
+            </div>
 
             <div className="tm-preview-actions">
               <button
@@ -622,9 +815,6 @@ export function TeamMaterialsPage({
                 onClick={() => void onDownload(previewVersion)}
               >
                 下载此版本
-              </button>
-              <button type="button" onClick={closePreview}>
-                关闭
               </button>
             </div>
           </div>

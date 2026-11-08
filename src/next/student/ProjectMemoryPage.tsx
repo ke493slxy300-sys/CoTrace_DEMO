@@ -28,6 +28,7 @@ import { locateByDemoMaterialId } from '../../data/teamMaterials';
 import { useDelivery } from '../../data/deliveryStore';
 import { hashMaterials } from './studentRoutes';
 import { StudentShell, type StudentPlace } from './StudentShell';
+import { StudentTrail } from './StudentTrail';
 import './projectMemory.css';
 
 type ProjectMemoryPageProps = {
@@ -65,12 +66,12 @@ export function ProjectMemoryPage({
   return (
     <StudentShell
       place="history"
-      projectName="项目记录"
+      projectName="记录"
       onNavigate={onNavigate}
     >
       <div className="pm">
         <div className="pm-empty is-quiet" role="status">
-          <p>暂无项目记录</p>
+          <p>暂无记录</p>
         </div>
       </div>
     </StudentShell>
@@ -88,7 +89,7 @@ function memoryActionLabel(kind: string): string {
     case 'student-help':
       return '发起求助';
     case 'teacher-feedback':
-      return '发送正式反馈';
+      return '回复';
     default:
       return '更新记录';
   }
@@ -100,7 +101,6 @@ function memoryImpactLabel(event: {
   statusLabel: string;
 }): string {
   const bits: string[] = [];
-  if (event.versionId) bits.push(`版本 ${event.versionId}`);
   bits.push(event.title);
   if (event.statusLabel) bits.push(event.statusLabel);
   return bits.join(' · ');
@@ -164,17 +164,23 @@ function CampusProcessMemory({
       onNavigate={onNavigate}
     >
       <div className="pm">
-        <p className="pm-kicker">{HANDOFF_PROJECT_NAME}</p>
-        <div className="pm-head">
-          <div>
-            <h1>项目记录</h1>
-            <p>一行概览 · 展开看日志 / 原文 / 证据</p>
+        <div className="pm-title">
+          <div className="pm-head">
+            <div>
+              <StudentTrail
+                segments={[
+                  { label: HANDOFF_PROJECT_NAME },
+                  { label: '记录' },
+                ]}
+              />
+              <h1>记录</h1>
+            </div>
           </div>
         </div>
 
         {campusEvents.length === 0 ? (
           <div className="pm-empty is-quiet" role="status">
-            <p>暂无项目记录</p>
+            <p>暂无记录。交付确认或教师回复后会在这里出现。</p>
           </div>
         ) : (
           <ol className="pm-list">
@@ -192,17 +198,17 @@ function CampusProcessMemory({
               const who = event.authorLabel.split('·')[0]?.trim() || event.authorLabel;
               const tags: { label: string; tone: string }[] = [];
               if (event.kind === 'teacher-feedback' || relatedFeedback) {
-                tags.push({ label: '教师正式反馈', tone: 'teacher' });
-              }
-              if (event.evidence.some((item) => /AI|建议/.test(item.label))) {
+                tags.push({ label: '教师回复', tone: 'teacher' });
+              } else if (
+                event.evidence.some((item) => /AI|建议/.test(item.label))
+              ) {
                 tags.push({ label: 'AI 建议', tone: 'ai' });
-              }
-              if (
+              } else if (
                 event.kind === 'delivery-published' ||
                 event.kind === 'delivery-received' ||
                 event.statusLabel.includes('已确认')
               ) {
-                tags.push({ label: '人工确认', tone: 'human' });
+                tags.push({ label: '已确认', tone: 'human' });
               }
 
               return (
@@ -232,9 +238,6 @@ function CampusProcessMemory({
                   {open ? (
                     <div className="pm-row-detail">
                       <p className="pm-summary">{event.summary}</p>
-                      {event.versionId ? (
-                        <p className="pm-meta">版本 {event.versionId}</p>
-                      ) : null}
                       {event.evidence.map((item) => (
                         <div key={item.id} className="pm-evidence">
                           <strong>{item.label}</strong>
@@ -273,14 +276,14 @@ function CampusProcessMemory({
                               );
                             }}
                           >
-                            在材料库打开本版代码
+                            在材料里打开这版代码
                           </button>
                         </div>
                       ) : null}
                       {relatedFeedback && event.kind !== 'teacher-feedback' ? (
                         <div className="pm-evidence is-teacher">
                           <strong>
-                            教师正式反馈 ·{' '}
+                            教师回复 ·{' '}
                             {getMemberById(relatedFeedback.authorId)?.name ??
                               '周老师'}
                           </strong>
@@ -336,30 +339,37 @@ function SeatflowMemory({
       onNavigate={onNavigate}
     >
       <div className="pm">
-        <p className="pm-kicker">{log.projectName}</p>
-        <div className="pm-head">
-          <div>
-            <h1>{log.pageTitle || '项目记忆'}</h1>
-            <p>团队共享已确认经验；可用「与我相关」查看角色差异</p>
-          </div>
-          <div className="pm-tools">
-            <label className="pm-search">
-              <Search size={16} strokeWidth={1.75} aria-hidden="true" />
-              <input
-                type="search"
-                value={query}
-                placeholder={log.search.placeholder}
-                aria-label="搜索项目决策"
-                onChange={(event) => setQuery(event.target.value)}
+        <div className="pm-title">
+          <div className="pm-head">
+            <div>
+              <StudentTrail
+                segments={[
+                  { label: log.projectName },
+                  { label: '记录' },
+                ]}
               />
-            </label>
-            <button
-              type="button"
-              className={`pm-filter${relatedOnly ? ' is-on' : ''}`}
-              onClick={() => setRelatedOnly((value) => !value)}
-            >
-              与我相关
-            </button>
+              <h1>记录</h1>
+              <p>团队共享已确认经验；可用「与我相关」查看角色差异</p>
+            </div>
+            <div className="pm-tools">
+              <label className="pm-search">
+                <Search size={16} strokeWidth={1.75} aria-hidden="true" />
+                <input
+                  type="search"
+                  value={query}
+                  placeholder={log.search.placeholder}
+                  aria-label="搜索项目决策"
+                  onChange={(event) => setQuery(event.target.value)}
+                />
+              </label>
+              <button
+                type="button"
+                className={`pm-filter${relatedOnly ? ' is-on' : ''}`}
+                onClick={() => setRelatedOnly((value) => !value)}
+              >
+                与我相关
+              </button>
+            </div>
           </div>
         </div>
         <div className="pm-keywords">
