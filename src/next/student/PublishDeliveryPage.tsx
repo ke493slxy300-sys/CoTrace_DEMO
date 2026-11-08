@@ -904,6 +904,18 @@ export function PublishDeliveryPage({
 
                       {(needsRisk || irrelevant) && delivery.analysis ? (
                         <div className="rd-block">
+                          {!irrelevant ? (
+                            <textarea
+                              className="rd-risk-note"
+                              aria-label="风险说明"
+                              placeholder="风险说明（随快照保存）"
+                              value={riskNotes}
+                              disabled={!canEdit}
+                              onChange={(event) =>
+                                setRiskNotes(event.target.value)
+                              }
+                            />
+                          ) : null}
                           <label className="rd-risk-row">
                             <input
                               type="checkbox"
@@ -919,18 +931,6 @@ export function PublishDeliveryPage({
                                 : '我知道风险，仍要发布'}
                             </span>
                           </label>
-                          {!irrelevant ? (
-                            <textarea
-                              className="rd-risk-note"
-                              aria-label="风险说明"
-                              placeholder="风险说明（随快照保存）"
-                              value={riskNotes}
-                              disabled={!canEdit}
-                              onChange={(event) =>
-                                setRiskNotes(event.target.value)
-                              }
-                            />
-                          ) : null}
                         </div>
                       ) : null}
 

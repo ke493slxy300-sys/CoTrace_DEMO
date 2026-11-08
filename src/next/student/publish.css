@@ -144,7 +144,7 @@
   width: 100%;
   max-width: none;
   margin: 0;
-  padding-bottom: 96px;
+  padding-bottom: 16px;
 }
 
 .ctn-publish .rd-page-title {
@@ -691,12 +691,15 @@
 }
 
 .ctn-actions {
+  flex: 0 0 auto;
   margin-top: auto;
   display: flex;
   justify-content: flex-end;
   align-items: center;
   gap: 12px;
   padding-top: 16px;
+  border-top: 1px solid var(--ct-divider, #e7ecef);
+  background: var(--ct-subtle, #f5f7f8);
 }
 
 .ctn-publish .ctn-hint {
@@ -713,9 +716,9 @@
   justify-content: center;
   gap: 8px;
   height: var(--ct-btn-height-sm);
-  min-width: 0;
+  min-width: 120px;
   width: auto;
-  padding: 0 14px;
+  padding: 0 16px;
   border-radius: 8px;
   font-size: var(--ct-fs-action-sm);
   line-height: var(--ct-lh);
@@ -729,12 +732,22 @@
 }
 
 .ctn-publish .ctn-btn-primary {
-  height: var(--ct-btn-height);
-  padding: 0 22px;
-  font-size: var(--ct-fs-action);
+  height: var(--ct-btn-height-sm);
+  min-width: 120px;
+  padding: 0 16px;
+  font-size: var(--ct-fs-action-sm);
   background: #00856e;
   border: 1px solid #00856e;
   color: #fff;
+}
+
+/* 底栏两钮等大，仅用实心/描边区分主次 */
+.ctn-actions .ctn-btn,
+.ctn-actions .ctn-btn-primary {
+  height: 40px;
+  min-width: 120px;
+  padding: 0 16px;
+  font-size: 15px;
 }
 
 .ctn-btn:disabled {
@@ -974,7 +987,7 @@
   line-height: var(--ct-lh);
 }
 
-/* խ������̨�ܶȣ��ж��̡����ֽضϡ�Э��Ͱֻ�� */
+/* AI 结论区密度：判定短、风险收、协议桶统一 */
 .ctn-publish .rd-ai {
   font-size: 14px;
 }
