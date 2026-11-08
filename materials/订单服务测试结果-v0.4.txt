@@ -1,0 +1,14 @@
+CoTrace synthetic fixture v0.4 — actual local test execution
+v24.22.1
+$ node --test orderService.test.mjs
+✔ sold item returns 409 ITEM_NOT_AVAILABLE (1.377377ms)
+✔ available item creates pending order (0.135864ms)
+✔ missing item returns 404 ITEM_NOT_FOUND (0.130426ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 92.180581
