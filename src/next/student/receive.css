@@ -368,6 +368,31 @@
   font-size: 14px;
 }
 
+.rcv-progress-qa {
+  margin: 12px 0 16px;
+  padding: 10px 12px;
+  border: 1px dashed #d0d5dd;
+  border-radius: 10px;
+  background: #fafbfc;
+}
+
+.rcv-progress-qa > summary {
+  cursor: pointer;
+  font-weight: 650;
+  color: #344054;
+}
+
+.rcv-progress-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.rcv-progress-answer {
+  margin-top: 10px;
+  white-space: pre-wrap;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .rcv-receipt.is-enter,
   .rcv-grid aside button.is-busy {

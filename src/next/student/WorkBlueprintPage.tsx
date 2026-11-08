@@ -373,13 +373,17 @@ export function WorkBlueprintPage({
       return '发布交付';
     }
     if (node.id === HANDOFF_NODE_BACKEND && waiting) {
-      return '已发布 · 等待确认接收';
+      return role === 'priya'
+        ? '待确认接收'
+        : '已发布 · 等待 Priya 接收';
     }
     if (node.id === HANDOFF_NODE_BACKEND && received) {
       return `已交接 ${delivery.version}`;
     }
     if (node.id === HANDOFF_NODE_INTEGRATION && waiting) {
-      return `等待确认接收 · ${delivery.version}`;
+      return role === 'priya'
+        ? `等待确认接收 · ${delivery.version}`
+        : `已发布 · 等待 Priya 接收`;
     }
     if (node.id === HANDOFF_NODE_INTEGRATION && received) {
       return '联调进行中';
@@ -429,9 +433,12 @@ export function WorkBlueprintPage({
           return {
             title,
             statusLabel,
-            keyLine: `已发布 ${delivery.version} · 等待确认接收`,
+            keyLine:
+              role === 'priya'
+                ? `已发布 ${delivery.version} · 等待确认接收`
+                : `已发布 ${delivery.version} · 等待 Priya 接收`,
             actionLabel:
-              role === 'priya' ? `打开并确认接收 ${delivery.version}` : '查看已发布交付',
+              role === 'priya' ? `打开并确认接收 ${delivery.version}` : '查看交付',
             onAction: () =>
               onNavigate(role === 'priya' ? 'receive' : 'publish'),
           };
@@ -455,12 +462,16 @@ export function WorkBlueprintPage({
           return {
             title,
             statusLabel,
-            keyLine: `等待确认接收 ${delivery.title} ${delivery.version}`,
+            keyLine:
+              role === 'priya'
+                ? `等待确认接收 ${delivery.title} ${delivery.version}`
+                : `已发布 ${delivery.version} · 等待 Priya 接收`,
             actionLabel:
               role === 'priya'
                 ? `确认接收 ${delivery.version}`
-                : '查看等待确认接收',
-            onAction: () => onNavigate('receive'),
+                : '查看交付',
+            onAction: () =>
+              onNavigate(role === 'priya' ? 'receive' : 'publish'),
           };
         }
         if (received) {
@@ -468,8 +479,9 @@ export function WorkBlueprintPage({
             title,
             statusLabel,
             keyLine: delivery.nextStep || '联调进行中',
-            actionLabel: '查看已接收交付',
-            onAction: () => onNavigate('receive'),
+            actionLabel: '查看交付',
+            onAction: () =>
+              onNavigate(role === 'priya' ? 'receive' : 'publish'),
           };
         }
       }

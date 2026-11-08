@@ -29,10 +29,12 @@ export {
 } from './validate';
 export {
   runProgressQa,
+  streamProgressQa,
   runStageBriefAi,
   runMemoryDraft,
   runBlueprintSuggest,
 } from './laterAi';
+export type { ProgressQaStreamEvent, ProgressQaResult } from './laterAi';
 
 export async function runHandoffAnalysis(request: HandoffAnalysisRequest) {
   const mode = resolveAiMode();

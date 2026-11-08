@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown, FileCode2, FileText } from 'lucide-react';
 import {
   fetchDemoMaterials,
@@ -6,9 +6,12 @@ import {
   fetchMaterialPreview,
   requestHandoffFocus,
   requestHelpContext,
+  requestProgressQa,
+  requestProgressQaStream,
   toSharedLogPayload,
   type DemoMaterialCatalogItem,
   type MaterialPreview,
+  type ProgressQaPayload,
 } from '../../api/cotraceApi';
 import {
   receiveDelivery,
@@ -95,9 +98,21 @@ export function ReceiveDeliveryPage({
   const [focusError, setFocusError] = useState('');
   const [focusRetryNonce, setFocusRetryNonce] = useState(0);
   const [aiMode, setAiMode] = useState('mock');
+  const [hasLiveKey, setHasLiveKey] = useState(true);
   const [catalog, setCatalog] = useState<DemoMaterialCatalogItem[]>([]);
   const [previews, setPreviews] = useState<Record<string, MaterialPreview>>({});
   const [openPreviewId, setOpenPreviewId] = useState<string | null>(null);
+  const [progressQuestion, setProgressQuestion] = useState(
+    '当前版本还缺什么才能安心联调？',
+  );
+  const [progressStreaming, setProgressStreaming] = useState(false);
+  const [progressAnswer, setProgressAnswer] = useState('');
+  const [progressChecks, setProgressChecks] = useState<string[]>([]);
+  const [progressMeta, setProgressMeta] = useState<ProgressQaPayload | null>(
+    null,
+  );
+  const [progressNote, setProgressNote] = useState('');
+  const progressAbortRef = useRef<AbortController | null>(null);
 
   const currentSnapshot = useMemo(() => {
     if (!delivery.currentVersionId) return null;
@@ -126,7 +141,10 @@ export function ReceiveDeliveryPage({
         fetchHealth(),
       ]);
       if (cancelled) return;
-      if (health.ok) setAiMode(health.data.aiMode);
+      if (health.ok) {
+        setAiMode(health.data.aiMode);
+        setHasLiveKey(Boolean(health.data.hasLiveKey));
+      }
       if (all.ok) {
         setCatalog(all.data.materials);
         if (!health.ok) setAiMode(all.data.aiMode);
@@ -330,6 +348,106 @@ export function ReceiveDeliveryPage({
     setHint('求助已提交，教师待办可从指导台打开');
   };
 
+  const stopProgressQa = () => {
+    progressAbortRef.current?.abort();
+    progressAbortRef.current = null;
+    setProgressStreaming(false);
+  };
+
+  const runProgressQaAsk = async () => {
+    if (progressStreaming) return;
+    const question = progressQuestion.trim();
+    if (!question) {
+      setProgressNote('请先填写问题');
+      return;
+    }
+    const contextSummary = [
+      log?.summary || delivery.brief || '',
+      ...(log?.openItems ?? []),
+      delivery.currentVersionId
+        ? `版本 ${delivery.currentVersionId}`
+        : '',
+    ]
+      .filter(Boolean)
+      .join('；');
+
+    setProgressStreaming(true);
+    setProgressAnswer('');
+    setProgressChecks([]);
+    setProgressMeta(null);
+    setProgressNote('正在流式生成…');
+    const controller = new AbortController();
+    progressAbortRef.current = controller;
+
+    const streamed = await requestProgressQaStream({
+      projectId: delivery.projectId,
+      question,
+      contextSummary,
+      signal: controller.signal,
+      onMeta: (meta) => setAiMode(meta.aiMode),
+      onToken: (text) => {
+        setProgressAnswer((prev) => prev + text);
+      },
+    });
+
+    if (streamed.ok) {
+      setProgressAnswer(streamed.progress.answer);
+      setProgressChecks(streamed.progress.nextChecks ?? []);
+      setProgressMeta(streamed.progress);
+      setProgressNote(
+        streamed.tokenCount >= 2
+          ? `真流式完成（${streamed.tokenCount} 帧）· ${formatAiSourceLabel(
+              streamed.progress.provider,
+              streamed.progress.modelLabel,
+            )}`
+          : `已完成 · ${formatAiSourceLabel(
+              streamed.progress.provider,
+              streamed.progress.modelLabel,
+            )}`,
+      );
+      setProgressStreaming(false);
+      progressAbortRef.current = null;
+      return;
+    }
+
+    if (streamed.message === 'aborted') {
+      setProgressNote('已停止流式生成');
+      setProgressStreaming(false);
+      progressAbortRef.current = null;
+      return;
+    }
+
+    setProgressNote(
+      `流式失败（${streamed.message}），改用普通请求…`,
+    );
+    const fallback = await requestProgressQa({
+      projectId: delivery.projectId,
+      question,
+      contextSummary,
+    });
+    if (fallback.ok) {
+      setProgressAnswer(fallback.progress.answer);
+      setProgressChecks(fallback.progress.nextChecks ?? []);
+      setProgressMeta(fallback.progress);
+      setProgressNote(
+        `已回退普通请求 · ${formatAiSourceLabel(
+          fallback.progress.provider,
+          fallback.progress.modelLabel,
+        )}`,
+      );
+    } else {
+      setProgressNote(
+        formatAiFailureHint(
+          aiMode,
+          fallback.message,
+          '可跳过进度问答，继续接手标注、求助或接收。',
+        ),
+      );
+    }
+    setProgressStreaming(false);
+    progressAbortRef.current = null;
+  };
+
   return (
     <StudentShell
       place="receive"
@@ -347,6 +465,13 @@ export function ReceiveDeliveryPage({
             {delivery.currentVersionId
               ? `可接收版本 ${delivery.version}（${delivery.currentVersionId}）`
               : '等待发布'}
+          </span>
+          <span className="rcv-note" role="status">
+            {aiMode === 'live'
+              ? 'AI：真实模型 (live)'
+              : hasLiveKey
+                ? 'AI：模拟结果 (mock)'
+                : 'AI：模拟结果 (mock) · 未检测到 DEEPSEEK_API_KEY'}
           </span>
         </div>
 
@@ -434,6 +559,65 @@ export function ReceiveDeliveryPage({
                   : '尚未生成'}
               </p>
             </section>
+
+            <details className="rcv-progress-qa">
+              <summary>进度问答（可选 · 真流式旁路）</summary>
+              <p className="rcv-note">
+                非主路径必经。失败可跳过，继续求助或接收。
+              </p>
+              <textarea
+                className="rcv-brief"
+                style={{ width: '100%', minHeight: 64 }}
+                value={progressQuestion}
+                onChange={(event) => setProgressQuestion(event.target.value)}
+                placeholder="例如：当前版本还缺什么才能安心联调？"
+                disabled={progressStreaming}
+              />
+              <div className="rcv-progress-actions">
+                <button
+                  type="button"
+                  className="rcv-btn"
+                  disabled={progressStreaming || !progressQuestion.trim()}
+                  onClick={() => void runProgressQaAsk()}
+                >
+                  {progressStreaming ? '生成中…' : '开始流式问答'}
+                </button>
+                <button
+                  type="button"
+                  className="rcv-btn"
+                  disabled={!progressStreaming}
+                  onClick={stopProgressQa}
+                >
+                  停止
+                </button>
+              </div>
+              {progressNote ? (
+                <p className="rcv-note" role="status">
+                  {progressNote}
+                </p>
+              ) : null}
+              {progressAnswer ? (
+                <p className="rcv-brief rcv-progress-answer">{progressAnswer}</p>
+              ) : null}
+              {progressChecks.length > 0 ? (
+                <ul className="rcv-pending">
+                  {progressChecks.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              ) : null}
+              {progressMeta ? (
+                <p className="ai-struct__meta">
+                  {formatAiSourceLabel(
+                    progressMeta.provider,
+                    progressMeta.modelLabel,
+                  )}
+                  {delivery.currentVersionId
+                    ? ` · 版本 ${delivery.currentVersionId}`
+                    : ''}
+                </p>
+              ) : null}
+            </details>
 
             <button
               type="button"

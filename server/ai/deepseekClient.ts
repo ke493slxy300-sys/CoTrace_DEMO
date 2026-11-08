@@ -198,6 +198,137 @@ function extractAssistantContent(data: unknown): string | null {
   return content;
 }
 
+export type DeepseekStreamDelta =
+  | { ok: true; kind: 'delta'; text: string }
+  | {
+      ok: true;
+      kind: 'done';
+      model: string;
+      content: string;
+      latencyMs: number;
+    }
+  | { ok: false; errorType: DeepseekErrorType; latencyMs: number };
+
+/**
+ * True token stream from DeepSeek chat completions.
+ * Yields content deltas, then a final done event (or a single failure).
+ */
+export async function* callDeepseekChatStream(
+  input: DeepseekChatInput,
+  env: NodeJS.ProcessEnv = process.env,
+): AsyncGenerator<DeepseekStreamDelta> {
+  const startedAt = Date.now();
+  const resolved = resolveDeepseekConfig(env);
+  if (!resolved.ok) {
+    yield { ok: false, errorType: resolved.errorType, latencyMs: Date.now() - startedAt };
+    return;
+  }
+  const config = resolved.config;
+  const model = input.model?.trim() || config.model;
+  const timeoutMs = input.timeoutMs ?? 60_000;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(`${config.baseUrl}/v1/chat/completions`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
+      },
+      body: JSON.stringify({
+        model,
+        messages: input.messages,
+        temperature: input.temperature ?? 0,
+        max_tokens: input.maxTokens ?? 800,
+        stream: true,
+        ...(input.thinking === 'disabled'
+          ? { thinking: { type: 'disabled' } }
+          : {}),
+      }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      try {
+        await response.text();
+      } catch (_err) {
+        /* ignore */
+      }
+      yield {
+        ok: false,
+        errorType: classifyHttpStatus(response.status),
+        latencyMs: Date.now() - startedAt,
+      };
+      return;
+    }
+
+    if (!response.body) {
+      yield {
+        ok: false,
+        errorType: 'invalid_response',
+        latencyMs: Date.now() - startedAt,
+      };
+      return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let content = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split('\n');
+      buffer = parts.pop() ?? '';
+      for (const rawLine of parts) {
+        const line = rawLine.trim();
+        if (!line.startsWith('data:')) continue;
+        const payload = line.slice(5).trim();
+        if (!payload || payload === '[DONE]') continue;
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(payload);
+        } catch {
+          continue;
+        }
+        const delta = extractStreamDelta(parsed);
+        if (!delta) continue;
+        content += delta;
+        yield { ok: true, kind: 'delta', text: delta };
+      }
+    }
+
+    yield {
+      ok: true,
+      kind: 'done',
+      model,
+      content,
+      latencyMs: Date.now() - startedAt,
+    };
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      yield { ok: false, errorType: 'timeout', latencyMs: Date.now() - startedAt };
+      return;
+    }
+    yield { ok: false, errorType: 'network', latencyMs: Date.now() - startedAt };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function extractStreamDelta(data: unknown): string | null {
+  if (!data || typeof data !== 'object') return null;
+  const choices = (data as { choices?: unknown }).choices;
+  if (!Array.isArray(choices) || choices.length === 0) return null;
+  const delta = (choices[0] as { delta?: { content?: unknown } }).delta;
+  const content = delta?.content;
+  return typeof content === 'string' && content.length > 0 ? content : null;
+}
+
 export async function probeDeepseekConnectivity(
   env: NodeJS.ProcessEnv = process.env,
 ): Promise<

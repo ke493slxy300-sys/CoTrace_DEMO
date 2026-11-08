@@ -4,9 +4,12 @@ export function formatAiSourceLabel(
   provider: string | undefined,
   modelLabel: string | undefined,
 ): string {
-  const mode = provider === 'live' ? '真实模型' : '模拟结果';
-  if (!provider && !modelLabel) return mode;
-  return `${mode} · ${provider ?? '?'}/${modelLabel ?? '?'}`;
+  if (provider === 'live') {
+    if (!modelLabel) return '真实模型';
+    return `真实模型 · ${provider}/${modelLabel}`;
+  }
+  if (!provider && !modelLabel) return 'AI 整理';
+  return `${provider ?? 'AI'}/${modelLabel ?? '?'}`;
 }
 
 export function formatAiFailureHint(
@@ -18,6 +21,6 @@ export function formatAiFailureHint(
     providerOrMode === 'live' ||
     providerOrMode === '真实模型' ||
     message.includes('真实');
-  const head = isLive ? '真实模型调用失败' : '模拟结果调用失败';
+  const head = isLive ? '真实模型调用失败' : '调用失败';
   return `${head}：${message}。${manualPath}`;
 }

@@ -4,7 +4,7 @@
  */
 
 import { resolveAiMode, type MaterialCitation } from './contract';
-import { callDeepseekChat } from './deepseekClient';
+import { callDeepseekChat, callDeepseekChatStream } from './deepseekClient';
 
 export type ProgressQaResult = {
   answer: string;
@@ -14,6 +14,13 @@ export type ProgressQaResult = {
   modelLabel: string;
   latencyMs: number;
 };
+
+export type ProgressQaStreamEvent =
+  | { type: 'meta'; aiMode: string }
+  | { type: 'token'; text: string }
+  | { type: 'result'; result: ProgressQaResult }
+  | { type: 'error'; message: string }
+  | { type: 'done' };
 
 export type StageBriefAiResult = {
   stageSummary: string;
@@ -155,6 +162,122 @@ export async function runProgressQa(input: {
       latencyMs: live.latencyMs,
     },
   };
+}
+
+function chunkText(text: string, size = 10): string[] {
+  if (!text) return ['…'];
+  const parts: string[] = [];
+  for (let i = 0; i < text.length; i += size) {
+    parts.push(text.slice(i, i + size));
+  }
+  return parts.length >= 2 ? parts : [text.slice(0, 1) || '…', text.slice(1) || '。'];
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * True multi-frame progress QA stream (mock chunks or live token deltas).
+ */
+export async function* streamProgressQa(input: {
+  projectId: string;
+  question: string;
+  contextSummary: string;
+}): AsyncGenerator<ProgressQaStreamEvent> {
+  const aiMode = resolveAiMode();
+  yield { type: 'meta', aiMode };
+
+  if (aiMode !== 'live') {
+    const result = mockProgress(input.question);
+    const chunks = chunkText(result.answer, 12);
+    for (const text of chunks) {
+      yield { type: 'token', text };
+      await sleep(12);
+    }
+    yield {
+      type: 'result',
+      result: {
+        ...result,
+        answer: chunks.join(''),
+        latencyMs: result.latencyMs + chunks.length * 12,
+      },
+    };
+    yield { type: 'done' };
+    return;
+  }
+
+  const started = Date.now();
+  let answer = '';
+  let modelLabel = 'deepseek';
+  let streamFailed: string | null = null;
+
+  for await (const event of callDeepseekChatStream({
+    messages: [
+      {
+        role: 'system',
+        content:
+          '你是 CoTrace 进度问答助手。只用中文散文解释当前项目进度与核对建议，禁止输出代码、命令或 JSON。',
+      },
+      {
+        role: 'user',
+        content: `问题：${input.question}\n上下文：${input.contextSummary}`,
+      },
+    ],
+    thinking: 'disabled',
+    maxTokens: 800,
+    temperature: 0,
+    timeoutMs: Number(process.env.COTRACE_AI_TIMEOUT_MS) || 60_000,
+  })) {
+    if (!event.ok) {
+      streamFailed = event.errorType || 'model error';
+      break;
+    }
+    if (event.kind === 'delta') {
+      answer += event.text;
+      yield { type: 'token', text: event.text };
+      continue;
+    }
+    answer = event.content || answer;
+    modelLabel = event.model;
+  }
+
+  if (streamFailed) {
+    yield { type: 'error', message: streamFailed };
+    yield { type: 'done' };
+    return;
+  }
+
+  if (!answer.trim()) {
+    yield { type: 'error', message: 'empty model response' };
+    yield { type: 'done' };
+    return;
+  }
+
+  let nextChecks: string[] = [
+    '核对当前可接收版本',
+    '确认错误码与前端提示一致',
+  ];
+  const checks = await liveJson<{ nextChecks?: string[] }>(
+    '你是 CoTrace 助手。根据已有答复提炼核对清单，禁止代码。返回 JSON：nextChecks[]（最多 3 条短句）。',
+    `问题：${input.question}\n答复：${answer.slice(0, 1200)}`,
+  );
+  if (checks.ok && Array.isArray(checks.data.nextChecks)) {
+    nextChecks = checks.data.nextChecks.map(String).filter(Boolean).slice(0, 3);
+  }
+
+  yield {
+    type: 'result',
+    result: {
+      answer,
+      nextChecks,
+      citations: [],
+      provider: 'live',
+      modelLabel,
+      latencyMs: Date.now() - started,
+    },
+  };
+  yield { type: 'done' };
 }
 
 export async function runStageBriefAi(input: {

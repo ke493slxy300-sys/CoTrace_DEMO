@@ -11,7 +11,8 @@ import { fileURLToPath } from 'node:url';
 const require = createRequire(import.meta.url);
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
-process.env.COTRACE_AI_MODE = process.env.COTRACE_AI_MODE || 'mock';
+// Force mock so default-live demos with a key do not burn quota in CI/local verify.
+process.env.COTRACE_AI_MODE = 'mock';
 
 const esbuild = require('esbuild');
 const outfile = path.join(os.tmpdir(), 'cotrace-verify-api-surface.mjs');

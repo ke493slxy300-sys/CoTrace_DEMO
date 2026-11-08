@@ -349,6 +349,12 @@
   font-weight: 500;
 }
 
+.ctn-mode-note {
+  margin: 4px 0 0;
+  color: #667085;
+  font-size: 13px;
+}
+
 .ctn-title-row {
   display: flex;
   align-items: center;
@@ -773,6 +779,8 @@
 }
 
 .ctn-doc {
+  display: flex;
+  flex-direction: column;
   padding: 18px 20px 16px;
   overflow: auto;
 }
@@ -941,7 +949,8 @@
 }
 
 .ctn-receipt-status {
-  margin-top: auto;
+  /* 设计规范：表单分组间距 32–40px */
+  margin-top: 32px;
   min-height: 52px;
   border-radius: 8px;
   background: #00856e;

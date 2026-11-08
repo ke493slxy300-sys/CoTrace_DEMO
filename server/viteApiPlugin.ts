@@ -10,11 +10,13 @@ import { loadMaterialBody } from './materials/bodies';
 import {
   CAMPUS_INTEGRATION_GOAL,
   normalizeSharedLog,
+  hasLiveApiKey,
   resolveAiMode,
   runHandoffAnalysis,
   runHandoffFocus,
   runHelpContext,
   runProgressQa,
+  streamProgressQa,
   runStageBriefAi,
   runMemoryDraft,
   runBlueprintSuggest,
@@ -74,11 +76,7 @@ async function handleApi(
     sendJson(res, 200, {
       ok: true,
       aiMode: resolveAiMode(),
-      hasLiveKey: Boolean(
-        process.env.DEEPSEEK_API_KEY ||
-          process.env.OPENAI_API_KEY ||
-          process.env.COTRACE_AI_API_KEY,
-      ),
+      hasLiveKey: hasLiveApiKey(),
     });
     return true;
   }
@@ -286,32 +284,44 @@ async function handleApi(
     return true;
   }
 
-  /** 轻量流式占位：先发 meta，再发完整 JSON 块（非 token 流） */
+  /** 真 token SSE：meta → token* → result → done（失败则 error → done） */
   if (req.method === 'POST' && pathname === '/api/ai/progress-qa/stream') {
     if (rateLimited(req, res, 'ai-progress-stream', 10)) return true;
     const body = await readJson(req);
-    const result = await runProgressQa({
-      projectId: String(body.projectId ?? ''),
-      question: String(body.question ?? ''),
-      contextSummary: String(body.contextSummary ?? ''),
-    });
-    res.statusCode = result.ok ? 200 : 422;
+    res.statusCode = 200;
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache');
-    res.write(
-      `event: meta\ndata: ${JSON.stringify({ aiMode: resolveAiMode() })}\n\n`,
-    );
-    if (!result.ok) {
-      res.write(
-        `event: error\ndata: ${JSON.stringify({ message: result.message })}\n\n`,
-      );
-      res.end();
-      return true;
+    res.setHeader('Connection', 'keep-alive');
+    if (typeof res.flushHeaders === 'function') {
+      res.flushHeaders();
     }
-    res.write(
-      `event: result\ndata: ${JSON.stringify(result.result)}\n\n`,
-    );
-    res.write(`event: done\ndata: {}\n\n`);
+    const writeEvent = (event: string, data: unknown) => {
+      res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+    };
+    try {
+      for await (const frame of streamProgressQa({
+        projectId: String(body.projectId ?? ''),
+        question: String(body.question ?? ''),
+        contextSummary: String(body.contextSummary ?? ''),
+      })) {
+        if (frame.type === 'meta') {
+          writeEvent('meta', { aiMode: frame.aiMode });
+        } else if (frame.type === 'token') {
+          writeEvent('token', { text: frame.text });
+        } else if (frame.type === 'result') {
+          writeEvent('result', frame.result);
+        } else if (frame.type === 'error') {
+          writeEvent('error', { message: frame.message });
+        } else if (frame.type === 'done') {
+          writeEvent('done', {});
+        }
+      }
+    } catch (error) {
+      writeEvent('error', {
+        message: error instanceof Error ? error.message : 'stream failed',
+      });
+      writeEvent('done', {});
+    }
     res.end();
     return true;
   }

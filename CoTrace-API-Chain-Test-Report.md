@@ -1,10 +1,10 @@
 # 校园二手交易平台 · 跨端交付链实测报告
 
-日期：2026-11-06（初测）／2026-11-07（live 收口）／2026-11-08（demo 主路径收口）
+日期：2026-11-06（初测）／2026-11-07（live 收口）／2026-11-08（demo 主路径收口）／2026-11-08（真流式旁路）
 
-## 结论（2026-11-08 收口）
+## 结论（2026-11-08 · 默认 live）
 
-Demo **仅保证两条主路径**：Alex 交付→Priya 接收；周老师读求助→正式反馈→双端同文回显。蓝图 AI / 记忆草稿 / 进度问答不在演示范围。`COTRACE_AI_MODE=mock npm run verify:chain`、`npm run verify:api`、`npm run typecheck` 已通过；有 key 时可选 `npm run verify:live`（只验分析四组）。
+Demo **仅保证两条主路径**：Alex 交付→Priya 接收；周老师读求助→正式反馈→双端同文回显。有 `DEEPSEEK_API_KEY` 时，分析 / 接手标注 / 教师情境 **默认走 DeepSeek live 整包**（非逐 token）；无 key 自动回退 mock。进度问答 **真 token SSE** 仍为接收页折叠旁路。验收脚本强制 mock；有 key 时另跑 `verify:live`。
 
 ## 运行方式
 
@@ -23,8 +23,8 @@ npm run verify:live
 
 | 变量 | 作用 | 默认 |
 |---|---|---|
-| `COTRACE_AI_MODE` | `mock` 或 `live` | `mock` |
-| `DEEPSEEK_API_KEY` | live 必需（仅服务端 / `.env.local`） | — |
+| `COTRACE_AI_MODE` | `mock` / `live` / 省略 | **省略时：有 key → live，否则 mock**；示例文件推荐 `live` |
+| `DEEPSEEK_API_KEY` | live 用（仅服务端 / `.env.local`） | 无则自动 mock |
 | `DEEPSEEK_MODEL` | DeepSeek 模型名 | `deepseek-flash` |
 | `COTRACE_AI_TIMEOUT_MS` | live 调用超时 | `60000` |
 
@@ -135,26 +135,51 @@ POST /api/ai/handoff-analysis → 四组 verdict 见下表
 
 页内 AI 来源统一为：`真实模型|模拟结果 · provider/model`；`AI 建议 ≠ 教师正式反馈`。
 
+### 旁路：进度问答真流式（非必经）
+
+| 项 | 说明 |
+|---|---|
+| 路由 | `POST /api/ai/progress-qa/stream`（SSE：`meta` → `token*` → `result` → `done`） |
+| 入口 | `#/next/receive` 折叠「进度问答（可选 · 真流式旁路）」 |
+| mock | 答案分片多帧（断言 ≥2 个 `token`） |
+| live | DeepSeek `stream: true` 真 delta；结束后补 `nextChecks` |
+| 失败 | 客户端自动回退 `POST /api/ai/progress-qa`；不影响接手/求助/接收 |
+| 主路径 JSON | analysis / focus / help-context **不**做逐 token |
+
 ### 不在演示范围
 
 | 能力 | 状态 |
 |---|---|
-| 蓝图节点生成 / `blueprint-suggest` | 已取消 UI 半成品；服务端路由可保留，不演示 |
+| 蓝图节点生成 / `blueprint-suggest` | 已取消 UI；服务端可保留，不演示 |
 | 记忆决策草稿 / `memory-draft` | 客户端入口已收敛，不演示 |
-| 进度问答 / `progress-qa`（含 SSE） | 客户端入口已收敛，不演示 |
-| 阶段汇报整理 / `stage-brief` | 教师页降为可选 `<details>`，非主路径必经 |
-| 真·逐 token 流式、跨设备推送 | 明确不做 |
+| 进度问答主路径化 | 仅旁路；不写入主演示脚本必经步骤 |
+| 阶段汇报整理 / `stage-brief` | 教师页可选 `<details>` |
+| 跨设备推送 | 明确不做 |
+| 主路径 JSON 真流式 | 明确不做 |
 
 ### 自动化验收（本轮）
 
 ```bash
-COTRACE_AI_MODE=mock npm run verify:chain   # 含修订重发与反馈回流
-npm run verify:api                          # demoCoreAi；excludedFromDemo 含蓝图/记忆/进度问答
+npm run verify:chain    # 脚本内强制 COTRACE_AI_MODE=mock
+npm run verify:api      # 强制 mock；含 streamProgressQa
+npm run verify:stream   # 强制 mock；≥2 token 帧
 npm run typecheck
-# 有 key 时可选：npm run verify:live（只验分析四组，不阻塞 demo 收口）
+# 有 key：npm run verify:live（分析四组）+ 手测接收页进度问答真流式
 ```
 
-`verify:api` 期望：`demoCoreAi` = handoff-focus / help-context / stage-brief；`excludedFromDemo` = blueprint-suggest / memory-draft / progress-qa。
+演示前请确认 `.env.local` 有 `DEEPSEEK_API_KEY`，并重启 `npm run dev`；页顶应显示「真实模型 (live)」。
+
+`verify:api` 期望：`streamProgressQa: true`；`demoCoreAi` = handoff-focus / help-context / stage-brief；`excludedFromDemo` = blueprint-suggest / memory-draft / progress-qa。
+
+### 排练检查清单（同浏览器切角色）
+
+1. Alex：`#/next/publish` → 选 v0.4 材料 → 分析 → 改一句日志 → 发布  
+2. Priya：`#/next/receive` → 见改句 + 接手标注 → 提交求助  
+3. （可选）展开进度问答 → 见 token 逐段出现；**跳过也不影响**后面  
+4. 周老师：`#/next/stage` → 读原文与共享日志 → 可选 AI 情境 → 发正式反馈  
+5. Alex / Priya：`#/next/log` → **同一反馈原文与时间**
+
+**红线：** 分析 / focus / 情境失败时仍可手填发布、手写反馈、完成闭环；流式失败不得阻断求助或接收。
 
 ## AI 边界
 

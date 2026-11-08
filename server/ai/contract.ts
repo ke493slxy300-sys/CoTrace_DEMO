@@ -151,11 +151,31 @@ export function resolveTaskGoal(
   return `项目 ${projectId} 任务 ${taskId}：请对照任务目标核对所选材料是否匹配。`;
 }
 
+/** True when a live provider API key is present (DeepSeek preferred). */
+export function hasLiveApiKey(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return Boolean(
+    (env.DEEPSEEK_API_KEY ?? '').trim() ||
+      (env.OPENAI_API_KEY ?? '').trim() ||
+      (env.COTRACE_AI_API_KEY ?? '').trim(),
+  );
+}
+
+/**
+ * AI mode for demo/API:
+ * - COTRACE_AI_MODE=mock → always mock (verify scripts)
+ * - COTRACE_AI_MODE=live → live if key present, else mock (avoid hard crash)
+ * - unset → live when key present, otherwise mock
+ */
 export function resolveAiMode(
   env: NodeJS.ProcessEnv = process.env,
 ): AiProviderMode {
-  const raw = (env.COTRACE_AI_MODE ?? env.AI_MODE ?? 'mock').toLowerCase();
-  return raw === 'live' ? 'live' : 'mock';
+  const raw = (env.COTRACE_AI_MODE ?? env.AI_MODE ?? '').trim().toLowerCase();
+  const keyed = hasLiveApiKey(env);
+  if (raw === 'mock') return 'mock';
+  if (raw === 'live') return keyed ? 'live' : 'mock';
+  return keyed ? 'live' : 'mock';
 }
 
 export function normalizeSharedLog(

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { Check } from 'lucide-react';
 import {
+  fetchHealth,
   requestHelpContext,
   requestStageBriefAi,
   toSharedLogPayload,
@@ -107,6 +108,20 @@ export function StageReportPage({
   } | null>(null);
   const [stageAiError, setStageAiError] = useState('');
   const [stageAiLoading, setStageAiLoading] = useState(false);
+  const [aiMode, setAiMode] = useState('mock');
+  const [hasLiveKey, setHasLiveKey] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchHealth().then((health) => {
+      if (cancelled || !health.ok) return;
+      setAiMode(health.data.aiMode);
+      setHasLiveKey(Boolean(health.data.hasLiveKey));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const selected =
     actionableEvents.find((event) => event.id === selectedId) ??
@@ -237,6 +252,13 @@ export function StageReportPage({
               <span className="cts-group">{group.label}</span>
               <h1>{group.name}</h1>
             </div>
+            <p className="cts-quiet" role="status">
+              {aiMode === 'live'
+                ? 'AI 模式：真实模型 (live)'
+                : hasLiveKey
+                  ? 'AI 模式：模拟结果 (mock)'
+                  : 'AI 模式：模拟结果 (mock) · 未检测到 DEEPSEEK_API_KEY'}
+            </p>
           </div>
         </div>
 

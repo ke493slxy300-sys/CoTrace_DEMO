@@ -240,7 +240,7 @@ export function PublishDeliveryPage({
     [],
   );
   const [aiMode, setAiMode] = useState('mock');
-  const [hasLiveKey, setHasLiveKey] = useState(false);
+  const [hasLiveKey, setHasLiveKey] = useState(true);
   const [hint, setHint] = useState('');
   const [analyzeError, setAnalyzeError] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
@@ -322,14 +322,14 @@ export function PublishDeliveryPage({
       setAnalyzeError(
         liveFail
           ? `真实模型调用失败：${result.message}`
-          : `模拟结果调用失败：${result.message}`,
+          : `调用失败：${result.message}`,
       );
       setHint(
         liveFail
           ? timedOut
             ? '真实模型超时。可再点「生成交付报告」，或手填协作日志后发布（手工路径仍可用）。'
-            : '真实模型未返回可用结果（非模拟）。可再点「生成交付报告」，或手填协作日志后发布。'
-          : '模拟分析失败。可再点「生成交付报告」，或手填协作日志后发布。',
+            : '真实模型未返回可用结果。可再点「生成交付报告」，或手填协作日志后发布。'
+          : '分析失败。可再点「生成交付报告」，或手填协作日志后发布。',
       );
       return;
     }
@@ -397,15 +397,13 @@ export function PublishDeliveryPage({
           <p className="ctn-crumb">
             {HANDOFF_PROJECT_NAME} / 后端接口 / {delivery.title}
           </p>
-          <p className="ctn-brief-lead" role="status">
-            服务端 AI：
-            {aiMode === 'live' ? '真实模型 (live)' : '模拟结果 (mock)'}
-            {aiMode === 'live' && !hasLiveKey
-              ? ' · 未检测到 DEEPSEEK_API_KEY，调用可能失败'
-              : ''}
-            。失败时可手填协作日志后继续发布。
+          <p className="ctn-mode-note" role="status">
+            {aiMode === 'live'
+              ? 'AI 模式：真实模型 (live)'
+              : hasLiveKey
+                ? 'AI 模式：模拟结果 (mock)'
+                : 'AI 模式：模拟结果 (mock) · 未检测到 DEEPSEEK_API_KEY'}
           </p>
-
           {isPublishedView ? (
             <>
               <div className="ctn-title-row">
@@ -679,8 +677,7 @@ export function PublishDeliveryPage({
                           {formatAiSourceLabel(
                             delivery.analysis.provider,
                             delivery.analysis.modelLabel,
-                          )}{' '}
-                          · 服务端模式 {aiMode}
+                          )}
                         </p>
                       </details>
 

@@ -36,6 +36,8 @@ function loadEnvLocal() {
   }
 }
 loadEnvLocal();
+// Force mock after .env.local so verify:chain stays fast and deterministic.
+process.env.COTRACE_AI_MODE = 'mock';
 
 const esbuild = require('esbuild');
 const outfile = path.join(os.tmpdir(), 'cotrace-verify-delivery-chain.mjs');

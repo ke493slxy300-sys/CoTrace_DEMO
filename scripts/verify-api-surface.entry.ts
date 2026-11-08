@@ -10,6 +10,7 @@ import {
 import {
   runHandoffFocus,
   runStageBriefAi,
+  streamProgressQa,
 } from '../server/ai/index';
 import {
   upsertPublishedVersion,
@@ -106,11 +107,26 @@ assert.equal(
   true,
 );
 
+let streamTokens = 0;
+let streamResult = false;
+for await (const frame of streamProgressQa({
+  projectId: 'proj-1',
+  question: '联调前还要核对什么？',
+  contextSummary: '已发布 v0.4',
+})) {
+  if (frame.type === 'token') streamTokens += 1;
+  if (frame.type === 'result') streamResult = true;
+}
+assert.ok(streamTokens >= 2, `stream tokens expected >=2, got ${streamTokens}`);
+assert.equal(streamResult, true);
+
 console.log(
   JSON.stringify({
     ok: true,
     focusCache: true,
     deliverySnapshot: true,
+    streamProgressQa: true,
+    streamTokenFrames: streamTokens,
     demoCoreAi: ['handoff-focus', 'help-context', 'stage-brief'],
     excludedFromDemo: ['blueprint-suggest', 'memory-draft', 'progress-qa'],
     promptVersion: HANDOFF_FOCUS_PROMPT_VERSION,

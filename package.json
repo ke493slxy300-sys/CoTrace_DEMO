@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "cotrace-demo",
   "private": true,
   "version": "0.1.0",
@@ -13,6 +13,7 @@
     "verify:chain": "node scripts/verify-delivery-chain.mjs",
     "verify:live": "node scripts/verify-live-analysis.mjs",
     "verify:api": "node scripts/verify-api-surface.mjs",
+    "verify:stream": "node scripts/verify-progress-stream.mjs",
     "test:deepseek": "node --env-file=.env.local scripts/test-deepseek-connectivity.mjs",
     "desktop": "node scripts/electron-dev.mjs",
     "desktop:dev": "node scripts/electron-dev.mjs",

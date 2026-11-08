@@ -391,3 +391,165 @@ export async function requestStageBriefAi(input: {
   );
 }
 
+export type ProgressQaPayload = {
+  answer: string;
+  nextChecks: string[];
+  citations: MaterialCitation[];
+  provider: 'mock' | 'live';
+  modelLabel: string;
+  latencyMs: number;
+};
+
+export async function requestProgressQa(input: {
+  projectId: string;
+  question: string;
+  contextSummary: string;
+}): Promise<
+  { ok: true; progress: ProgressQaPayload } | { ok: false; message: string }
+> {
+  const result = await api<{
+    ok?: boolean;
+    progress?: ProgressQaPayload;
+    message?: string;
+  }>('/api/ai/progress-qa', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+  if (!result.ok) {
+    return { ok: false, message: result.message };
+  }
+  if (!result.data.progress) {
+    return { ok: false, message: result.data.message || '进度问答失败' };
+  }
+  return { ok: true, progress: result.data.progress };
+}
+
+function parseSseChunk(
+  chunk: string,
+): Array<{ event: string; data: string }> {
+  const frames: Array<{ event: string; data: string }> = [];
+  const blocks = chunk.split('\n\n');
+  for (const block of blocks) {
+    if (!block.trim()) continue;
+    let event = 'message';
+    const dataLines: string[] = [];
+    for (const line of block.split('\n')) {
+      if (line.startsWith('event:')) {
+        event = line.slice(6).trim();
+      } else if (line.startsWith('data:')) {
+        dataLines.push(line.slice(5).trim());
+      }
+    }
+    if (dataLines.length) {
+      frames.push({ event, data: dataLines.join('\n') });
+    }
+  }
+  return frames;
+}
+
+/**
+ * True token SSE for progress QA. Falls back is caller's responsibility.
+ */
+export async function requestProgressQaStream(input: {
+  projectId: string;
+  question: string;
+  contextSummary: string;
+  signal?: AbortSignal;
+  onToken?: (text: string) => void;
+  onMeta?: (meta: { aiMode: string }) => void;
+}): Promise<
+  | { ok: true; progress: ProgressQaPayload; tokenCount: number }
+  | { ok: false; message: string; tokenCount: number }
+> {
+  let tokenCount = 0;
+  try {
+    const response = await fetch('/api/ai/progress-qa/stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        projectId: input.projectId,
+        question: input.question,
+        contextSummary: input.contextSummary,
+      }),
+      signal: input.signal,
+    });
+    if (!response.ok || !response.body) {
+      return {
+        ok: false,
+        message: `HTTP ${response.status}`,
+        tokenCount,
+      };
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let result: ProgressQaPayload | null = null;
+    let errorMessage: string | null = null;
+    let sawDone = false;
+
+    while (!sawDone) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const ready = buffer.split('\n\n');
+      buffer = ready.pop() ?? '';
+      for (const block of ready) {
+        for (const frame of parseSseChunk(`${block}\n\n`)) {
+          if (frame.event === 'meta') {
+            try {
+              const meta = JSON.parse(frame.data) as { aiMode?: string };
+              input.onMeta?.({ aiMode: String(meta.aiMode ?? 'mock') });
+            } catch {
+              /* ignore */
+            }
+          } else if (frame.event === 'token') {
+            try {
+              const payload = JSON.parse(frame.data) as { text?: string };
+              const text = String(payload.text ?? '');
+              if (text) {
+                tokenCount += 1;
+                input.onToken?.(text);
+              }
+            } catch {
+              /* ignore */
+            }
+          } else if (frame.event === 'result') {
+            try {
+              result = JSON.parse(frame.data) as ProgressQaPayload;
+            } catch {
+              errorMessage = 'invalid stream result';
+            }
+          } else if (frame.event === 'error') {
+            try {
+              const payload = JSON.parse(frame.data) as { message?: string };
+              errorMessage = payload.message || 'stream error';
+            } catch {
+              errorMessage = 'stream error';
+            }
+          } else if (frame.event === 'done') {
+            sawDone = true;
+          }
+        }
+      }
+    }
+
+    if (errorMessage) {
+      return { ok: false, message: errorMessage, tokenCount };
+    }
+    if (!result) {
+      return { ok: false, message: 'stream ended without result', tokenCount };
+    }
+    return { ok: true, progress: result, tokenCount };
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      return { ok: false, message: 'aborted', tokenCount };
+    }
+    return {
+      ok: false,
+      message: error instanceof Error ? error.message : '网络错误',
+      tokenCount,
+    };
+  }
+}
+
