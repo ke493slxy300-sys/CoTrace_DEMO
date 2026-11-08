@@ -10,6 +10,8 @@ export default defineConfig(({ mode }) => {
   applyServerEnv(loaded);
 
   return {
+    // GitHub Pages 子路径用 VITE_BASE=/CoTrace_DEMO/；本地/Vercel 保持 /
+    base: process.env.VITE_BASE || '/',
     plugins: [react(), cotraceApiPlugin()],
     // 保持默认 envPrefix=VITE_，禁止客户端读取 DEEPSEEK_*。
     server: {
