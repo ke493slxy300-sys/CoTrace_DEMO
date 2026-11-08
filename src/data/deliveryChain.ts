@@ -169,7 +169,15 @@ export function selectMaterials(
       selectedChatMaterialId: chatMaterialId,
     };
   }
-  // 换料作废旧分析与由其派生的协作日志草稿，避免旧稿被发布
+  // 换料作废旧分析；未人工确认的日志草稿一并清空，已手改摘要则保留
+  const keepManualLog =
+    delivery.collaborationLog?.manuallyEdited === true
+      ? {
+          ...delivery.collaborationLog,
+          aiActions: [],
+          citations: [],
+        }
+      : null;
   return {
     ...delivery,
     selectedCodeMaterialId: codeMaterialId,
@@ -177,8 +185,8 @@ export function selectMaterials(
     analysisRequestToken: delivery.analysisRequestToken + 1,
     analysisStale: true,
     analysis: null,
-    collaborationLog: null,
-    brief: '',
+    collaborationLog: keepManualLog,
+    brief: keepManualLog?.summary ?? '',
     changes: [],
     downstreamImpact: [],
     suggestedChecks: [],

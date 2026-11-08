@@ -60,7 +60,17 @@ import {
   WorkBlueprintPage,
 } from './next/student/WorkBlueprintPage';
 import { ProjectMemoryPage } from './next/student/ProjectMemoryPage';
+import { WorkInboxPage } from './next/student/WorkInboxPage';
+import { TeamMaterialsPage } from './next/student/TeamMaterialsPage';
 import type { StudentPlace } from './next/student/StudentShell';
+import {
+  hashForStudentPlace,
+  hashMaterials,
+  parseHash,
+  parseMaterialsQuery,
+  type MaterialsQuery,
+} from './next/student/studentRoutes';
+import { getMaterialFile } from './data/teamMaterials';
 import { CourseGuidePage } from './next/teacher/CourseGuidePage';
 import { StageReportPage } from './next/teacher/StageReportPage';
 import { AcceptancePage } from './next/teacher/AcceptancePage';
@@ -82,21 +92,19 @@ type AppView =
   | 'next-publish'
   | 'next-receive'
   | 'next-blueprint'
+  | 'next-work'
+  | 'next-materials'
   | 'next-guide'
   | 'next-log';
 
 const AI_OVERLAY_MS = 2200;
 
-function parseHash(hash: string): { path: string; query: URLSearchParams } {
-  const raw = hash.startsWith('#') ? hash.slice(1) : hash;
-  const [pathPart, queryPart = ''] = raw.split('?');
-  return { path: pathPart || '/', query: new URLSearchParams(queryPart) };
-}
-
 function viewFromHash(hash: string): AppView | null {
   const { path } = parseHash(hash);
   if (path === '/next/projects') return 'project-list';
   if (path === '/next/blueprint') return 'next-blueprint';
+  if (path === '/next/work') return 'next-work';
+  if (path === '/next/materials') return 'next-materials';
   if (path === '/next/publish') return 'next-publish';
   if (path === '/next/receive') return 'next-receive';
   if (path === '/next/log') return 'next-log';
@@ -111,16 +119,6 @@ function projectIdFromHash(hash: string): string {
   const fromQuery = query.get('project');
   if (fromQuery) return fromQuery;
   return HANDOFF_PROJECT_ID;
-}
-
-function hashForStudentPlace(place: StudentPlace, projectId: string): string {
-  if (place === 'projects') return '#/next/projects';
-  const encoded = encodeURIComponent(projectId);
-  if (place === 'history') return `#/next/log?project=${encoded}`;
-  if (place === 'publish') return `#/next/publish?project=${encoded}`;
-  if (place === 'receive') return `#/next/receive?project=${encoded}`;
-  // blueprint / work 共用蓝图入口，项目标识写在 query
-  return `#/next/blueprint?project=${encoded}`;
 }
 
 function hashForTeacher(place: TeacherPlace, groupId?: string | null): string {
@@ -144,6 +142,8 @@ function isCampusProjectId(projectId: string): boolean {
 const STUDENT_SHELL: AppView[] = [
   'project-list',
   'next-blueprint',
+  'next-work',
+  'next-materials',
   'next-publish',
   'next-receive',
   'next-log',
@@ -218,6 +218,7 @@ export default function App() {
   const [blueprintFocusNodeId, setBlueprintFocusNodeId] = useState<
     string | null
   >(null);
+  const [materialsQuery, setMaterialsQuery] = useState<MaterialsQuery>({});
   const [registerOpen, setRegisterOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -332,6 +333,7 @@ export default function App() {
     }
 
     const nextProjectId = projectIdFromHash(hash);
+    const projectChanged = nextProjectId !== shellProjectId;
     setShellProjectId(nextProjectId);
     if (next === 'next-log') {
       setLogProjectId(nextProjectId);
@@ -343,16 +345,30 @@ export default function App() {
       setTeacherGroupId(groupFromHash);
     }
 
+    if (next === 'next-blueprint') {
+      setBlueprintFocusNodeId(query.get('node'));
+    }
+    if (next === 'next-materials') {
+      setMaterialsQuery(parseMaterialsQuery(query));
+    } else if (projectChanged) {
+      // 切换项目时丢弃材料库定位，避免 SeatFlow 带上校园 file/version
+      setMaterialsQuery({});
+    }
+
     const campusShell =
       isCampusProjectId(nextProjectId) ||
       (!query.get('project') &&
         (next === 'next-blueprint' ||
+          next === 'next-work' ||
+          next === 'next-materials' ||
           next === 'next-publish' ||
           next === 'next-receive'));
 
     if (
       campusShell &&
       (next === 'next-blueprint' ||
+        next === 'next-work' ||
+        next === 'next-materials' ||
         next === 'next-publish' ||
         next === 'next-receive')
     ) {
@@ -392,14 +408,25 @@ export default function App() {
       // 侧栏导航一律沿用当前 shell 项目，避免 SeatFlow ↔ 校园串跳
       const activeId = shellProjectId || project?.id || HANDOFF_PROJECT_ID;
 
+      const navigatePlace = (projectKey: string) => {
+        if (place === 'materials') {
+          // 恢复定位前校验文件属于当前项目，避免跨项目串参
+          const safeQuery =
+            materialsQuery.file &&
+            !getMaterialFile(projectKey, materialsQuery.file)
+              ? {}
+              : materialsQuery;
+          goHash(hashMaterials(projectKey, safeQuery));
+          return;
+        }
+        goHash(hashForStudentPlace(place, projectKey));
+      };
+
       if (activeId === SEATFLOW_PROJECT_ID) {
         if (place === 'history') {
           setLogProjectId(SEATFLOW_PROJECT_ID);
-          goHash(hashForStudentPlace('history', SEATFLOW_PROJECT_ID));
-          return;
         }
-        // SeatFlow 无蓝图 / 交付；蓝图·工作·发布·接收均留在本项目空态
-        goHash(hashForStudentPlace('blueprint', SEATFLOW_PROJECT_ID));
+        navigatePlace(SEATFLOW_PROJECT_ID);
         return;
       }
 
@@ -409,19 +436,16 @@ export default function App() {
         if (place === 'history') {
           setLogProjectId(HANDOFF_PROJECT_ID);
         }
-        goHash(hashForStudentPlace(place, HANDOFF_PROJECT_ID));
+        navigatePlace(HANDOFF_PROJECT_ID);
         return;
       }
 
-      // 自定义项目：记录页可读；蓝图用当前内存项目
       if (place === 'history') {
         setLogProjectId(activeId);
-        goHash(hashForStudentPlace('history', activeId));
-        return;
       }
-      goHash(hashForStudentPlace(place === 'work' ? 'blueprint' : place, activeId));
+      navigatePlace(activeId);
     },
-    [ensureCampus, goHash, project?.id, shellProjectId],
+    [ensureCampus, goHash, materialsQuery, project?.id, shellProjectId],
   );
 
   const openProjectLog = useCallback(
@@ -714,6 +738,8 @@ export default function App() {
             projectName={seatflowName}
             reason="SeatFlow 为已完成项目，仅开放项目记忆；本阶段不提供可编辑工作蓝图。"
             onNavigate={goStudent}
+            place="blueprint"
+            title="工作蓝图"
           />
         ) : activeCampusProject ||
           (project && project.id === shellProjectId) ? (
@@ -724,6 +750,7 @@ export default function App() {
             selectedId={blueprintFocusNodeId}
             onSelect={setBlueprintFocusNodeId}
             onNavigate={goStudent}
+            onOpenHash={goHash}
             onOpenNode={(nodeId) => {
               const target = blueprintNodes.find((node) => node.id === nodeId);
               setBlueprintFocusNodeId(nodeId);
@@ -757,10 +784,47 @@ export default function App() {
             onNavigate={goStudent}
           />
         )
+      ) : view === 'next-work' ? (
+        shellIsSeatflow ? (
+          <WorkInboxPage
+            projectId={SEATFLOW_PROJECT_ID}
+            projectName={seatflowName}
+            nodes={[]}
+            onNavigate={goStudent}
+            onOpenHash={goHash}
+          />
+        ) : (
+          <WorkInboxPage
+            projectId={shellProjectId}
+            projectName={
+              activeCampusProject?.name ||
+              project?.name ||
+              HANDOFF_PROJECT_NAME
+            }
+            nodes={blueprintNodes}
+            onNavigate={goStudent}
+            onOpenHash={goHash}
+          />
+        )
+      ) : view === 'next-materials' ? (
+        <TeamMaterialsPage
+          projectId={shellProjectId}
+          projectName={
+            shellIsSeatflow
+              ? seatflowName
+              : activeCampusProject?.name ||
+                project?.name ||
+                HANDOFF_PROJECT_NAME
+          }
+          query={materialsQuery}
+          onNavigate={goStudent}
+          onOpenHash={goHash}
+        />
       ) : view === 'next-log' ? (
         <ProjectMemoryPage
           projectId={logProjectId}
           onNavigate={goStudent}
+          onOpenHash={goHash}
         />
       ) : view === 'next-publish' ? (
         shellIsSeatflow ? (
@@ -768,6 +832,8 @@ export default function App() {
             projectName={seatflowName}
             reason="SeatFlow 无交付发布入口；请从项目记忆回看已确认经验。"
             onNavigate={goStudent}
+            place="publish"
+            title="发布交付"
           />
         ) : (
           <PublishDeliveryPage onNavigate={goStudent} />
@@ -778,6 +844,8 @@ export default function App() {
             projectName={seatflowName}
             reason="SeatFlow 无交付接收入口；请从项目记忆回看已确认经验。"
             onNavigate={goStudent}
+            place="receive"
+            title="接收交付"
           />
         ) : (
           <ReceiveDeliveryPage
@@ -862,6 +930,7 @@ export default function App() {
           nodes={blueprintNodes}
           onBack={handleBackToBlueprint}
           onNavigate={goStudent}
+          onOpenHash={goHash}
           onContinueWork={handleContinueWorkFromDetail}
         />
       ) : view === 'blueprint' && project ? (

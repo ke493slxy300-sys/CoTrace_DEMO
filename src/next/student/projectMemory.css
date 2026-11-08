@@ -202,6 +202,96 @@
   padding: 16px 18px;
 }
 
+.pm-row {
+  padding: 0;
+}
+
+.pm-row-main {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  gap: 10px 14px;
+  align-items: center;
+  text-align: left;
+  padding: 14px 18px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.pm-row-main:hover {
+  background: rgba(0, 133, 110, 0.03);
+}
+
+.pm-row-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  align-items: baseline;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #344054;
+}
+
+.pm-row-line strong {
+  color: #101514;
+  font-weight: 700;
+}
+
+.pm-row-line em {
+  font-style: normal;
+  color: #667085;
+  font-size: 13px;
+}
+
+.pm-row-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.pm-tag {
+  font-size: 12px;
+  line-height: 1.2;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid #e7ecef;
+  color: #475467;
+  background: #f8faf9;
+  white-space: nowrap;
+}
+
+.pm-tag.is-ai {
+  border-color: #d7e5e1;
+  background: #f3faf7;
+  color: #0b6b57;
+}
+
+.pm-tag.is-human {
+  border-color: #e7ecef;
+  background: #fff;
+  color: #344054;
+}
+
+.pm-tag.is-teacher {
+  border-color: #cfe8df;
+  background: rgba(0, 133, 110, 0.08);
+  color: #00856e;
+  font-weight: 600;
+}
+
+.pm-row-detail {
+  padding: 0 18px 16px;
+  border-top: 1px solid #eef2f1;
+}
+
+.pm-row.is-open .pm-row-main {
+  background: rgba(0, 133, 110, 0.04);
+}
+
 .pm-card-top {
   display: flex;
   flex-wrap: wrap;

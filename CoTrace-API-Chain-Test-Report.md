@@ -1,10 +1,38 @@
 # 校园二手交易平台 · 跨端交付链实测报告
 
-日期：2026-11-06（初测）／2026-11-07（live 收口）／2026-11-08（demo 主路径收口）／2026-11-08（真流式旁路）
+日期：2026-11-06（初测）／2026-11-07（live 收口）／2026-11-08（demo 主路径收口）／2026-11-08（真流式旁路）／2026-11-08（版本关联与浏览器三场景收口）
 
 ## 结论（2026-11-08 · 默认 live）
 
 Demo **仅保证两条主路径**：Alex 交付→Priya 接收；周老师读求助→正式反馈→双端同文回显。有 `DEEPSEEK_API_KEY` 时，分析 / 接手标注 / 教师情境 **默认走 DeepSeek live 整包**（非逐 token）；无 key 自动回退 mock。进度问答 **真 token SSE** 仍为接收页折叠旁路。验收脚本强制 mock；有 key 时另跑 `verify:live`。
+
+## 发布版本 · 接收分支 · 求助关联（权威说明）
+
+### 版本从哪里来、存在哪里
+
+| 步骤 | 谁负责 | 落点 |
+|---|---|---|
+| 生成 `versionId` | **客户端** `publishDeliveryChain`（形如 `ver-{deliveryId}-{n}`） | 内存状态机 |
+| 保存最终交付记录 | **客户端** `commitHandoffDelivery` → `localStorage['cotrace-demo-submissions'].handoffDelivery`（含 `publishedVersions[]` 全量快照：协作日志、材料 ID、风险说明、分析结论） | 浏览器 localStorage（schema meta v4） |
+| 服务端镜像 | `POST /api/deliveries/publish` → `serverDeliveryStore.upsertPublishedVersion`（幂等键 `pub-{versionId}`） | 进程内存；供 GET 与 AI 旁路同源，**不替代** localStorage 主存 |
+| Priya 读当前版 | `ReceiveDeliveryPage` → `getVersionSnapshot(delivery, currentVersionId)`，缺省回退顶层字段 | 同浏览器切角色即可看到同一句日志与同一 `versionId` |
+| 重发 | 再走 publish → **新** `versionId`；旧版留在 `publishedVersions`，旧求助事件继续绑旧版 |
+
+### Priya 两个操作分支（均不靠 AI 推进联调）
+
+| 操作 | 状态变化 | 联调节点 |
+|---|---|---|
+| 提出修改意见 | `published` → `needs-revision`（绑当前 `versionId`） | **不**进入进行中 |
+| 确认接收 | `published` → `received`（仅当前 `currentVersionId`；旧版 → `stale-version`） | 蓝图「交易流程联调」→ **进行中** |
+
+打开接收页、生成 handoff-focus、提交修改意见、进度问答 SSE：**均不**把联调推到进行中。
+
+### 求助 ID ↔ 交付版本 ID
+
+- 学生正式提交：`help-{versionId}-{timestamp}`；过程事件 `event-student-help-{helpId}`，字段 `versionId` = **提交时的交付版本**。
+- 原文与采纳补充分字段保存：`studentText` / `adoptedClarify`（事件 evidence 分「学生原文」「学生采纳的 AI 补充」）。
+- 教师 `help-context`（teacher-brief）用求助事件上的 `versionId` 取**当时**快照日志；Alex 后续重发不影响已有求助绑定。
+- 正式反馈：`feedback-{helpEventId}`，`relatedEventId` = 同一求助；学生「项目记录」按该求助回显反馈原文。界面三分区：学生原文 · AI 辅助 · 老师正式反馈。
 
 ## 运行方式
 
@@ -179,7 +207,19 @@ npm run typecheck
 4. 周老师：`#/next/stage` → 读原文与共享日志 → 可选 AI 情境 → 发正式反馈  
 5. Alex / Priya：`#/next/log` → **同一反馈原文与时间**
 
-**红线：** 分析 / focus / 情境失败时仍可手填发布、手写反馈、完成闭环；流式失败不得阻断求助或接收。
+**红线：** 分析 / focus / 情境失败时仍可手填发布、手写反馈、完成闭环；流式失败不得阻断求助或接收。含风险判定时须勾选风险确认后才能点「带风险发布」（不可用不勾选的旁路按钮硬发）。
+
+### 浏览器三场景（2026-11-08 · Playwright + live）
+
+脚本：`node scripts/_accept-main-path.mjs`（需 `npm run dev`，勿用 mock 覆盖）。
+
+| 场景 | 结果 | 关键 ID / 脱敏字段 |
+|---|---|---|
+| 改一句再发布 | **通过 · DeepSeek 实测（focus/analysis live）** | `versionId=ver-delivery-order-service-v04-1`；handoff-focus 请求含改写摘要与该 versionId；材料 `mat-code/chat-order-v04` |
+| 退回、重发、确认 | **通过 · 浏览器实测** | v1→v2=`…-v04-2`；历史旧版可见；确认后蓝图「联调进行中」；旧版不可再确认 |
+| 旧版求助、新版发布 | **通过 · DeepSeek 实测（teacher help-context）** | 求助 `event-student-help-help-ver-…-v04-1-…` 绑 v1；老师 help-context `deliveryVersionId=v1` + 旧版摘要；反馈后 Alex/Priya 项目记录同文 |
+
+配套脚本：`npm run verify:chain` → **mock 实测**通过；`npm run verify:live` 四组（含「材料相符」）→ **DeepSeek 实测**通过；`npm run verify:api` → **mock 实测**通过。超时失败：`scripts/_probe-timeout.mjs`（`COTRACE_AI_TIMEOUT_MS=50`）用于确认模型失败时 UI 仍可手填继续（见下节）。
 
 ## AI 边界
 

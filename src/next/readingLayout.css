@@ -1,0 +1,252 @@
+/* 长文阅读：左证据 / 右 AI 结论。各业务页引入后套用 .rd-* 类名。 */
+
+.rd-page-title {
+  margin: 0;
+  font-size: clamp(28px, 2.2vw, 32px);
+  line-height: 1.25;
+  font-weight: 700;
+  color: #101514;
+}
+
+.rd-section-title {
+  margin: 0 0 12px;
+  font-size: clamp(18px, 1.4vw, 20px);
+  line-height: 1.35;
+  font-weight: 700;
+  color: #101514;
+}
+
+.rd-body {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #344054;
+}
+
+.rd-aux {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #667085;
+}
+
+.rd-split {
+  display: grid;
+  grid-template-columns: minmax(0, 55fr) minmax(0, 45fr);
+  gap: 24px;
+  align-items: start;
+  width: 100%;
+  max-width: none;
+}
+
+.rd-evidence {
+  background: #fff;
+  border: 1px solid #e7ecef;
+  border-radius: 12px;
+  padding: 20px 22px 24px;
+}
+
+.rd-ai {
+  background: #f7faf9;
+  border: 1px solid #e0ebe8;
+  border-radius: 12px;
+  padding: 20px 22px 24px;
+}
+
+.rd-ai.is-warn {
+  background: #fff8ef;
+  border-color: #f0d9b5;
+}
+
+.rd-ai.is-ok {
+  background: #f3faf7;
+  border-color: #cfe8df;
+}
+
+.rd-block {
+  margin: 0 0 24px;
+  scroll-margin-top: 88px;
+}
+
+.rd-block:last-child {
+  margin-bottom: 0;
+}
+
+.rd-block.is-flash {
+  outline: 2px solid #00856e;
+  outline-offset: 4px;
+  border-radius: 10px;
+  transition: outline-color 0.2s ease;
+}
+
+.rd-block-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.rd-num {
+  flex: 0 0 auto;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 8px;
+  background: #00856e;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-grid;
+  place-items: center;
+}
+
+.rd-block-meta {
+  min-width: 0;
+}
+
+.rd-block-meta strong {
+  display: block;
+  font-size: 16px;
+  line-height: 1.4;
+  color: #101514;
+}
+
+.rd-excerpt {
+  margin: 0;
+  padding: 12px 14px;
+  background: #f8fafb;
+  border-radius: 10px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #344054;
+  white-space: pre-wrap;
+}
+
+.rd-code {
+  margin: 0;
+  max-height: 220px;
+  overflow: auto;
+  padding: 12px 14px;
+  background: #0f1720;
+  color: #e7eef5;
+  border-radius: 10px;
+  font-family: ui-monospace, "Cascadia Code", "Consolas", monospace;
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre;
+}
+
+.rd-missing {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px dashed #d0d5dd;
+  border-radius: 10px;
+  color: #667085;
+  font-size: 15px;
+  line-height: 1.6;
+  background: #fcfcfd;
+}
+
+.rd-status {
+  margin: 0 0 16px;
+  padding: 16px 16px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(16, 21, 20, 0.06);
+}
+
+.rd-status h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.rd-status p {
+  margin: 0 0 12px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #344054;
+}
+
+.rd-status p:last-child {
+  margin-bottom: 0;
+}
+
+.rd-findings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.rd-finding {
+  margin: 0;
+  padding: 0 0 14px;
+  border-bottom: 1px solid rgba(16, 21, 20, 0.06);
+}
+
+.rd-finding:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.rd-finding-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #101514;
+}
+
+.rd-finding-body {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #344054;
+}
+
+.rd-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 22px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 999px;
+  background: #d9f4ee;
+  color: #00856e;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rd-chip:hover,
+.rd-chip:focus-visible {
+  background: #b6ebe0;
+  outline: none;
+}
+
+.rd-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding-bottom: 96px;
+}
+
+@media (max-width: 1100px) {
+  .rd-split {
+    grid-template-columns: 1fr;
+  }
+
+  .rd-split.is-stack-ai-first .rd-ai {
+    order: -1;
+  }
+}

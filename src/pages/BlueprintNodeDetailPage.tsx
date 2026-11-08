@@ -22,6 +22,11 @@ import {
   StudentShell,
   type StudentPlace,
 } from "../next/student/StudentShell";
+import {
+  getMaterialVersion,
+  listMaterialsForNode,
+} from "../data/teamMaterials";
+import { hashMaterials } from "../next/student/studentRoutes";
 import "../next/student/nodeWork.css";
 import { getSubmission } from "../data/demoSubmission";
 import { getBlueprintNodeDetailData } from "../data/nodeCollaboration";
@@ -59,6 +64,7 @@ type BlueprintNodeDetailPageProps = {
   onNavigate: (place: StudentPlace) => void;
   /** 负责人进入个人工作区 */
   onContinueWork?: () => void;
+  onOpenHash?: (hash: string) => void;
 };
 
 export function BlueprintNodeDetailPage({
@@ -66,6 +72,8 @@ export function BlueprintNodeDetailPage({
   node,
   onNavigate,
   onContinueWork: _onContinueWork,
+  onOpenHash,
+  onBack,
 }: BlueprintNodeDetailPageProps) {
   const me = getCurrentMember();
   const activeMemberId = useActiveMemberId();
@@ -98,6 +106,10 @@ export function BlueprintNodeDetailPage({
   );
   const [linkedDocHint, setLinkedDocHint] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const libraryMaterials = useMemo(
+    () => listMaterialsForNode(project.id, node.id),
+    [project.id, node.id],
+  );
 
   useEffect(() => {
     setActiveFileId(resolveDefaultFileId(node.id, baseData));
@@ -242,9 +254,38 @@ export function BlueprintNodeDetailPage({
       <header className="nw-head">
         <div>
           <p className="nw-kicker">{project.name}</p>
+          <button type="button" className="nw-ghost" onClick={onBack}>
+            ← 返回蓝图
+          </button>
           <h1>{baseData.title}</h1>
         </div>
         <div className="nw-actions">
+          {onOpenHash &&
+            libraryMaterials.map((file) => {
+              const version = getMaterialVersion(file, file.currentVersionId);
+              if (!version) return null;
+              return (
+                <button
+                  key={file.id}
+                  type="button"
+                  className="nw-ghost"
+                  data-material-ref={file.id}
+                  onClick={() =>
+                    onOpenHash(
+                      hashMaterials(project.id, {
+                        folder: file.folderId,
+                        file: file.id,
+                        version: version.id,
+                        from: "blueprint",
+                        retNode: node.id,
+                      }),
+                    )
+                  }
+                >
+                  材料库 · {file.displayName}
+                </button>
+              );
+            })}
           <button
             type="button"
             className="nw-ghost"

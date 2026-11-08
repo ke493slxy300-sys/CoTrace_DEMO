@@ -18,6 +18,11 @@ import {
   HANDOFF_NODE_INTEGRATION,
   HANDOFF_PROJECT_ID,
 } from '../../data/handoffDemoSeed';
+import {
+  getMaterialVersion,
+  listMaterialsForNode,
+} from '../../data/teamMaterials';
+import { hashMaterials, parseHash } from './studentRoutes';
 import { StudentShell, type StudentPlace } from './StudentShell';
 import './blueprint.css';
 
@@ -29,6 +34,7 @@ type WorkBlueprintPageProps = {
   onSelect: (nodeId: string | null) => void;
   onNavigate: (place: StudentPlace) => void;
   onOpenNode: (nodeId: string) => void;
+  onOpenHash?: (hash: string) => void;
 };
 
 /** SeatFlow / 无蓝图项目：侧栏仍属当前项目，不跳校园蓝图 */
@@ -36,24 +42,28 @@ export function ProjectSpaceUnavailable({
   projectName,
   reason,
   onNavigate,
+  place = 'blueprint',
+  title = '工作蓝图',
 }: {
   projectName: string;
   reason: string;
   onNavigate: (place: StudentPlace) => void;
+  place?: StudentPlace;
+  title?: string;
 }) {
   return (
     <StudentShell
-      place="blueprint"
+      place={place}
       projectName={projectName}
       onNavigate={onNavigate}
     >
       <div className="wbp">
         <p className="wbp-kicker">{projectName}</p>
         <div className="wbp-head">
-          <h1>工作蓝图</h1>
+          <h1>{title}</h1>
         </div>
         <div className="wbp-empty" role="status">
-          <h2>暂无工作蓝图</h2>
+          <h2>暂不可用</h2>
           <p>{reason}</p>
           <button type="button" onClick={() => onNavigate('history')}>
             查看项目记忆
@@ -179,6 +189,7 @@ export function WorkBlueprintPage({
   onSelect,
   onNavigate,
   onOpenNode,
+  onOpenHash,
 }: WorkBlueprintPageProps) {
   const delivery = useDelivery();
   const role = useDemoRole();
@@ -187,6 +198,8 @@ export function WorkBlueprintPage({
 
   const waiting = delivery.status === 'published';
   const needsRevision = delivery.status === 'needs-revision';
+  const waitingUpstream =
+    delivery.status === 'published' || delivery.status === 'needs-revision';
   const received = delivery.status === 'received';
   const selected = selectedId
     ? (live.find((node) => node.id === selectedId) ?? null)
@@ -458,17 +471,21 @@ export function WorkBlueprintPage({
         projectId === HANDOFF_PROJECT_ID &&
         node.id === HANDOFF_NODE_INTEGRATION
       ) {
-        if (waiting) {
+        if (waitingUpstream) {
           return {
             title,
-            statusLabel,
+            statusLabel: '等待确认接收',
             keyLine:
-              role === 'priya'
-                ? `等待确认接收 ${delivery.title} ${delivery.version}`
-                : `已发布 ${delivery.version} · 等待 Priya 接收`,
+              needsRevision
+                ? `上游 ${delivery.title} ${delivery.version} 待修订，确认有效版本后可开始联调。`
+                : role === 'priya'
+                  ? `等待确认接收 ${delivery.title} ${delivery.version}`
+                  : `已发布 ${delivery.version} · 等待 Priya 接收`,
             actionLabel:
               role === 'priya'
-                ? `确认接收 ${delivery.version}`
+                ? needsRevision
+                  ? '查看交付'
+                  : `确认接收 ${delivery.version}`
                 : '查看交付',
             onAction: () =>
               onNavigate(role === 'priya' ? 'receive' : 'publish'),
@@ -522,10 +539,15 @@ export function WorkBlueprintPage({
       received,
       role,
       waiting,
-    ],
+      waitingUpstream,
+    ], // waiting kept for backend published branch
   );
 
   const brief = shown ? buildBrief(shown) : null;
+  const nodeMaterials = useMemo(
+    () => (shown ? listMaterialsForNode(projectId, shown.id) : []),
+    [projectId, shown],
+  );
 
   const bumpZoom = (delta: number) => {
     setZoomPercent((current) =>
@@ -534,6 +556,7 @@ export function WorkBlueprintPage({
   };
 
   const scale = zoomPercent / 100;
+  const fromPlace = parseHash(window.location.hash).query.get('from');
 
   return (
     <StudentShell
@@ -543,10 +566,24 @@ export function WorkBlueprintPage({
     >
       <div className="wbp">
         <p className="wbp-kicker">{projectName}</p>
+        {fromPlace === 'materials' || fromPlace === 'work' ? (
+          <p style={{ margin: '0 0 8px' }}>
+            <button
+              type="button"
+              className="wbp-zoom-btn"
+              onClick={() =>
+                onNavigate(fromPlace === 'materials' ? 'materials' : 'work')
+              }
+            >
+              ← 返回{fromPlace === 'materials' ? '材料库' : '工作'}
+            </button>
+          </p>
+        ) : null}
         <div className="wbp-head">
           <h1>工作蓝图</h1>
         </div>
 
+        <div className="wbp-canvas-frame">
         <div
           className="wbp-canvas-wrap"
           ref={canvasWrapRef}
@@ -575,11 +612,7 @@ export function WorkBlueprintPage({
             aria-label="任务蓝图画布"
             onPointerDown={(event) => {
               const target = event.target as HTMLElement;
-              if (
-                target.closest('.wbp-node') ||
-                target.closest('.wbp-zoom') ||
-                target.closest('.wbp-canvas-tools')
-              ) {
+              if (target.closest('.wbp-node')) {
                 return;
               }
               onSelect(null);
@@ -693,8 +726,9 @@ export function WorkBlueprintPage({
             })}
           </div>
           </div>
+        </div>
 
-          {/* 固定在画布框架底部工具条，不随画布内容平移/缩放 */}
+          {/* 叠在画布视口上，不随内容滚动/平移 */}
           <div className="wbp-canvas-tools" role="toolbar" aria-label="画布工具">
             <div className="wbp-zoom">
               <button
@@ -746,6 +780,35 @@ export function WorkBlueprintPage({
                   <button type="button" onClick={brief.onAction}>
                     {brief.actionLabel}
                   </button>
+                  {onOpenHash &&
+                    nodeMaterials.slice(0, 2).map((file) => {
+                      const version = getMaterialVersion(
+                        file,
+                        file.currentVersionId,
+                      );
+                      if (!version) return null;
+                      return (
+                        <button
+                          key={file.id}
+                          type="button"
+                          className="secondary"
+                          data-material-ref={file.id}
+                          onClick={() =>
+                            onOpenHash(
+                              hashMaterials(projectId, {
+                                folder: file.folderId,
+                                file: file.id,
+                                version: version.id,
+                                from: 'blueprint',
+                                retNode: shown.id,
+                              }),
+                            )
+                          }
+                        >
+                          材料 · {file.displayName}
+                        </button>
+                      );
+                    })}
                 </div>
               </div>
             </aside>

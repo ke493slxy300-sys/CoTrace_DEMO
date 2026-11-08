@@ -141,12 +141,14 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding-bottom: 8px;
-  /* 相对此前 75% 宽再缩一半，并水平居中 */
-  width: 37.5%;
-  max-width: 37.5%;
-  min-width: min(420px, 100%);
-  margin-inline: auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding-bottom: 96px;
+}
+
+.ctn-publish .rd-page-title {
+  margin: 0;
 }
 
 .ctn-brief-field {

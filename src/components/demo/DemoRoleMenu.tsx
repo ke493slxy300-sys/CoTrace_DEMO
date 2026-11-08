@@ -7,31 +7,28 @@ import {
 } from '../../data/demoRoleStore';
 import { resetDemoLocalStorage } from '../../data/demoStorage';
 import type { DemoRoleId } from '../../types/handoff';
+import { parseHash } from '../../next/student/studentRoutes';
 import './demoRole.css';
 
 const ROLES: Array<{
   id: DemoRoleId;
   title: string;
   landing: string;
-  hash: string;
 }> = [
   {
     id: 'alex',
     title: 'Alex Lee · 发布交付',
-    landing: '进入校园二手交易平台的工作蓝图',
-    hash: '#/next/blueprint?project=project-campus-marketplace',
+    landing: '保留当前项目与页面，切换为发布视角',
   },
   {
     id: 'priya',
     title: 'Priya Shah · 接收交付',
-    landing: '进入校园二手交易平台的工作蓝图',
-    hash: '#/next/blueprint?project=project-campus-marketplace',
+    landing: '保留当前项目与页面，切换为接收视角',
   },
   {
     id: 'teacher',
     title: '周老师 · 课程指导',
     landing: '进入课程指导台',
-    hash: '#/next/guide',
   },
 ];
 
@@ -41,24 +38,45 @@ function displayName(role: DemoRoleId): string {
   return 'Alex Lee';
 }
 
+function isStudentHash(hash: string): boolean {
+  const { path } = parseHash(hash);
+  return (
+    path.startsWith('/next/') &&
+    path !== '/next/guide' &&
+    path !== '/next/stage' &&
+    path !== '/next/acceptance'
+  );
+}
+
 export function DemoRoleMenu() {
   const role = useDemoRole();
   const [open, setOpen] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const current = getDemoRoleOption(role);
 
-  const choose = (next: DemoRoleId, hash: string) => {
+  const choose = (next: DemoRoleId) => {
     setDemoRole(next);
+    setOpen(false);
+    setConfirmReset(false);
+
+    if (next === 'teacher') {
+      window.location.hash = '#/next/guide';
+      return;
+    }
+
     if (next === 'priya' || next === 'alex') {
       window.dispatchEvent(new Event('cotrace-ensure-campus'));
     }
-    setOpen(false);
-    setConfirmReset(false);
-    if (window.location.hash === hash) {
+
+    const hash = window.location.hash;
+    // 学生角色互切：保留当前项目 ID 与页面（含材料定位参数）
+    if (isStudentHash(hash) && hash !== '#/next/projects') {
       window.dispatchEvent(new HashChangeEvent('hashchange'));
       return;
     }
-    window.location.hash = hash;
+
+    window.location.hash =
+      '#/next/blueprint?project=project-campus-marketplace';
   };
 
   const reset = () => {
@@ -80,7 +98,9 @@ export function DemoRoleMenu() {
       </button>
       {open ? (
         <div className="demo-role-menu" role="menu" aria-label="演示视角">
-          <p className="demo-role-note">切换角色会保留同一份演示数据，并前往对应页面。</p>
+          <p className="demo-role-note">
+            切换 Alex / Priya 会保留同一份演示数据，并留在当前项目与页面。
+          </p>
           {ROLES.map((item) => {
             const selected = item.id === current.id;
             return (
@@ -90,13 +110,15 @@ export function DemoRoleMenu() {
                 role="menuitemradio"
                 aria-checked={selected}
                 className={selected ? 'is-on' : ''}
-                onClick={() => choose(item.id, item.hash)}
+                onClick={() => choose(item.id)}
               >
                 <span>
                   <strong>{item.title}</strong>
                   <small>{item.landing}</small>
                 </span>
-                {selected ? <Check size={16} strokeWidth={2.4} aria-hidden="true" /> : null}
+                {selected ? (
+                  <Check size={16} strokeWidth={2.4} aria-hidden="true" />
+                ) : null}
               </button>
             );
           })}

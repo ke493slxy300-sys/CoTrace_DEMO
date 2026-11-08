@@ -16,7 +16,8 @@ export type StudentPlace =
   | 'work'
   | 'publish'
   | 'receive'
-  | 'history';
+  | 'history'
+  | 'materials';
 
 type StudentShellProps = {
   place: StudentPlace;
@@ -37,6 +38,7 @@ export function StudentShell({
   const workOn =
     place === 'work' || place === 'publish' || place === 'receive';
   const historyOn = place === 'history';
+  const materialsOn = place === 'materials';
 
   if (isHome) {
     return (
@@ -108,7 +110,12 @@ export function StudentShell({
             <History size={18} strokeWidth={1.75} aria-hidden="true" />
             记录
           </button>
-          <button type="button" className="stu-nav" disabled>
+          <button
+            type="button"
+            className={`stu-nav${materialsOn ? ' is-on' : ''}`}
+            aria-current={materialsOn ? 'page' : undefined}
+            onClick={() => onNavigate('materials')}
+          >
             <FileText size={18} strokeWidth={1.75} aria-hidden="true" />
             材料
           </button>

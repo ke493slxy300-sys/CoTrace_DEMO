@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown, FileCode2, FileText } from 'lucide-react';
+import { Check } from 'lucide-react';
 import {
   fetchDemoMaterials,
   fetchHealth,
@@ -27,10 +27,12 @@ import {
   HANDOFF_PROJECT_NAME,
 } from '../../data/handoffDemoSeed';
 import { getVersionSnapshot } from '../../data/deliveryChain';
-import type { HandoffBriefBlock } from '../../types/handoff';
-import { AiFocusItemList } from '../AiStruct';
+import { enrichAiProse } from '../AiStruct';
 import { formatAiFailureHint, formatAiSourceLabel } from '../aiMeta';
+import { EvidenceChip, evidenceLabel, useEvidenceFocus } from '../EvidenceNav';
+import { parseHash } from './studentRoutes';
 import { StudentShell, type StudentPlace } from './StudentShell';
+import '../readingLayout.css';
 import './receive.css';
 
 type ReceiveDeliveryPageProps = {
@@ -38,41 +40,12 @@ type ReceiveDeliveryPageProps = {
   onReceived: (integrationNodeId: string) => void;
 };
 
-function kindLabel(kind: HandoffBriefBlock['kind']): string {
-  if (kind === 'fact') return '事实';
-  if (kind === 'suggestion') return '建议';
-  return '未验证';
-}
-
 function verdictLabel(verdict: string | undefined): string {
   if (verdict === 'match') return '相符';
   if (verdict === 'suspect-wrong-version') return '疑似错版';
-  if (verdict === 'irrelevant') return '无关';
+  if (verdict === 'irrelevant') return '所选对话与任务无关';
   if (verdict === 'insufficient-evidence') return '证据不足';
   return '未分析';
-}
-
-function EvidenceSection({
-  title,
-  blocks,
-}: {
-  title: string;
-  blocks: HandoffBriefBlock[];
-}) {
-  if (!blocks.length) return null;
-  return (
-    <section className="rcv-evidence-section">
-      <h3>{title}</h3>
-      <ul>
-        {blocks.map((block, index) => (
-          <li key={`${title}-${index}`}>
-            <span className={`rcv-kind is-${block.kind}`}>{kindLabel(block.kind)}</span>
-            <p>{block.body}</p>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
 }
 
 export function ReceiveDeliveryPage({
@@ -88,7 +61,6 @@ export function ReceiveDeliveryPage({
   const canAct =
     delivery.status === 'published' && isReceiver;
   const [confirming, setConfirming] = useState(false);
-  const [showEvidence, setShowEvidence] = useState(true);
   const [revisionNote, setRevisionNote] = useState('');
   const [evidenceLocator, setEvidenceLocator] = useState('');
   const [hint, setHint] = useState('');
@@ -98,10 +70,14 @@ export function ReceiveDeliveryPage({
   const [focusError, setFocusError] = useState('');
   const [focusRetryNonce, setFocusRetryNonce] = useState(0);
   const [aiMode, setAiMode] = useState('mock');
+  const aiModeRef = useRef(aiMode);
+  aiModeRef.current = aiMode;
+  const focusRequestGenRef = useRef(0);
   const [hasLiveKey, setHasLiveKey] = useState(true);
   const [catalog, setCatalog] = useState<DemoMaterialCatalogItem[]>([]);
   const [previews, setPreviews] = useState<Record<string, MaterialPreview>>({});
   const [openPreviewId, setOpenPreviewId] = useState<string | null>(null);
+  const { activeId, focusEvidence } = useEvidenceFocus();
   const [progressQuestion, setProgressQuestion] = useState(
     '当前版本还缺什么才能安心联调？',
   );
@@ -173,47 +149,52 @@ export function ReceiveDeliveryPage({
   }, [codeId, chatId]);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (
-        delivery.status !== 'published' ||
-        !delivery.currentVersionId ||
-        !codeId ||
-        !chatId
-      ) {
-        return;
-      }
-      if (
-        focusRetryNonce === 0 &&
-        delivery.focusAnnotation &&
-        delivery.focusAnnotation.versionId === delivery.currentVersionId &&
-        delivery.focusAnnotation.items.length > 0
-      ) {
-        return;
-      }
-      const sharedLog = toSharedLogPayload(
-        log,
-        log?.summary || delivery.brief || '',
-      );
-      const result = await requestHandoffFocus({
-        deliveryId: delivery.id,
-        versionId: delivery.currentVersionId,
-        projectId: delivery.projectId,
-        collaborationSummary: sharedLog.summary,
-        risks: analysis?.risks ?? [],
-        riskNotes: riskNotes || '',
-        riskAcknowledged: Boolean(riskAck),
-        sharedLog,
-        integrationGoal: HANDOFF_INTEGRATION_GOAL,
-        codeMaterialId: codeId,
-        chatMaterialId: chatId,
-        bypassCache: focusRetryNonce > 0,
-      });
-      if (cancelled) return;
+    if (
+      delivery.status !== 'published' ||
+      !delivery.currentVersionId ||
+      !codeId ||
+      !chatId
+    ) {
+      return;
+    }
+    if (
+      focusRetryNonce === 0 &&
+      delivery.focusAnnotation &&
+      delivery.focusAnnotation.versionId === delivery.currentVersionId &&
+      delivery.focusAnnotation.items.length > 0
+    ) {
+      return;
+    }
+
+    const gen = ++focusRequestGenRef.current;
+    const versionId = delivery.currentVersionId;
+    const sharedLog = toSharedLogPayload(
+      log,
+      log?.summary || delivery.brief || '',
+    );
+    const payload = {
+      deliveryId: delivery.id,
+      versionId,
+      projectId: delivery.projectId,
+      collaborationSummary: sharedLog.summary,
+      risks: analysis?.risks ?? [],
+      riskNotes: riskNotes || '',
+      riskAcknowledged: Boolean(riskAck),
+      sharedLog,
+      integrationGoal: HANDOFF_INTEGRATION_GOAL,
+      codeMaterialId: codeId,
+      chatMaterialId: chatId,
+      bypassCache: focusRetryNonce > 0,
+    };
+
+    void (async () => {
+      const result = await requestHandoffFocus(payload);
+      // Ignore superseded requests (StrictMode remount, material/health churn).
+      if (gen !== focusRequestGenRef.current) return;
       if (!result.ok) {
         setFocusError(
           formatAiFailureHint(
-            aiMode,
+            aiModeRef.current,
             result.message,
             '仍可阅读已发布协作日志，并手工求助或确认接收。',
           ),
@@ -223,9 +204,6 @@ export function ReceiveDeliveryPage({
       saveFocusAnnotation(result.focus);
       setFocusError('');
     })();
-    return () => {
-      cancelled = true;
-    };
   }, [
     delivery.status,
     delivery.currentVersionId,
@@ -233,14 +211,14 @@ export function ReceiveDeliveryPage({
     chatId,
     delivery.id,
     delivery.projectId,
-    log,
+    // Stabilize on summary text rather than log object identity.
+    log?.summary,
     delivery.brief,
-    analysis?.risks,
     riskNotes,
     riskAck,
-    delivery.focusAnnotation,
+    delivery.focusAnnotation?.versionId,
+    delivery.focusAnnotation?.items?.length,
     focusRetryNonce,
-    aiMode,
   ]);
 
   const titleOf = (id: string | null) => {
@@ -448,6 +426,8 @@ export function ReceiveDeliveryPage({
     progressAbortRef.current = null;
   };
 
+  const fromPlace = parseHash(window.location.hash).query.get('from');
+
   return (
     <StudentShell
       place="receive"
@@ -458,57 +438,64 @@ export function ReceiveDeliveryPage({
         <p className="rcv-kicker">
           {HANDOFF_PROJECT_NAME} / 交易流程联调 / {delivery.title}
         </p>
-        <div className="rcv-head">
-          <h1>接收交付</h1>
-          <span className="rcv-pill">{delivery.version}</span>
-          <span className="rcv-note">
-            {delivery.currentVersionId
-              ? `可接收版本 ${delivery.version}（${delivery.currentVersionId}）`
-              : '等待发布'}
-          </span>
-          <span className="rcv-note" role="status">
-            {aiMode === 'live'
-              ? 'AI：真实模型 (live)'
-              : hasLiveKey
-                ? 'AI：模拟结果 (mock)'
-                : 'AI：模拟结果 (mock) · 未检测到 DEEPSEEK_API_KEY'}
-          </span>
-        </div>
-
-        {delivery.status === 'draft' || delivery.status === 'needs-revision' ? (
-          <p className="rcv-brief is-empty">
-            {delivery.status === 'needs-revision'
-              ? '已提出修改意见，等待 Alex 发布新版本。旧版本不可再确认接收。'
-              : 'Alex 尚未发布交付。'}
+        {fromPlace === 'work' ? (
+          <p className="rd-aux" style={{ marginBottom: 8 }}>
+            <button
+              type="button"
+              className="rd-chip"
+              onClick={() => onNavigate('work')}
+            >
+              ← 返回工作
+            </button>
           </p>
         ) : null}
+        <div className="rcv-head">
+          <h1 className="rd-page-title">接收交付</h1>
+          <span className="rcv-pill">{delivery.version}</span>
+        </div>
+        <p className="rd-aux" role="status" style={{ marginBottom: 16 }}>
+          {delivery.status === 'published'
+            ? '等待确认接收'
+            : delivery.status === 'received'
+              ? `已确认接收 ${delivery.version}`
+              : delivery.status === 'needs-revision'
+                ? '已提出修改意见，等待 Alex 发布新版本'
+                : '等待发布'}
+          {delivery.currentVersionId
+            ? ` · ${delivery.currentVersionId}`
+            : ''}
+          {aiMode === 'live'
+            ? ' · 真实模型'
+            : hasLiveKey
+              ? ' · 模拟结果'
+              : ' · 模拟结果 · 未检测到 DEEPSEEK_API_KEY'}
+        </p>
 
-        <div className="rcv-grid">
-          <article>
-            <h2>交付说明与协作日志</h2>
-            {hasBrief ? (
-              <p className="rcv-brief">{log?.summary || delivery.brief}</p>
-            ) : (
-              <p className="rcv-brief is-empty">发布人尚未确认协作日志。</p>
-            )}
-            {analysis ? (
-              <p className="rcv-summary-note">
-                材料分析结论：{verdictLabel(analysis.verdict)}
-              </p>
-            ) : null}
-            {riskAck ? (
-              <p className="rcv-summary-note">
-                发布时已确认风险：{riskNotes || '见分析结论'}
-              </p>
-            ) : null}
-            {usageSummary?.trim() ? (
-              <p className="rcv-summary-note">使用说明：{usageSummary}</p>
-            ) : null}
-
-            {log ? (
-              <section className="rcv-evidence-section" aria-label="已确认协作日志">
-                <h3>已确认协作日志</h3>
-                <ul className="rcv-log-list">
+        <div className="rcv-grid rd-split is-stack-ai-first">
+          <article className="rd-evidence" aria-label="本版交付证据">
+            <h2 className="rd-section-title">本版交付证据</h2>
+            <article
+              id={`evidence-${evidenceLabel(1)}`}
+              className={`rd-block${activeId === `evidence-${evidenceLabel(1)}` ? ' is-flash' : ''}`}
+            >
+              <div className="rd-block-head">
+                <span className="rd-num">{evidenceLabel(1)}</span>
+                <div className="rd-block-meta">
+                  <strong>Alex 最终确认协作日志</strong>
+                  <span className="rd-aux">
+                    {delivery.currentVersionId ?? '尚无版本'}
+                  </span>
+                </div>
+              </div>
+              {hasBrief ? (
+                <p className="rd-excerpt rd-body">
+                  {log?.summary || delivery.brief}
+                </p>
+              ) : (
+                <p className="rd-missing">发布人尚未确认协作日志。</p>
+              )}
+              {log ? (
+                <ul className="rcv-log-list" style={{ marginTop: 10 }}>
                   {log.humanActions.map((item) => (
                     <li key={`h-${item}`}>人工：{item}</li>
                   ))}
@@ -519,160 +506,80 @@ export function ReceiveDeliveryPage({
                     <li key={`o-${item}`}>待确认：{item}</li>
                   ))}
                 </ul>
-              </section>
-            ) : null}
+              ) : null}
+              {riskAck ? (
+                <p className="rd-aux" style={{ marginTop: 8 }}>
+                  已确认风险：{riskNotes || '见分析结论'}
+                </p>
+              ) : null}
+            </article>
 
-            <section className="rcv-evidence-section" aria-label="接手标注">
-              <h3>接手标注（AI）</h3>
-              {focusError ? (
-                <p className="rcv-note" role="alert">
-                  {focusError}{' '}
-                  <button
-                    type="button"
-                    className="rcv-btn"
-                    onClick={() => {
-                      setFocusError('');
-                      setFocusRetryNonce((value) => value + 1);
-                    }}
-                  >
-                    重新生成接手标注
-                  </button>
-                </p>
-              ) : null}
-              {delivery.focusAnnotation?.items?.length ? (
-                <AiFocusItemList items={delivery.focusAnnotation.items} />
-              ) : (
-                <p className="rcv-note">
-                  打开本页后自动整理关注项；失败时仍可阅读发布原文并手工求助或接收。
-                </p>
-              )}
-              <p className="ai-struct__meta">
-                {delivery.focusAnnotation?.items?.length
-                  ? `${formatAiSourceLabel(
-                      delivery.focusAnnotation.provider,
-                      delivery.focusAnnotation.modelLabel,
-                    )}${
-                      delivery.focusAnnotation.cacheKey.includes(':hit')
-                        ? ' · 服务端缓存命中'
-                        : ''
-                    } · 绑定 ${delivery.focusAnnotation.versionId}`
-                  : '尚未生成'}
-              </p>
-            </section>
-
-            <details className="rcv-progress-qa">
-              <summary>进度问答（可选 · 真流式旁路）</summary>
-              <p className="rcv-note">
-                非主路径必经。失败可跳过，继续求助或接收。
-              </p>
-              <textarea
-                className="rcv-brief"
-                style={{ width: '100%', minHeight: 64 }}
-                value={progressQuestion}
-                onChange={(event) => setProgressQuestion(event.target.value)}
-                placeholder="例如：当前版本还缺什么才能安心联调？"
-                disabled={progressStreaming}
-              />
-              <div className="rcv-progress-actions">
-                <button
-                  type="button"
-                  className="rcv-btn"
-                  disabled={progressStreaming || !progressQuestion.trim()}
-                  onClick={() => void runProgressQaAsk()}
-                >
-                  {progressStreaming ? '生成中…' : '开始流式问答'}
-                </button>
-                <button
-                  type="button"
-                  className="rcv-btn"
-                  disabled={!progressStreaming}
-                  onClick={stopProgressQa}
-                >
-                  停止
-                </button>
-              </div>
-              {progressNote ? (
-                <p className="rcv-note" role="status">
-                  {progressNote}
-                </p>
-              ) : null}
-              {progressAnswer ? (
-                <p className="rcv-brief rcv-progress-answer">{progressAnswer}</p>
-              ) : null}
-              {progressChecks.length > 0 ? (
-                <ul className="rcv-pending">
-                  {progressChecks.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              ) : null}
-              {progressMeta ? (
-                <p className="ai-struct__meta">
-                  {formatAiSourceLabel(
-                    progressMeta.provider,
-                    progressMeta.modelLabel,
-                  )}
-                  {delivery.currentVersionId
-                    ? ` · 版本 ${delivery.currentVersionId}`
-                    : ''}
-                </p>
-              ) : null}
-            </details>
-
-            <button
-              type="button"
-              className="rcv-evidence-toggle"
-              aria-expanded={showEvidence}
-              onClick={() => setShowEvidence((open) => !open)}
+            <article
+              id={`evidence-${evidenceLabel(2)}`}
+              className={`rd-block${activeId === `evidence-${evidenceLabel(2)}` ? ' is-flash' : ''}`}
             >
-              <ChevronDown
-                size={16}
-                strokeWidth={1.75}
-                aria-hidden="true"
-                style={{ transform: showEvidence ? 'none' : 'rotate(-90deg)' }}
-              />
-              查看依据与分区
-            </button>
-            {showEvidence ? (
-              <div className="rcv-evidence" aria-label="接手依据">
-                <EvidenceSection title="人工动作" blocks={delivery.changes ?? []} />
-                <EvidenceSection
-                  title="AI 动作"
-                  blocks={delivery.downstreamImpact ?? []}
-                />
-                <EvidenceSection
-                  title="待确认"
-                  blocks={delivery.evidenceAndOpen ?? []}
-                />
+              <div className="rd-block-head">
+                <span className="rd-num">{evidenceLabel(2)}</span>
+                <div className="rd-block-meta">
+                  <strong>{titleOf(codeId)}</strong>
+                  <span className="rd-aux">代码材料</span>
+                </div>
               </div>
-            ) : null}
-
-            {canAct ? (
-              <div className="rcv-evidence-section">
-                <h3>提出修改意见</h3>
-                <textarea
-                  className="rcv-brief"
-                  style={{ width: '100%', minHeight: 72 }}
-                  value={revisionNote}
-                  placeholder="说明需要修改的点"
-                  onChange={(event) => setRevisionNote(event.target.value)}
-                />
-                <input
-                  style={{ width: '100%', marginTop: 8 }}
-                  value={evidenceLocator}
-                  placeholder="可选：证据定位（材料/片段）"
-                  onChange={(event) => setEvidenceLocator(event.target.value)}
-                />
-                <button type="button" className="rcv-btn" onClick={sendRevision}>
-                  提交修改意见
+              {codeId && previews[codeId] ? (
+                <pre className="rd-code">{previews[codeId].preview.slice(0, 1000)}</pre>
+              ) : (
+                <p className="rd-missing">打开材料预览以查看本版代码摘录</p>
+              )}
+              {codeId ? (
+                <button
+                  type="button"
+                  className="rcv-btn"
+                  style={{ marginTop: 8 }}
+                  onClick={() =>
+                    setOpenPreviewId((prev) => (prev === codeId ? null : codeId))
+                  }
+                >
+                  {openPreviewId === codeId ? '收起' : '展开完整预览'}
                 </button>
+              ) : null}
+            </article>
+
+            <article
+              id={`evidence-${evidenceLabel(3)}`}
+              className={`rd-block${activeId === `evidence-${evidenceLabel(3)}` ? ' is-flash' : ''}`}
+            >
+              <div className="rd-block-head">
+                <span className="rd-num">{evidenceLabel(3)}</span>
+                <div className="rd-block-meta">
+                  <strong>{titleOf(chatId)}</strong>
+                  <span className="rd-aux">对话材料</span>
+                </div>
               </div>
-            ) : null}
+              {chatId && previews[chatId] ? (
+                <p className="rd-excerpt rd-body">
+                  {previews[chatId].preview.slice(0, 900)}
+                </p>
+              ) : (
+                <p className="rd-missing">打开材料预览以查看本版对话摘录</p>
+              )}
+              {chatId ? (
+                <button
+                  type="button"
+                  className="rcv-btn"
+                  style={{ marginTop: 8 }}
+                  onClick={() =>
+                    setOpenPreviewId((prev) => (prev === chatId ? null : chatId))
+                  }
+                >
+                  {openPreviewId === chatId ? '收起' : '展开完整预览'}
+                </button>
+              ) : null}
+            </article>
 
             {(delivery.status === 'published' ||
               delivery.status === 'received') && (
-              <div className="rcv-evidence-section">
-                <h3>向教师求助</h3>
+              <div className="rd-block">
+                <h3 className="rd-section-title">向教师求助</h3>
                 <textarea
                   style={{ width: '100%', minHeight: 72 }}
                   value={helpText}
@@ -680,10 +587,18 @@ export function ReceiveDeliveryPage({
                   onChange={(event) => setHelpText(event.target.value)}
                 />
                 <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                  <button type="button" className="rcv-btn" onClick={() => void loadClarify()}>
+                  <button
+                    type="button"
+                    className="rcv-btn"
+                    onClick={() => void loadClarify()}
+                  >
                     获取 AI 澄清建议
                   </button>
-                  <button type="button" className="rcv-btn is-primary" onClick={submitHelp}>
+                  <button
+                    type="button"
+                    className="rcv-btn is-primary"
+                    onClick={submitHelp}
+                  >
                     正式提交求助
                   </button>
                 </div>
@@ -714,117 +629,230 @@ export function ReceiveDeliveryPage({
                 ) : null}
               </div>
             )}
+
+            <details className="rcv-progress-qa">
+              <summary>进度问答（可选 · 真流式旁路）</summary>
+              <p className="rd-aux">非主路径必经。失败可跳过。</p>
+              <textarea
+                className="rcv-brief"
+                style={{ width: '100%', minHeight: 64 }}
+                value={progressQuestion}
+                onChange={(event) => setProgressQuestion(event.target.value)}
+                disabled={progressStreaming}
+              />
+              <div className="rcv-progress-actions">
+                <button
+                  type="button"
+                  className="rcv-btn"
+                  disabled={progressStreaming || !progressQuestion.trim()}
+                  onClick={() => void runProgressQaAsk()}
+                >
+                  {progressStreaming ? '生成中…' : '开始流式问答'}
+                </button>
+                <button
+                  type="button"
+                  className="rcv-btn"
+                  disabled={!progressStreaming}
+                  onClick={stopProgressQa}
+                >
+                  停止
+                </button>
+              </div>
+              {progressNote ? <p className="rd-aux">{progressNote}</p> : null}
+              {progressAnswer ? (
+                <p className="rd-excerpt">{progressAnswer}</p>
+              ) : null}
+              {progressChecks.length > 0 ? (
+                <ul className="rd-findings">
+                  {progressChecks.map((item) => (
+                    <li key={item}>
+                      <p>{item}</p>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {progressMeta ? (
+                <details className="rd-aux">
+                  <summary>技术来源</summary>
+                  <p>
+                    {formatAiSourceLabel(
+                      progressMeta.provider,
+                      progressMeta.modelLabel,
+                    )}
+                  </p>
+                </details>
+              ) : null}
+            </details>
           </article>
 
-          <aside>
-            <h2>交付材料</h2>
-            <div className="rcv-files">
-              {[
-                { id: codeId, kind: 'code' as const },
-                { id: chatId, kind: 'chat' as const },
-              ]
-                .filter((item) => item.id)
-                .map((item) => (
-                  <div key={item.id!} className="rcv-file">
-                    {item.kind === 'code' ? (
-                      <FileCode2 size={18} strokeWidth={1.75} aria-hidden="true" />
-                    ) : (
-                      <FileText size={18} strokeWidth={1.75} aria-hidden="true" />
-                    )}
-                    <div>
-                      <strong>{titleOf(item.id)}</strong>
-                      <button
-                        type="button"
-                        className="rcv-btn"
-                        style={{ marginTop: 6 }}
-                        onClick={() =>
-                          setOpenPreviewId((prev) =>
-                            prev === item.id ? null : item.id,
-                          )
-                        }
-                      >
-                        {openPreviewId === item.id ? '收起正文' : '打开该版本文件'}
-                      </button>
-                      {openPreviewId === item.id && previews[item.id!] ? (
-                        <pre className="rcv-preview">
-                          {previews[item.id!].preview}
-                        </pre>
-                      ) : null}
-                      <details>
-                        <summary>技术 ID</summary>
-                        {item.id}
-                      </details>
-                    </div>
-                  </div>
-                ))}
-              {delivery.files.map((file) => (
-                <div key={file.id} className="rcv-file">
-                  {file.kind === 'code' ? (
-                    <FileCode2 size={18} strokeWidth={1.75} aria-hidden="true" />
-                  ) : (
-                    <FileText size={18} strokeWidth={1.75} aria-hidden="true" />
-                  )}
-                  <span>{file.name.split(/[/\\]/).pop()}</span>
-                </div>
-              ))}
+          <aside className="rd-ai" aria-label="联调关注与操作">
+            <h2 className="rd-section-title">联调关注点</h2>
+            <div className="rd-status">
+              <h3>
+                {delivery.status === 'published'
+                  ? '等待确认接收'
+                  : delivery.status === 'received'
+                    ? '已确认接收'
+                    : delivery.status === 'needs-revision'
+                      ? '等待新版本'
+                      : '等待发布'}
+              </h3>
+              <p>
+                仅「确认接收」当前有效版本会推进联调。打开本页或生成 AI
+                提示不会改变联调状态。
+              </p>
+              {focusError ? (
+                <p className="ctn-brief-error" role="alert">
+                  {focusError}{' '}
+                  <button
+                    type="button"
+                    className="rcv-btn"
+                    onClick={() => {
+                      setFocusError('');
+                      setFocusRetryNonce((value) => value + 1);
+                    }}
+                  >
+                    重试
+                  </button>
+                </p>
+              ) : null}
             </div>
-            <p className="rcv-next">{delivery.nextStep}</p>
+
+            {delivery.focusAnnotation?.items?.length ? (
+              <ul className="rd-findings">
+                {delivery.focusAnnotation.items.slice(0, 3).map((item, index) => (
+                  <li key={item.title} className="rd-finding">
+                    <div className="rd-finding-title">
+                      {item.title}
+                      <EvidenceChip
+                        index={Math.min(index + 1, 3)}
+                        onFocus={focusEvidence}
+                      />
+                    </div>
+                    <p className="rd-finding-body">
+                      <strong>先查：</strong>
+                      {enrichAiProse(item.checkAction)}
+                    </p>
+                    <p className="rd-finding-body">
+                      <strong>预期：</strong>
+                      {enrichAiProse(item.impact)}
+                    </p>
+                    {item.citations?.[0] ? (
+                      <p className="rd-finding-body">
+                        <strong>依据：</strong>
+                        {enrichAiProse(item.citations[0].excerpt)}
+                      </p>
+                    ) : item.risk ? (
+                      <p className="rd-finding-body">
+                        <strong>依据：</strong>
+                        {enrichAiProse(item.risk)}
+                      </p>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="rd-aux">
+                打开本页后自动整理关注项；失败时仍可阅读发布原文并手工求助或接收。
+              </p>
+            )}
+            {delivery.focusAnnotation?.items?.length ? (
+              <p className="rd-aux" style={{ marginTop: 12 }}>
+                {formatAiSourceLabel(
+                  delivery.focusAnnotation.provider,
+                  delivery.focusAnnotation.modelLabel,
+                )}
+                {delivery.focusAnnotation.cacheKey.includes(':hit')
+                  ? ' · 缓存命中'
+                  : ''}
+                · 绑定 {delivery.focusAnnotation.versionId}
+              </p>
+            ) : null}
+
             {hint ? <p className="rcv-note">{hint}</p> : null}
 
-            {isPublisher && delivery.status === 'published' ? (
-              <p className="rcv-note" role="status">
-                发送方视角：已发布 · 等待确认接收（{receiver?.name ?? 'Priya'}）
-              </p>
-            ) : null}
-
             {canAct ? (
-              <button
-                type="button"
-                className="rcv-btn is-primary"
-                disabled={confirming}
-                onClick={confirm}
-              >
-                {confirming ? (
-                  '确认中…'
-                ) : (
-                  <>
-                    <Check size={16} strokeWidth={2.25} aria-hidden="true" />
-                    确认接收
-                  </>
-                )}
-              </button>
-            ) : delivery.status === 'received' ? (
-              <p className="rcv-note" role="status">
-                已确认接收 {delivery.version}
-              </p>
-            ) : !isReceiver && delivery.status === 'published' ? (
-              <p className="rcv-note">仅指定接收人可确认接收。</p>
+              <div className="rd-block" style={{ marginTop: 20 }}>
+                <h3 className="rd-section-title">提出修改意见</h3>
+                <textarea
+                  className="rcv-brief"
+                  style={{ width: '100%', minHeight: 72 }}
+                  value={revisionNote}
+                  placeholder="说明需要修改的点"
+                  onChange={(event) => setRevisionNote(event.target.value)}
+                />
+                <input
+                  style={{ width: '100%', marginTop: 8 }}
+                  value={evidenceLocator}
+                  placeholder="可选：证据定位"
+                  onChange={(event) => setEvidenceLocator(event.target.value)}
+                />
+                <button
+                  type="button"
+                  className="rcv-btn"
+                  style={{ marginTop: 8 }}
+                  onClick={sendRevision}
+                >
+                  提交修改意见
+                </button>
+              </div>
             ) : null}
 
-            <p className="rcv-note">
-              发布者 {publisher?.name ?? delivery.publisherId} · 接收者{' '}
-              {receiver?.name ?? delivery.receiverId}
-            </p>
+            <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {canAct ? (
+                <button
+                  type="button"
+                  className="rcv-btn is-primary"
+                  disabled={confirming}
+                  onClick={confirm}
+                >
+                  {confirming ? (
+                    '确认中…'
+                  ) : (
+                    <>
+                      <Check size={16} strokeWidth={2.25} aria-hidden="true" />
+                      确认接收
+                    </>
+                  )}
+                </button>
+              ) : null}
+              {isPublisher && delivery.status === 'published' ? (
+                <p className="rd-aux">
+                  发送方视角：已发布，等待 {receiver?.name ?? 'Priya'} 确认接收
+                </p>
+              ) : null}
+            </div>
+
             {delivery.publishedVersions.length > 1 ? (
-              <div className="rcv-evidence-section">
-                <h3>历史版本（不可确认旧版）</h3>
-                <ul>
+              <div className="rd-block" style={{ marginTop: 20 }}>
+                <h3 className="rd-section-title">历史版本</h3>
+                <ul className="rd-aux">
                   {delivery.publishedVersions.map((version) => (
                     <li key={version.versionId}>
                       {version.version}
                       {version.versionId === delivery.currentVersionId
                         ? '（当前）'
-                        : '（旧）'}
-                      {version.riskAcknowledged ? ' · 已确认风险' : ''}
-                      <details>
-                        <summary>版本详情</summary>
-                        {version.versionId}
-                      </details>
+                        : '（旧，不可确认）'}
                     </li>
                   ))}
                 </ul>
               </div>
             ) : null}
+
+            <details className="ctn-tech-details" style={{ marginTop: 12 }}>
+              <summary>技术详情</summary>
+              <p className="rd-aux">
+                发布者 {publisher?.name ?? delivery.publisherId} · 接收者{' '}
+                {receiver?.name ?? delivery.receiverId}
+              </p>
+              <p className="rd-aux">联调目标：{HANDOFF_INTEGRATION_GOAL}</p>
+              {analysis ? (
+                <p className="rd-aux">分析判定：{verdictLabel(analysis.verdict)}</p>
+              ) : null}
+              {usageSummary?.trim() ? (
+                <p className="rd-aux">使用说明：{usageSummary}</p>
+              ) : null}
+            </details>
           </aside>
         </div>
       </div>

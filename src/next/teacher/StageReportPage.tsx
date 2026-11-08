@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { Check } from 'lucide-react';
 import {
   fetchHealth,
@@ -35,6 +41,7 @@ import {
 } from '../AiStruct';
 import { formatAiSourceLabel } from '../aiMeta';
 import { TeacherShell, type TeacherPlace } from './TeacherShell';
+import '../readingLayout.css';
 import './stage.css';
 
 type StageReportPageProps = {
@@ -88,6 +95,8 @@ export function StageReportPage({
       HANDOFF_EVENT_EXCEPTION,
   );
   const [draft, setDraft] = useState(DEFAULT_DRAFT);
+  /** Once the teacher edits, AI brief must not clobber the formal feedback draft. */
+  const draftTouchedRef = useRef(false);
   const [notice, setNotice] = useState('');
   const [aiBrief, setAiBrief] = useState<{
     situationSummary: string;
@@ -139,6 +148,12 @@ export function StageReportPage({
       delivery.collaborationLog
     );
   }, [selected?.versionId, delivery]);
+
+  useEffect(() => {
+    // Switching help events resets draft ownership so a new AI brief may seed once.
+    draftTouchedRef.current = false;
+    setDraft(DEFAULT_DRAFT);
+  }, [selectedId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -197,7 +212,8 @@ export function StageReportPage({
         provider: result.data.help.provider,
         modelLabel: result.data.help.modelLabel,
       });
-      if (!feedback) {
+      // Seed draft only when teacher has not started editing (avoid clobbering manual formal feedback).
+      if (!feedback && !draftTouchedRef.current) {
         setDraft(
           result.data.help.guidanceSuggestions[0] || DEFAULT_DRAFT,
         );
@@ -406,73 +422,15 @@ export function StageReportPage({
                                   <span className="cts-ev is-student-edit">
                                     <span className="cts-ev-top">
                                       <strong>学生原始问题</strong>
+                                      {event.versionId ? (
+                                        <span>版本 {event.versionId}</span>
+                                      ) : null}
                                     </span>
                                     <span className="cts-ev-body">
                                       {studentOriginal?.summary || event.summary}
                                     </span>
                                   </span>
                                 </span>
-
-                                {aiLoading ? (
-                                  <span className="cts-quiet">
-                                    AI 正在整理情境…
-                                  </span>
-                                ) : null}
-                                {aiError ? (
-                                  <span className="cts-quiet">{aiError}</span>
-                                ) : null}
-                                {aiBrief ? (
-                                  <span className="cts-evidence">
-                                    <span className="cts-ev-top">
-                                      <strong>AI 补充</strong>
-                                      <span>不等于正式反馈</span>
-                                    </span>
-                                    <AiStructCard
-                                      claim={enrichAiProse(
-                                        aiBrief.situationSummary,
-                                      )}
-                                    >
-                                      {aiBrief.keyDisagreements.map((item) => (
-                                        <AiStructField
-                                          key={item}
-                                          role="impact"
-                                          label="分歧"
-                                        >
-                                          {enrichAiProse(item)}
-                                        </AiStructField>
-                                      ))}
-                                      {aiBrief.missingInfo.map((item) => (
-                                        <AiStructField
-                                          key={item}
-                                          role="note"
-                                          label="缺失"
-                                        >
-                                          {enrichAiProse(item)}
-                                        </AiStructField>
-                                      ))}
-                                      {aiBrief.guidanceSuggestions.map(
-                                        (item) => (
-                                          <AiStructField
-                                            key={item}
-                                            role="check"
-                                            label="建议"
-                                          >
-                                            {enrichAiProse(item)}
-                                          </AiStructField>
-                                        ),
-                                      )}
-                                    </AiStructCard>
-                                    <p className="ai-struct__meta">
-                                      {formatAiSourceLabel(
-                                        aiBrief.provider,
-                                        aiBrief.modelLabel,
-                                      )}
-                                      {selected.versionId
-                                        ? ` · 版本 ${selected.versionId}`
-                                        : ''}
-                                    </p>
-                                  </span>
-                                ) : null}
 
                                 {aiAdopted && aiAdopted.length > 0 ? (
                                   <span className="cts-evidence">
@@ -483,6 +441,7 @@ export function StageReportPage({
                                       >
                                         <span className="cts-ev-top">
                                           <strong>学生采纳的 AI 补充</strong>
+                                          <span>证据侧 · 非教师反馈</span>
                                         </span>
                                         <span className="cts-ev-body">
                                           {item.summary}
@@ -536,7 +495,7 @@ export function StageReportPage({
             </ol>
           </section>
 
-          <section className="cts-feed" aria-label="反馈意见">
+          <section className="cts-feed" aria-label="AI 梳理与教师正式反馈">
             <div className="cts-feed-top" key={selected?.id ?? 'none'}>
               <p>
                 {feedback ? '正在查看' : '正在回应'}：
@@ -544,9 +503,58 @@ export function StageReportPage({
               </p>
               <span>历史反馈 {feedbacks.length}</span>
             </div>
-            <h2>教师正式反馈</h2>
+
+            {selected?.kind === 'student-help' ? (
+              <div className="cts-ai-panel">
+                <h2 className="rd-section-title">AI 梳理</h2>
+                <p className="cts-quiet">仅整理情境与建议，不等于教师正式反馈。</p>
+                {aiLoading ? (
+                  <p className="cts-quiet">AI 正在整理情境…</p>
+                ) : null}
+                {aiError ? <p className="cts-quiet">{aiError}</p> : null}
+                {aiBrief ? (
+                  <>
+                    <AiStructCard
+                      claim={enrichAiProse(aiBrief.situationSummary)}
+                    >
+                      {aiBrief.keyDisagreements.map((item) => (
+                        <AiStructField key={item} role="impact" label="分歧">
+                          {enrichAiProse(item)}
+                        </AiStructField>
+                      ))}
+                      {aiBrief.missingInfo.map((item) => (
+                        <AiStructField key={item} role="note" label="缺失">
+                          {enrichAiProse(item)}
+                        </AiStructField>
+                      ))}
+                      {aiBrief.guidanceSuggestions.map((item) => (
+                        <AiStructField key={item} role="check" label="建议">
+                          {enrichAiProse(item)}
+                        </AiStructField>
+                      ))}
+                    </AiStructCard>
+                    <details className="cts-quiet">
+                      <summary>技术来源</summary>
+                      <p>
+                        {formatAiSourceLabel(
+                          aiBrief.provider,
+                          aiBrief.modelLabel,
+                        )}
+                        {selected.versionId
+                          ? ` · 版本 ${selected.versionId}`
+                          : ''}
+                      </p>
+                    </details>
+                  </>
+                ) : !aiLoading ? (
+                  <p className="cts-quiet">打开求助后会自动整理情境。</p>
+                ) : null}
+              </div>
+            ) : null}
+
+            <h2 className="rd-section-title">教师正式反馈</h2>
             <p className="cts-quiet">
-              独立署名；发送后学生项目记录回显同一原文与关联任务。
+              周老师署名；发送后学生项目记录回显同一原文与关联任务。
             </p>
             {!isLiveGroup ? (
               <p className="cts-quiet" role="status">
@@ -564,13 +572,20 @@ export function StageReportPage({
               <p className="cts-quiet" role="status">
                 当前为 Alex 发布背景，不在此发送教师反馈。请选中学生求助事件。
               </p>
+            ) : selected?.kind === 'stage' ? (
+              <p className="cts-quiet" role="status">
+                阶段事件作交付背景参考；正式反馈请绑定学生求助。
+              </p>
             ) : (
               <>
                 <textarea
                   aria-label="教师反馈意见"
                   value={draft}
                   disabled={!canSendFormalFeedback}
-                  onChange={(event) => setDraft(event.target.value)}
+                  onChange={(event) => {
+                    draftTouchedRef.current = true;
+                    setDraft(event.target.value);
+                  }}
                 />
                 <div className="cts-feed-foot">
                   <span>草稿不会显示为学生可见的教师反馈</span>

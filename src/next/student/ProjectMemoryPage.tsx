@@ -24,12 +24,16 @@ import {
 } from '../../data/processEventStore';
 import { useActiveMemberId } from '../../data/demoRoleStore';
 import { getMemberById } from '../../data/members';
+import { locateByDemoMaterialId } from '../../data/teamMaterials';
+import { useDelivery } from '../../data/deliveryStore';
+import { hashMaterials } from './studentRoutes';
 import { StudentShell, type StudentPlace } from './StudentShell';
 import './projectMemory.css';
 
 type ProjectMemoryPageProps = {
   projectId: string | null;
   onNavigate: (place: StudentPlace) => void;
+  onOpenHash?: (hash: string) => void;
 };
 
 /**
@@ -39,6 +43,7 @@ type ProjectMemoryPageProps = {
 export function ProjectMemoryPage({
   projectId,
   onNavigate,
+  onOpenHash,
 }: ProjectMemoryPageProps) {
   const isSeatflow = projectId === SEATFLOW_PROJECT_ID;
   const isCampus =
@@ -48,11 +53,13 @@ export function ProjectMemoryPage({
     projectId === 'current';
 
   if (isSeatflow) {
-    return <SeatflowMemory onNavigate={onNavigate} />;
+    return <SeatflowMemory onNavigate={onNavigate} onOpenHash={onOpenHash} />;
   }
 
   if (isCampus) {
-    return <CampusProcessMemory onNavigate={onNavigate} />;
+    return (
+      <CampusProcessMemory onNavigate={onNavigate} onOpenHash={onOpenHash} />
+    );
   }
 
   return (
@@ -70,14 +77,47 @@ export function ProjectMemoryPage({
   );
 }
 
+function memoryActionLabel(kind: string): string {
+  switch (kind) {
+    case 'delivery-published':
+      return '发布交付';
+    case 'delivery-received':
+      return '确认接收';
+    case 'delivery-revision':
+      return '提出修改意见';
+    case 'student-help':
+      return '发起求助';
+    case 'teacher-feedback':
+      return '发送正式反馈';
+    default:
+      return '更新记录';
+  }
+}
+
+function memoryImpactLabel(event: {
+  versionId?: string | null;
+  title: string;
+  statusLabel: string;
+}): string {
+  const bits: string[] = [];
+  if (event.versionId) bits.push(`版本 ${event.versionId}`);
+  bits.push(event.title);
+  if (event.statusLabel) bits.push(event.statusLabel);
+  return bits.join(' · ');
+}
+
 function CampusProcessMemory({
   onNavigate,
+  onOpenHash,
 }: {
   onNavigate: (place: StudentPlace) => void;
+  onOpenHash?: (hash: string) => void;
 }) {
   const events = useProcessEvents();
   const feedbacks = getAllFeedbacks();
+  const delivery = useDelivery();
   const actorId = useActiveMemberId();
+  const [openId, setOpenId] = useState<string | null>(null);
   const campusEvents = useMemo(() => {
     const filtered = events.filter(
       (event) =>
@@ -128,7 +168,7 @@ function CampusProcessMemory({
         <div className="pm-head">
           <div>
             <h1>项目记录</h1>
-            <p>共享事件 · 同一原文与版本（含教师正式反馈回显）</p>
+            <p>一行概览 · 展开看日志 / 原文 / 证据</p>
           </div>
         </div>
 
@@ -148,34 +188,106 @@ function CampusProcessMemory({
               const relatedFeedback =
                 linkedFeedback ||
                 feedbacks.find((item) => item.eventId === event.relatedEventId);
+              const open = openId === event.id;
+              const who = event.authorLabel.split('·')[0]?.trim() || event.authorLabel;
+              const tags: { label: string; tone: string }[] = [];
+              if (event.kind === 'teacher-feedback' || relatedFeedback) {
+                tags.push({ label: '教师正式反馈', tone: 'teacher' });
+              }
+              if (event.evidence.some((item) => /AI|建议/.test(item.label))) {
+                tags.push({ label: 'AI 建议', tone: 'ai' });
+              }
+              if (
+                event.kind === 'delivery-published' ||
+                event.kind === 'delivery-received' ||
+                event.statusLabel.includes('已确认')
+              ) {
+                tags.push({ label: '人工确认', tone: 'human' });
+              }
+
               return (
-                <li key={event.id} className="pm-card">
-                  <div className="pm-card-top">
+                <li key={event.id} className={`pm-card pm-row${open ? ' is-open' : ''}`}>
+                  <button
+                    type="button"
+                    className="pm-row-main"
+                    aria-expanded={open}
+                    onClick={() => setOpenId(open ? null : event.id)}
+                  >
                     <span className="pm-date">{event.dateLabel}</span>
-                    <strong>{event.title}</strong>
-                    <em>{event.statusLabel}</em>
-                  </div>
-                  <p className="pm-author">{event.authorLabel}</p>
-                  <p className="pm-summary">{event.summary}</p>
-                  <details className="pm-tech">
-                    <summary>详情</summary>
-                    {event.versionId ? <p>版本 {event.versionId}</p> : null}
-                    {event.evidence.map((item) => (
-                      <div key={item.id} className="pm-evidence">
-                        <strong>{item.label}</strong>
-                        <span>{item.summary}</span>
-                      </div>
-                    ))}
-                  </details>
-                  {relatedFeedback && event.kind !== 'teacher-feedback' ? (
-                    <div className="pm-evidence is-teacher">
-                      <strong>
-                        教师正式反馈 ·{' '}
-                        {getMemberById(relatedFeedback.authorId)?.name ??
-                          '周老师'}
-                      </strong>
-                      <span>{relatedFeedback.content}</span>
-                      <time>{relatedFeedback.createdAt}</time>
+                    <span className="pm-row-line">
+                      <strong>{who}</strong>
+                      <span>·</span>
+                      <span>{memoryActionLabel(event.kind)}</span>
+                      <span>·</span>
+                      <em>{memoryImpactLabel(event)}</em>
+                    </span>
+                    <span className="pm-row-tags">
+                      {tags.map((tag) => (
+                        <span key={tag.label} className={`pm-tag is-${tag.tone}`}>
+                          {tag.label}
+                        </span>
+                      ))}
+                    </span>
+                  </button>
+                  {open ? (
+                    <div className="pm-row-detail">
+                      <p className="pm-summary">{event.summary}</p>
+                      {event.versionId ? (
+                        <p className="pm-meta">版本 {event.versionId}</p>
+                      ) : null}
+                      {event.evidence.map((item) => (
+                        <div key={item.id} className="pm-evidence">
+                          <strong>{item.label}</strong>
+                          <span>{item.summary}</span>
+                        </div>
+                      ))}
+                      {onOpenHash &&
+                      (event.kind === 'delivery-published' ||
+                        event.kind === 'delivery-received' ||
+                        event.kind === 'delivery-revision') ? (
+                        <div className="pm-evidence">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const codeId =
+                                delivery.publishedVersions.find(
+                                  (version) =>
+                                    version.versionId === event.versionId,
+                                )?.codeMaterialId ||
+                                delivery.selectedCodeMaterialId;
+                              const located = codeId
+                                ? locateByDemoMaterialId(
+                                    HANDOFF_PROJECT_ID,
+                                    codeId,
+                                  )
+                                : null;
+                              onOpenHash(
+                                hashMaterials(HANDOFF_PROJECT_ID, {
+                                  folder: 'folder-api',
+                                  file: located?.fileId ?? 'matfile-order-service',
+                                  version:
+                                    located?.versionId ??
+                                    'matver-order-svc-v04',
+                                  from: 'history',
+                                }),
+                              );
+                            }}
+                          >
+                            在材料库打开本版代码
+                          </button>
+                        </div>
+                      ) : null}
+                      {relatedFeedback && event.kind !== 'teacher-feedback' ? (
+                        <div className="pm-evidence is-teacher">
+                          <strong>
+                            教师正式反馈 ·{' '}
+                            {getMemberById(relatedFeedback.authorId)?.name ??
+                              '周老师'}
+                          </strong>
+                          <span>{relatedFeedback.content}</span>
+                          <time>{relatedFeedback.createdAt}</time>
+                        </div>
+                      ) : null}
                     </div>
                   ) : null}
                 </li>
@@ -190,8 +302,10 @@ function CampusProcessMemory({
 
 function SeatflowMemory({
   onNavigate,
+  onOpenHash,
 }: {
   onNavigate: (place: StudentPlace) => void;
+  onOpenHash?: (hash: string) => void;
 }) {
   const log = useMemo(() => getSeatflowProjectLog(), []);
   const actorId = useActiveMemberId();
@@ -291,7 +405,22 @@ function SeatflowMemory({
                       {decision.evidence.map((item: SeatflowEvidence, index) => (
                         <li key={`${decision.id}-ev-${index}`}>
                           <FileSearch size={14} aria-hidden="true" />
-                          <button type="button" onClick={showToast}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (onOpenHash) {
+                                onOpenHash(
+                                  hashMaterials(SEATFLOW_PROJECT_ID, {
+                                    folder: 'folder-req',
+                                    file: 'matfile-seat-consensus',
+                                    from: 'history',
+                                  }),
+                                );
+                                return;
+                              }
+                              showToast();
+                            }}
+                          >
                             {formatEvidenceKind(item.kind)} · {item.label}
                           </button>
                         </li>
